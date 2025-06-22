@@ -4,7 +4,7 @@ import { NextPage } from "next";
 import { Media, Row, Col, Container } from "reactstrap";
 import Testimonial from "../layouts/widgets/testimonial";
 import Slider from "react-slick";
-import DiscountCoupon from "../layouts/widgets/discountCoupon";
+import DiscountCoupon from "../layouts/widgets/price_ranges";
 import Breadcrumb from "../../views/Containers/Breadcrumb";
 
 var settings = {

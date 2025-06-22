@@ -3,12 +3,8 @@ import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import Slider from "react-slick";
 import { Col, Media, Row } from "reactstrap";
-//import { getAllBanners, BannerModel } from '../../../app/services/api.service';
 import {API, BannerModel, ObjCache } from '@/app/globalProvider'
-// var settings = {
-//   autoplay: true,
-//   autoplaySpeed: 2500,
-// };
+
 
 
 interface ButtonProps {
@@ -55,10 +51,11 @@ interface ButtonProps {
 }
 
 interface SliderProps {
-  data: BannerModel[];
+  banners: BannerModel[] | undefined;
 }
 
-const SlideBanner: React.FC<SliderProps> = ({ data }) => {
+const SliderBanner: NextPage<SliderProps> = ({ banners }) => {
+  if(banners)
   return (
     <section className="w-full section-py-space">
       <div className="custom-container rts-banner-area-one" >
@@ -84,33 +81,11 @@ const SlideBanner: React.FC<SliderProps> = ({ data }) => {
           }}
           modules={[Autoplay, Navigation, Mousewheel, Keyboard]}
         >
-          {data.map((item) => (
+          {banners.map((item) => (
             <SwiperSlide>
              
                   <Media src={item.img[0]} className="bg-img  img-fluid" alt={item.name} />
               
-             
-              {/* <div
-                className="h-full w-full absolute left-0 top-0 bannerCover"
-                style={{
-                  background: `url("${item.img[0]}") cover center / cover scroll no-repeat`
-                }}
-              ></div>
-              <div className="h-full w-full absolute left-0 top-0 bg-black opacity-20"></div> */}
-              {/* <div className="relative z-10 h-full flex items-center justify-center">
-                <div className="text-center">
-                  {item.name && (
-                    <p className="text-md sm:text-xl lg:text-3xl font-semibold ">
-                      {item.name}
-                    </p>
-                  )}
-                  <p className="text-3xl sm:text-6xl lg:text-8xl font-bold">
-                    {item.name}
-                  </p>
-                  
-                </div>
-              </div> */}
-
             </SwiperSlide>
           ))}
         </Swiper>
@@ -120,20 +95,6 @@ const SlideBanner: React.FC<SliderProps> = ({ data }) => {
   );
 };
 
-//export default Slider;
-var banners: BannerModel[] = [];
-
-const SliderBanner: NextPage = () => {
- 
-  return (
-    <>
-{banners.length && <SlideBanner data={banners}>
-      </SlideBanner>}
-      
-
-    </>
-  );
-};
 
 export default SliderBanner;
 

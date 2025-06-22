@@ -6,6 +6,7 @@ import React, { Fragment, useContext, useRef, useState } from "react";
 import { Media, Modal, ModalBody } from "reactstrap";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import Slider from "react-slick";
+import {searchController} from '@/app/globalProvider';
 
 interface productType {
   // id: Number;

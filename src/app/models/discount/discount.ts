@@ -1,5 +1,6 @@
 import { DiscountItem } from "../models";
 export class Discount {
+  [x: string]: any;
   id: string;
   name?: string;
   details?: string;

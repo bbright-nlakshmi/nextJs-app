@@ -9,7 +9,7 @@ import { CartContext } from "../../../../helpers/cart/cart.context";
 import { WishlistContext } from "../../../../helpers/wishlist/wish.context";
 import { CompareContext } from "../../../../helpers/compare/compare.context";
 import { Skeleton } from "../../../../common/skeleton";
-import { API, BannerModel, Category } from '@/app/globalProvider';
+import { API, BannerModel, Category, ObjCache, Product } from '@/app/globalProvider';
 
 // Swiper components, modules and styles
 import { Autoplay, Navigation, Pagination, Mousewheel, Keyboard } from "swiper/modules";
@@ -17,6 +17,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { all } from "axios";
 
 var settings = {
   autoplay: true,
@@ -60,66 +61,29 @@ var settings = {
     },
   ],
 };
-
-const GET_PRODUCTS = gql`
-  query getProducts($type: CategoryType, $limit: Int!) {
-    products(type: $type, limit: $limit) {
-      items {
-        id
-        title
-        type
-        collection {
-          collectionName
-        }
-      }
-    }
-  }
-`;
-
-const GET_COLLECTION = gql`
-  query getCollection($collection: String) {
-    collection(collec: $collection) {
-      id
-      title
-      description
-      type
-      brand
-      category
-      price
-      new
-      sale
-      discount
-      stock
-      variants {
-        id
-        sku
-        size
-        color
-        image_id
-      }
-      images {
-        image_id
-        id
-        alt
-        src
-      }
-    }
-  }
-`;
+interface allProductsProps{
+  category:string,
+  products:Product[];
+}
 
 type TabProductProps = {
   effect?: any;
+  categories?:Category[];
 };
-var categories: any;
-const TabProduct: NextPage<TabProductProps> = ({ effect }) => {
-
-  
+//var categories: any;
+const TabProduct: NextPage<TabProductProps> = ({ effect ,categories}) => {
+const [allproducts,setAllProducts] = useState<allProductsProps>();
+  // ObjCache.allProducstsList.subscribe((products: allProductsProps) => {
+  //     setAllProducts(products);
+  //     console.log(allproducts)
+  //   })
+    
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
   const [activeTab, setActiveTab] = useState(0);
   const collection: any[] = [];
-
+if(categories)
   return (
     <>
       <section className="section-pt-space">
@@ -142,7 +106,7 @@ const TabProduct: NextPage<TabProductProps> = ({ effect }) => {
                 modules={[Mousewheel]}
 
               >
-                {categories && categories.map((c: any, i: any) =>
+                {categories.map((c: any, i: any) =>
                 (
                   <SwiperSlide key={c.id}>
                     <NavItem key={i}>
@@ -167,15 +131,13 @@ const TabProduct: NextPage<TabProductProps> = ({ effect }) => {
                 <TabPane tabId={activeTab}>
                   <div className="product product-slide-6 product-m no-arrow">
                     <div>
-                      {!categories || !categories.length ? (
-                        <Skeleton />
-                      ) : (
+                       
                         <Swiper
                           slidesPerView={3}
                           navigation
                           spaceBetween={30}
                           pagination={{ type: "bullets", clickable: true }}
-                          autoplay={true}
+                          
                           loop={false}
                           mousewheel={true}
                           breakpoints={{
@@ -190,9 +152,8 @@ const TabProduct: NextPage<TabProductProps> = ({ effect }) => {
                         >
 
                           {categories[activeTab].category_products && categories[activeTab].category_products.map((item: any, i: any) => (
-
                             <SwiperSlide key={item.id}>
-                              {item.id}
+                              {/* {item.id} */}
                               {/* <Media src={item.img[0]} alt="" className="img-fluid  image_zoom_cls-0" /> */}
                               {/* hoverEffect={effect} id={item.id} newLabel={item.name} title={item.name} {...item} addCart={() => addToCart(item)} addCompare={() => addToCompare(item)} addWish={() => addToWish(item)}*/}
                               <ProductBox layout="layout-one" hoverEffect={effect} data={item} newLabel={item.name} addCart={() => addToCart(item)} addCompare={() => addToCompare(item)} addWish={() => addToWish(item)} />
@@ -201,7 +162,7 @@ const TabProduct: NextPage<TabProductProps> = ({ effect }) => {
                           ))}
                         </Swiper>
 
-                      )}
+                      
                     </div>
                   </div>
                 </TabPane>

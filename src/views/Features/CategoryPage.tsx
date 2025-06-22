@@ -1,5 +1,5 @@
 import React, { Fragment } from "react";
-import DiscountCoupon from "@/views/layouts/widgets/discountCoupon";
+import DiscountCoupon from "@/views/layouts/widgets/price_ranges";
 import RoundedCategory from "../layouts/widgets/roundedCategory";
 
 const CategoryPage: React.FC = () => {

@@ -46,7 +46,7 @@ const WishListPage: NextPage = () => {
                               onClick={(e) => {
                                 e.preventDefault();
                               }}>
-                              <img src={`/images/${item.images[0].src}`} alt="product" className="img-fluid" />
+                              <img src={`${item.img[0]}`} alt="product" className="img-fluid" />
                             </a>
                           </td>
                           <td>
