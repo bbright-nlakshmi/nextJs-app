@@ -1,12 +1,41 @@
-import React, { useState } from "react";
-import { NextPage } from "next";
-import { Input, DropdownToggle, DropdownMenu, InputGroupText, DropdownItem, InputGroup, ButtonDropdown } from "reactstrap";
-import { useTranslation } from "react-i18next";
+"use client";
 
-const Search: NextPage = () => {
+import React, { useEffect, useState } from "react";
+import {
+  Input,
+  DropdownToggle,
+  DropdownMenu,
+  InputGroupText,
+  DropdownItem,
+  InputGroup,
+  ButtonDropdown,
+} from "reactstrap";
+import { useTranslation } from "react-i18next";
+import { Category as ICategory } from "@/app/globalProvider";
+import { centralDataCollector } from "@/app/services/central_data_control";
+
+const Search: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const toggleDropDown = () => setDropdownOpen(!dropdownOpen);
+  const [categories, setCategories] = useState<ICategory[]>([]);
   const { t } = useTranslation("common");
+
+  const toggleDropDown = () => setDropdownOpen(!dropdownOpen);
+
+  useEffect(() => {
+    const unsubscribe = centralDataCollector.categoryStream.subscribe(
+      (data: ICategory[]) => {
+        setCategories(data);
+      }
+    );
+
+    // Trigger data fetch if not already triggered
+    centralDataCollector.getData();
+    centralDataCollector.scheduleGetData();
+
+    return () => {
+      unsubscribe(); // this is a function, not an object with .unsubscribe()
+    };
+  }, []);
 
   return (
     <div className="input-block">
@@ -15,20 +44,19 @@ const Search: NextPage = () => {
           <InputGroup>
             <InputGroupText>
               <span className="search">
-                <i
-                  className="fa 
-                       fa-search"></i>
+                <i className="fa fa-search" />
               </span>
             </InputGroupText>
-            <Input />
+            <Input placeholder="Search products..." />
             <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropDown}>
-              <DropdownToggle key={"search-menu-toggle"} caret>
+              <DropdownToggle caret>
                 {t("All Category")}
               </DropdownToggle>
-              <DropdownMenu key={"search-menu"}>
-                <DropdownItem>All Category</DropdownItem>
-                <DropdownItem>indurstrial</DropdownItem>
-                <DropdownItem>sports</DropdownItem>
+              <DropdownMenu>
+                <DropdownItem key="all">{t("All Category")}</DropdownItem>
+                {categories.map((cat) => (
+                  <DropdownItem key={cat.id}>{cat.name}</DropdownItem>
+                ))}
               </DropdownMenu>
             </ButtonDropdown>
           </InputGroup>

@@ -1,4 +1,4 @@
-import React, { Fragment, useContext, useEffect } from "react";
+import React, { Fragment, useContext, useEffect, useState } from "react";
 import { Container, Row, Col, Media } from "reactstrap";
 import TopBar from "./widgets/TopBar";
 import Search from "./widgets/search";
@@ -13,52 +13,93 @@ import HorizaontalMenu from "../Menu/horizontal";
 import MobileSearch from "./widgets/mobile-search";
 import MobileSetting from "./widgets/mobile-setting";
 import { MenuContext } from "@/helpers/menu/MenuContext";
+import { API } from "@/app/services/api.service";
 
-interface header {
+interface HeaderProps {
   cartPopupPosition: string;
   display: string;
   category: boolean;
   layoutLogo: string;
+  appLogo: string;
+
 }
 
-const Header: NextPage<header> = ({ cartPopupPosition, display, category, layoutLogo }) => {
-  const menuContext = useContext(MenuContext);
-  const { setLeftMenu, leftMenu } = menuContext;
+const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, layoutLogo }) => {
+  const { setLeftMenu, leftMenu } = useContext(MenuContext);
+  const [logoUrl, setLogoUrl] = useState<string>("");
+
+  // Handle sticky header on scroll
   const handleScroll = () => {
-    let number = window.pageXOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    if (number >= 300) {
-      if (window.innerWidth < 581) document.getElementById("stickyHeader")?.classList.remove("sticky");
-      else document.getElementById("stickyHeader")?.classList.add("sticky");
-    } else document.getElementById("stickyHeader")?.classList.remove("sticky");
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const header = document.getElementById("stickyHeader");
+
+    if (scrollTop >= 300) {
+      window.innerWidth < 581
+        ? header?.classList.remove("sticky")
+        : header?.classList.add("sticky");
+    } else {
+      header?.classList.remove("sticky");
+    }
   };
 
+  // Fetch dynamic logo from API on mount
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+  const fetchLogo = async () => {
+    try {
+      const res = await API.getAppLogo();
+      const logo = res?.appLogo;
+      if (logo) {
+        setLogoUrl(logo);
+      } else {
+        console.warn("Logo not found in response", res);
+      }
+    } catch (err) {
+      console.error("Error fetching logo:", err);
+    }
+  };
+
+  fetchLogo();
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+
+
   return (
     <Fragment>
       <header id="stickyHeader">
-        <div className="mobile-fix-option"></div>
+        <div className="mobile-fix-option" />
         <TopBar />
+
+        {/* Header Layout */}
         <div className="layout-header2">
           <Container>
             <Row>
               <Col md="12">
                 <div className="main-menu-block">
-                  <div onClick={() => { setLeftMenu(!leftMenu); document.body.style.overflow = "hidden"; }}
-                    className="sm-nav-block" >
+                  {/* Mobile Nav Toggle */}
+                  <div
+                    onClick={() => {
+                      setLeftMenu(!leftMenu);
+                      document.body.style.overflow = "hidden";
+                    }}
+                    className="sm-nav-block"
+                  >
                     <span className="sm-nav-btn">
-                      <i className="fa fa-bars"></i>
+                      <i className="fa fa-bars" />
                     </span>
                   </div>
+
+                  {/* Dynamic Logo Block */}
                   <div className="logo-block">
-                    <a href="/#">
-                      <Media src={`/images/${layoutLogo}/logo/logo.png`} className="img-fluid" alt="logo" />
+                    <a href="/">
+                      <Media
+                        src={logoUrl || `/images/${layoutLogo}/logo/logo.png`}
+                        className="img-fluid"
+                        alt="logo"
+                      />
                     </a>
                   </div>
+
                   <Search />
                   <ShoppingCart position={cartPopupPosition} cartDisplay={display} layout="layout2" />
                 </div>
@@ -66,6 +107,8 @@ const Header: NextPage<header> = ({ cartPopupPosition, display, category, layout
             </Row>
           </Container>
         </div>
+
+        {/* Category and Navigation */}
         <div className="category-header-2">
           <div className="custom-container">
             <Row>
@@ -96,4 +139,5 @@ const Header: NextPage<header> = ({ cartPopupPosition, display, category, layout
     </Fragment>
   );
 };
+
 export default Header;

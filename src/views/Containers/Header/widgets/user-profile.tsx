@@ -1,88 +1,215 @@
+"use client";
+
 import { NextPage } from "next";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Form, FormGroup, Input, Label } from "reactstrap";
+import { API } from "@/app/services/api.service";
 
 const UserProfile: NextPage = () => {
   const [openAccount, setOpenAccount] = useState(false);
-  const [email, setEmail] = useState("test@gmail.com");
-  const [password, setPassword] = useState("test@123");
-  const [user, setUser] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otpArray, setOtpArray] = useState<string[]>(Array(6).fill(""));
+  const [otpSent, setOtpSent] = useState(false);
+  const [user, setUser] = useState<string | null>(
+    typeof window !== "undefined" ? localStorage.getItem("Login") : null
+  );
+
+  const router = useRouter();
+  const otpRefs = useRef<HTMLInputElement[]>([]);
+
+  const toggleAccount = () => setOpenAccount(!openAccount);
+
   const signout = () => {
-    setUser("");
+    setUser(null);
     localStorage.removeItem("Login");
-    setOpenAccount(!openAccount);
-    setTimeout(() => toast.success("Success Fully Signed Out"), 200);
+    toggleAccount();
+    setTimeout(() => toast.success("Successfully Signed Out"), 200);
   };
 
-  const loginAuth = (email: string, password: string) => {
-    if (email === "test@gmail.com" && password === "test@123") {
-      setUser(email);
-      localStorage.setItem("Login", email);
-      setOpenAccount(!openAccount);
-      setTimeout(() => toast.success("Success Fully Login"), 200);
-    } else {
-      setTimeout(() => toast.error("Login Failed"), 200);
+  const handleSendOtp = async () => {
+    if (!/^[0-9]{10}$/.test(phoneNumber)) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+    try {
+      await API.sendOtp(phoneNumber);
+      toast.success("OTP sent successfully");
+      setOtpArray(Array(6).fill(""));
+      setOtpSent(true);
+      setTimeout(() => otpRefs.current[0]?.focus(), 0);
+    } catch {
+      toast.error("Failed to send OTP");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await API.resendOtp(phoneNumber);
+      toast.info("OTP resent successfully");
+      setOtpArray(Array(6).fill(""));
+      setTimeout(() => otpRefs.current[0]?.focus(), 0);
+    } catch {
+      toast.error("Failed to resend OTP");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const otp = otpArray.join("");
+    if (otp.length !== 6 || otpArray.some((d) => d === "")) {
+      toast.error("Please enter the complete 6-digit OTP");
+      return;
+    }
+    try {
+      await API.verifyOtp("User", phoneNumber, otp);
+      localStorage.setItem("Login", phoneNumber);
+      setUser(phoneNumber);
+      toggleAccount();
+      toast.success("Login successful");
+    } catch {
+      toast.error("OTP verification failed");
+    }
+  };
+
+  const onOtpChange = (val: string, idx: number) => {
+    if (!/^[0-9]?$/.test(val)) return;
+    const newArr = [...otpArray];
+    newArr[idx] = val;
+    setOtpArray(newArr);
+    if (val && idx < 5) {
+      otpRefs.current[idx + 1]?.focus();
     }
   };
 
   return (
     <>
-      <li className="mobile-user onhover-dropdown" onClick={() => setOpenAccount(!openAccount)}>
+      <li className="mobile-user onhover-dropdown" onClick={toggleAccount}>
         <a href="#">
           <i className="icon-user"></i>
         </a>
       </li>
+
       <div id="myAccount" className={`add_to_cart right account-bar ${openAccount ? "open-side" : ""}`}>
-        <a href="#" className="overlay" onClick={() => setOpenAccount(!openAccount)}></a>
+        <a href="#" className="overlay" onClick={toggleAccount}></a>
         <div className="cart-inner">
-          <>
-            <div className="cart_top">
-              <h3>my account</h3>
-              <div className="close-cart">
-                <a href="#" onClick={() => setOpenAccount(!openAccount)}>
-                  <i className="fa fa-times" aria-hidden="true"></i>
-                </a>
-              </div>
+          <div className="cart_top">
+            <h3>my account</h3>
+            <div className="close-cart">
+              <a href="#" onClick={toggleAccount}>
+                <i className="fa fa-times" aria-hidden="true"></i>
+              </a>
             </div>
-            <Form className="userForm">
-              <FormGroup>
-                <Label htmlFor="email">Email</Label>
-                <Input type="text" disabled={user ? true : false} className="form-control d-inherit" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </FormGroup>
-              <FormGroup>
-                <Label htmlFor="review">Password</Label>
-                <Input type="password" disabled={user ? true : false} className="form-control d-inherit" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              </FormGroup>
-              <FormGroup>
-                {!user ? (
-                  <a href="#" className="btn btn-rounded btn-block" onClick={() => loginAuth(email, password)}>
-                    Login
-                  </a>
-                ) : (
-                  <a href="#" className="btn btn-rounded btn-block" onClick={signout}>
-                    Logout
-                  </a>
-                )}
-              </FormGroup>
-              {!user && (
+          </div>
+
+          <Form className="userForm">
+            {!user && (
+              <>
                 <FormGroup>
-                  <h5 className="forget-class">
-                    <a href="/pages/account/forget-password" className="d-block">
-                      forget password?
-                    </a>
-                  </h5>
-                  <h6 className="forget-class">
-                    <a href="/pages/account/register" className="d-block">
-                      new to store? Signup now
-                    </a>
-                  </h6>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="form-control d-inherit"
+                    placeholder="Enter phone number"
+                    required
+                  />
                 </FormGroup>
-              )}
-            </Form>
-          </>
+
+                {otpSent && (
+                  <>
+                    <Label className="form-label">Enter OTP</Label>
+                    <div className="d-flex justify-content-center mb-3 otp-inputs" style={{ gap: "8px" }}>
+                      {otpArray.map((val, i) => (
+                        <input
+                          key={i}
+                          ref={(el) => {
+                            if (el) otpRefs.current[i] = el;
+                          }}
+                          type="text"
+                          maxLength={1}
+                          value={val}
+                          onChange={(e) => onOtpChange(e.target.value, i)}
+                          className="otp-box text-center"
+                        />
+                      ))}
+                    </div>
+                    <div className="d-flex justify-content-between mt-2">
+                      <button
+                        type="button"
+                        onClick={handleVerifyOtp}
+                        className="btn btn-primary w-50 me-2"
+                        disabled={otpArray.some((d) => d === "")}
+                      >
+                        Verify OTP
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        className="btn btn-outline-secondary w-50"
+                      >
+                        Resend OTP
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {!otpSent && (
+                  <FormGroup>
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      className="btn btn-primary w-100 mt-3"
+                      disabled={!/^[0-9]{10}$/.test(phoneNumber)}
+                    >
+                      Send OTP
+                    </button>
+                  </FormGroup>
+                )}
+              </>
+            )}
+
+            {user && (
+              <FormGroup>
+                <button type="button" className="btn btn-danger w-100 mt-3" onClick={signout}>
+                  Logout
+                </button>
+              </FormGroup>
+            )}
+
+            {!user && (
+              <FormGroup>
+                <h6 className="forget-class">
+                  <a
+                    href="#"
+                    className="d-block"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.push("/pages/account/register");
+                      setOpenAccount(false);
+                    }}
+                  >
+                    
+                  </a>
+                </h6>
+              </FormGroup>
+            )}
+          </Form>
         </div>
       </div>
+
+      <style jsx>{`
+        .otp-box {
+          width: 45px;
+          height: 50px;
+          font-size: 20px;
+          border-radius: 6px;
+          border: 1px solid #ccc;
+        }
+      `}</style>
     </>
   );
 };
