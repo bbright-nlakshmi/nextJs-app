@@ -9,18 +9,19 @@ import { usePathname } from "next/navigation";
 const LeftSidebar: NextPage = () => {
   const pathname = usePathname();
   const symbolRegex = /[!@#\$%\^&\*\(\)_\+\{\}\[\]:;"'<>,.?/\\|`~\-=]/g;
+
   const [secondPart] = pathname
     .split("/")
     .slice(2)
-    .map((item) => item.replace(symbolRegex, " "));
-
+    .map((item) => item.replace(symbolRegex, ""));
+  console.log("📦 Final cleaned productId:", secondPart);
   return (
     <Layout1>
       <Breadcrumb title="left sidebar" parent="product" />
       <section className="section-big-pt-space bg-light">
         <LeftSidebarPage pathId={secondPart} />
       </section>
-      <RelatedProducts />
+      <RelatedProducts productId={secondPart} />
     </Layout1>
   );
 };

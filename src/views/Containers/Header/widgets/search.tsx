@@ -6,15 +6,16 @@ import { Category, objCache, searchController } from "@/app/globalProvider";
 import ProductBox from "@/views/layouts/widgets/Product-Box/productbox";
 import Link from "next/link";
 import { SearchResults } from './search_results';
+
 const Search: NextPage = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const toggleDropDown = () => setDropdownOpen(!dropdownOpen);
+  const [categories, setCategories] = useState<Category[]>([]);
   const { t } = useTranslation("common");
   const [showResults, setShowResults] = useState(false);
 
 
   const [query, setQuery] = useState<string>('')
-  const onHandleSearch = (e) => {
+  const onHandleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value)
 
     searchController.refreshGrid(e.target.value);
@@ -25,15 +26,16 @@ const Search: NextPage = () => {
 
   }
   const blurEvent = () => { setShowResults(false) }
-  const [allCategories, setAllCategories] = useState<Category[]>();
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   useEffect(() => {
     objCache.on('updateAllCategories', (data: Category[]) => {
       console.log(data);
       setAllCategories(data);
-
-
     });
   }, []);
+
+  const toggleDropDown = () => setDropdownOpen(!dropdownOpen);
+
 
   return (
 
@@ -50,16 +52,16 @@ const Search: NextPage = () => {
           <Input name="query" value={query} onChange={(event) => onHandleSearch(event)} onBlur={blurEvent} onFocus={(event) => onHandleSearch(event)} />
           <SearchResults show={showResults} />
           <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropDown}>
-            <DropdownToggle key={"search-menu-toggle"} caret>
-              {t("All Category")}
-            </DropdownToggle>
-            <DropdownMenu key={"search-menu"}>
-              <DropdownItem>All Category</DropdownItem>
-              {allCategories && allCategories.map((item: Category) => <DropdownItem>{item.name}</DropdownItem>)}
-
-
-            </DropdownMenu>
-          </ButtonDropdown>
+              <DropdownToggle caret>
+                {t("All Category")}
+              </DropdownToggle>
+              <DropdownMenu>
+                <DropdownItem key="all">{t("All Category")}</DropdownItem>
+                {allCategories.map((cat) => (
+                  <DropdownItem key={cat.id}>{cat.name}</DropdownItem>
+                ))}
+              </DropdownMenu>
+            </ButtonDropdown>
         </InputGroup>
       </form>
     </>

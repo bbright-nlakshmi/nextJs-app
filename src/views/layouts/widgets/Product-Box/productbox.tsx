@@ -25,6 +25,7 @@ interface productType {
   item?: any;
   data: any;
   type?: Array<string>;
+
 }
 // { layout, id, item, title, newLabel, sale, price, discount, stock, images, addCart, addCompare, addWish, hoverEffect }
 const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, newLabel, addCart, addCompare, addWish }) => {
@@ -71,12 +72,14 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
   };
 
   const clickProductDetail = () => {
+
     router.push(`/product-details/${data?.productId}`);
   };
 
 
 
   return (
+
     <Fragment>
       <div className="product-box" >
 
@@ -118,9 +121,12 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
                 <i className="fa fa-star"></i>
               </ul>
               {layout === "list-view" ? <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book</p> : ""}
+
               <Link href={`/product-details/${data?.productId}` + "-" + `${titleProps}`}>
+
                 <h6 className="price-title">{data?.name}</h6>
-              </Link>
+                </Link>
+      
             </div>
             <div className="detail-right">
               {/* <div className="check-price">

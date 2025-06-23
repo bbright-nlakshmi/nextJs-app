@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { NextPage } from "next";
 import { Row, Col } from "reactstrap";
 import Sidebar from "../../views/Products-Detail/sidebar";
@@ -15,10 +15,42 @@ interface LeftSidebar {
 }
 
 
+const GET_SINGLE_PRODUCTS = gql`
+  query getProducts($id: String!) {
+    product(id: $id) {
+      id
+      title
+      description
+      type
+      brand
+      category
+      price
+      new
+      sale
+      discount
+      stock
+      variants {
+        id
+        sku
+        size
+        color
+        image_id
+      }
+      images {
+        alt
+        src
+      }
+    }
+  }
+`;
+
+
 const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
   const filterContext = useContext(FilterContext);
   const { filterOpen, setFilterOpen } = filterContext;
+
   var  loading, data ;
+
   return (
     <div className="collection-wrapper">
       {data && data.product && !loading && (

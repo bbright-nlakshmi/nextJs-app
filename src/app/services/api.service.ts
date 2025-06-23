@@ -39,14 +39,15 @@ import { useEffect } from 'react';
 
 
 // Configuration
+//const API_BASE_URL = 'https://1rpapp.in/v1';
 const API_BASE_URL = 'https://devqarupeecomservice.rupeecom.in/v1';
-//'https://1rpapp.in/v1';
+
 const DEV_API_BASE_URL = 'https://devqarupeecomservice.rupeecom.in/v1';
 const TENANT_SERVICE_URL = 'https://tenantservice.1rpapp.in/v1';
 
 // Get tenantId from environment variables or config
 const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'dxrhudtb';
-const appName = process.env.NEXT_PUBLIC_APP_NAME || '';
+const appName = process.env.NEXT_PUBLIC_APP_NAME || 'big-deal';
 const storeId = '5b547df0-967d-4aa4-8996-e02511c66e26'
 
 export class APIService {

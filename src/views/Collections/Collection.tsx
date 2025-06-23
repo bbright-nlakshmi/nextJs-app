@@ -15,7 +15,6 @@ import { useSearchParams } from "next/navigation";
 import { objCache, searchController } from "@/app/globalProvider";
 import { Discount } from "@/app/models/models";
 
-
 type CollectionProps = {
   cols: any;
   layoutList: string;
@@ -29,19 +28,18 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
     selectedPrice,
     setSelectedColor,
     setSelectedBrands,
-    setLeftSidebarOpen,
-    leftSidebarOpen,
+    
   } = useContext(FilterContext);
   const { addToCart } = useContext(CartContext);
   const { addToWish } = useContext(WishlistContext);
   const { addToCompare } = useContext(CompareContext);
   const [grid, setGrid] = useState(cols);
   const [sortBy, setSortBy] = useState("ASC_ORDER");
-  const [pageLimit, setPageLimit] = useState(10);
+  const [pageLimit, setPageLimit] = useState(5);
   const [layout, setLayout] = useState(layoutList);
   const [discount, setDiscount] = useState<Discount>();
   const [isLoading, setIsLoading] = useState(false);
-
+  const router = useRouter();
   const searchParams = useSearchParams();
   const discountId = searchParams.get("id");
 
@@ -129,7 +127,7 @@ const handleUserLogin = (userId) => {
                   ) : (
                     discount.discountItems.slice(0, pageLimit).map((item: any, i: number) => (
                       <div className={grid} key={i}>
-                        <div className="product">
+                        <div className="product" >
                           <ProductBox
                             layout="layout-one"
                             data={item}
