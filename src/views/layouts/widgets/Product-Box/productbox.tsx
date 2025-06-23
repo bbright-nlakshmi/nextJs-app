@@ -125,6 +125,8 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
               <Link href={`/product-details/${data?.productId}` + "-" + `${titleProps}`}>
 
                 <h6 className="price-title">{data?.name}</h6>
+                </Link>
+      
             </div>
             <div className="detail-right">
               {/* <div className="check-price">

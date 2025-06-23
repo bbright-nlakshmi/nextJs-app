@@ -24,7 +24,7 @@ import { BannerModel, Category, Discount, ObjCache, StorePriceRanges, objCache }
 import { Subscription } from 'rxjs';
 
 
-const centralDataCollectorObj: CentralDataCollector = centralDataCollector;
+//const centralDataCollectorObj: CentralDataCollector = centralDataCollector;
 
 const Home = () => {
   const [products, setProducts] = useState<Discount[]>([]);
@@ -68,8 +68,8 @@ return () => {
 
   useEffect(() => {
 
-    centralDataCollectorObj.getData();
-    centralDataCollectorObj.scheduleGetData()
+    centralDataCollector.getData();
+    centralDataCollector.scheduleGetData()
   }, []);
 
 
