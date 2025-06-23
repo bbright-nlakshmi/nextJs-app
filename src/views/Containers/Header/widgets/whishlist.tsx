@@ -5,6 +5,7 @@ import { WishlistContext } from "../../../../helpers/wishlist/wish.context";
 import { Media } from "reactstrap";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { searchController } from "@/app/globalProvider";
 
 const Wishlist: NextPage = () => {
   const [openWishlist, setOpenWishlist] = useState(false);
@@ -54,7 +55,7 @@ const Wishlist: NextPage = () => {
                                 <span>{item.type}</span>
                               </h4>
                               <h5>
-                                <span> ${item.price}</span>
+                                <span> ${searchController.getDetails(item.productId, 'getPrice')}</span>
                               </h5>
                             </div>
                           </div>

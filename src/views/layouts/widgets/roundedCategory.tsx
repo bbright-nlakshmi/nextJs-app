@@ -52,7 +52,7 @@ const CategoryList = [
   { img: "/images/layout-1/rounded-cat/6.png", category: "Camera" },
   { img: "/images/layout-1/rounded-cat/7.png", category: "cardigans" },
 ];
-const Category: NextPage = () => {
+const Category_View: NextPage = () => {
   return (
     <Container>
       <Row>
@@ -81,4 +81,4 @@ const Category: NextPage = () => {
   );
 };
 
-export default Category;
+export default Category_View;

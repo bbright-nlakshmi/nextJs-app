@@ -29,7 +29,7 @@ const LeftSidebarCollection: NextPage = () => {
           </div>
         </div>
       </Col>
-      <Collection cols="col-xl-3 col-md-4 col-6 col-grid-box" layoutList="" />
+      
     </Row>
   );
 };

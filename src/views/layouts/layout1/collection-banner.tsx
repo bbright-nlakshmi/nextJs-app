@@ -10,6 +10,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/grid";
 import { Category, ObjCache } from "@/app/globalProvider";
+import { takeLast } from "rxjs";
 
 
 interface CollectionBannerProps {
@@ -21,45 +22,45 @@ interface CollectionBannerProps {
 }
 
 interface Categories {
-  category: Category;
+  
+  category: Category[];
+}
+
+interface Props {
+  categories: Category[];
 }
 
 
    
     
-const CollectionBannerList: React.FC<Categories> = ({ category }) => {
-  return (
-    <Col md="4">
-      <div className="collection-banner-main banner-1  p-right">
-        <div className="collection-img">
-          <Media src={category.img[0]} alt="dsfds" />
-        </div>
-        <div className="collection-banner-contain">
-          <div>
-            <h3>{category.name}</h3>
-            <h4>{category.name}</h4>
-            <div className="shop">
-              <Link href={{ pathname: "/collections/leftsidebar/", query: { category: category.name, }, }} >
-                {category.id}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Col>
-  );
-};
+// const CollectionBannerList: React.FC<Categories> = ({ category }) => {
+//   return (
+//     <Col md="4">
+//       <div className="collection-banner-main banner-1  p-right">
+//         <div className="collection-img">
+//           <Media src={category.img[0]} alt="dsfds" />
+//         </div>
+//         <div className="collection-banner-contain">
+//           <div>
+//             <h3>{category.name}</h3>
+//             <h4>{category.name}</h4>
+//             <div className="shop">
+//               <Link href={{ pathname: "/collections/leftsidebar/", query: { category: category.name, }, }} >
+//                 {category.id}
+//               </Link>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </Col>
+//   );
+// };
 
-const CollectionBanner: NextPage = () => {
-  const [categories,setCategories] = useState([]);
+const CollectionBanner: NextPage<Props> = ({categories}) => {
 
-
- ObjCache.categoryList.subscribe((data:any) => {
-      console.log(data)
-      setCategories(data);
-    })
+    if(categories){
   return (<>
-    { categories.length && <section className="w-full rts-category-area section-py-space">
+     <section className="w-full rts-category-area section-py-space">
       <div className="custom-container">
           
               <h2 className="title-left mb--0">Featured Categories</h2>
@@ -121,8 +122,9 @@ const CollectionBanner: NextPage = () => {
           </Swiper>
         </div>
       </div>
-    </section>}
+    </section>
  </> );
+    }
 };
 
 export default CollectionBanner;

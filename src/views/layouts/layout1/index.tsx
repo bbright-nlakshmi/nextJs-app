@@ -5,9 +5,10 @@ import { CartProvider } from "../../../helpers/cart/cart.provider";
 import { FilterProvider } from "../../../helpers/filter/filter.provider";
 import Footer from "../../Containers/Footer";
 import HeaderContainer from "../../Containers/Header/header1";
-import TopBrand from "../widgets/TopBrand";
+
 import Loader from "@/common/Loader";
 import '@/app/globalProvider';
+import Announcement from "../widgets/announcement";
 
 interface Props {
   children: ReactNode;
@@ -27,11 +28,9 @@ const Layout1: NextPage<Props> = ({ children }) => {
         <CartProvider>
           <HeaderContainer category={false} cartPopupPosition="top" display="d-none" layoutLogo="layout-2" />
           {pathMatch.includes(path) && (
-            <section className="brand-panel">
-              <div className="brand-panel-box">
-                <TopBrand />
-              </div>
-            </section>
+            
+                <Announcement />
+              
           )}
           <FilterProvider>{children}</FilterProvider>
           <Footer layoutLogo="layout-2" />

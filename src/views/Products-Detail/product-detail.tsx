@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+"use client";
 import React, { useContext, useState } from "react";
 import { Modal, ModalHeader, ModalBody, Input } from "reactstrap";
 import ImageGroup from "./common/ImageGroup";
@@ -7,7 +8,7 @@ import { CartContext } from "@/helpers/cart/cart.context";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import ImageSwatch from "./common/ImageSwatch";
-
+import router, { useRouter } from "next/router";
 interface ProductRightProps {
   item: any;
   changeColorVar: Function | any;
@@ -52,7 +53,8 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
   const changeQty = (e: any) => {
     setQty(parseInt(e.target.value));
   };
-
+  const { id } = router.query; 
+  console.log("id", id);
   const uniqueColor: any[] = [];
   const uniqueSize: any[] = [];
   return (

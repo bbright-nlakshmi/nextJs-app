@@ -9,7 +9,7 @@ import TabProduct from "@/views/layouts/widgets/Tab-Product/TabProduct";
 import Services from "@/views/layouts/widgets/services";
 import CollectionBanner from "@/views/layouts/layout4/CollectionBanner2";
 import RatioSquare from "@/views/layouts/widgets/ratio-square";
-import DiscountCoupon from "@/views/layouts/widgets/discountCoupon";
+import DiscountCoupon from "@/views/layouts/widgets/price_ranges";
 import DealBanner from "@/views/layouts/widgets/dealBanner";
 import Category from "@/views/layouts/widgets/roundedCategory";
 import SpecialProduct from "@/views/layouts/widgets/title-section";

@@ -5,7 +5,7 @@ import { NextPage } from "next";
 import { Media } from "reactstrap";
 import { useTranslation } from "react-i18next";
 import { MenuContext } from "@/helpers/menu/MenuContext";
-import { Category as ICategory } from "@/app/globalProvider";
+import { Category, Category as ICategory, objCache } from "@/app/globalProvider";
 import { centralDataCollector } from "@/app/services/central_data_control";
 
 interface ByCategoryProps {
@@ -19,16 +19,11 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
   const [categories, setCategories] = useState<ICategory[]>([]);
 
   useEffect(() => {
-    const unsubscribe = centralDataCollector.categoryStream.subscribe((data) => {
-      setCategories(data);
-    });
-
-    centralDataCollector.getData();
-    centralDataCollector.scheduleGetData();
-
-    return () => {
-      unsubscribe(); // Correct cleanup
-    };
+    objCache.on('updateAllCategories',(data: Category[]) => {
+          
+              setCategories(data);
+          
+            });
   }, []);
 
   return (

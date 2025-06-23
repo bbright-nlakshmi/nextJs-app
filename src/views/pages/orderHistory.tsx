@@ -2,27 +2,23 @@
 
 import React, { useEffect, useState } from "react";
 import { NextPage } from "next";
-import { Row, Col, Spinner } from "reactstrap";
+import { Row, Col, Spinner, Input, FormGroup, Label, Button } from "reactstrap";
 import Breadcrumb from "../../views/Containers/Breadcrumb";
 import { API } from "@/app/services/api.service";
-
-interface OrderData {
-  order_no: string;
-  product_name: string;
-  product_image: string;
-  price: number;
-  size: string;
-  quantity: number;
-  status: string;
-  delivered_date?: string;
-  phone_number: string;
-}
+import { OrderModel } from "@/app/models/order_model/order";
+import { OrderItemsModel } from "@/app/models/order_item_model/order_item_model";
 
 const OrderHistoryPage: NextPage = () => {
-  const [orders, setOrders] = useState<OrderData[]>([]);
+  const [orders, setOrders] = useState<OrderModel[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<OrderModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const phoneNumber = "9876543210"; // Replace with actual phone number
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+
+  const phoneNumber = "9346716572";
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -30,22 +26,13 @@ const OrderHistoryPage: NextPage = () => {
         setLoading(true);
         setError(null);
 
-        const rawOrders = await API.getOrders(phoneNumber);
-        console.log("📦 Orders fetched:", rawOrders); // <-- Debug log
+        const fetchedOrders = await API.getOrders(phoneNumber);
 
-        const transformed: OrderData[] = rawOrders.map((order: any) => ({
-          order_no: order.order_no ?? order.id ?? "N/A",
-          product_name: order.product_name ?? order.name ?? "Unknown Product",
-          product_image: order.product_image ?? order.image_url ?? "",
-          price: typeof order.price === "number" ? order.price : Number(order.amount) || 0,
-          size: order.size || "-",
-          quantity: order.quantity ?? order.qty ?? 1,
-          status: order.status || "Pending",
-          delivered_date: order.delivered_date ?? order.delivery_date,
-          phone_number: order.phone_number ?? order.phone ?? phoneNumber,
-        }));
+        // Sort newest first
+        fetchedOrders.sort((a, b) => new Date(b.creationTime).getTime() - new Date(a.creationTime).getTime());
 
-        setOrders(transformed);
+        setOrders(fetchedOrders);
+        setFilteredOrders(fetchedOrders);
       } catch (err) {
         console.error("❌ Error fetching orders:", err);
         setError("Could not load your orders.");
@@ -57,11 +44,78 @@ const OrderHistoryPage: NextPage = () => {
     fetchOrders();
   }, [phoneNumber]);
 
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrderId(prev => (prev === orderId ? null : orderId));
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
+  const handleFilter = () => {
+    if (!fromDate || !toDate) return;
+
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    to.setHours(23, 59, 59, 999); // include entire day
+
+    const filtered = orders.filter(order => {
+      const orderDate = new Date(order.creationTime);
+      return orderDate >= from && orderDate <= to;
+    });
+
+    setFilteredOrders(filtered);
+    setExpandedOrderId(null); // collapse all on filter
+  };
+
+  const handleClearFilter = () => {
+    setFromDate("");
+    setToDate("");
+    setFilteredOrders(orders);
+    setExpandedOrderId(null);
+  };
+
   return (
     <div className="bg-light py-4">
       <Breadcrumb title="Order History" parent="Home" />
       <section className="order-history-section">
         <div className="container">
+          <Row className="mb-4">
+            <Col md="4">
+              <FormGroup>
+                <Label>From Date</Label>
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+              </FormGroup>
+            </Col>
+            <Col md="4">
+              <FormGroup>
+                <Label>To Date</Label>
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
+              </FormGroup>
+            </Col>
+            <Col md="4" className="d-flex align-items-end gap-2">
+              <Button color="primary" onClick={handleFilter}>
+                Apply Filter
+              </Button>
+              <Button color="secondary" onClick={handleClearFilter}>
+                Clear
+              </Button>
+            </Col>
+          </Row>
+
           <Row>
             <Col sm="12">
               {loading ? (
@@ -70,61 +124,96 @@ const OrderHistoryPage: NextPage = () => {
                 </div>
               ) : error ? (
                 <div className="text-center py-5 text-danger">{error}</div>
-              ) : orders.length === 0 ? (
+              ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-5">
-                  <h4 className="mb-3">No orders found</h4>
-                  <a href="/" className="btn btn-primary">
-                    Keep Shopping
-                  </a>
+                  <h4 className="mb-3">No orders found for selected date</h4>
+                  <Button color="primary" onClick={handleClearFilter}>Show All</Button>
                 </div>
               ) : (
-                <div className="table-responsive">
-                  <table className="table table-bordered table-hover">
+                <div className="table-responsive rounded shadow-sm bg-white">
+                  <table className="table table-bordered table-hover mb-0">
                     <thead className="thead-dark">
                       <tr>
-                        <th>Product</th>
-                        <th>Description</th>
-                        <th>Price</th>
-                        <th>Details</th>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Total Items</th>
+                        <th>Total Amount</th>
                         <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.map((order, index) => (
-                        <tr key={index}>
-                          <td style={{ width: 100 }}>
-                            <img
-                              src={order.product_image || "/images/product-sidebar/001.jpg"}
-                              alt="product"
-                              className="img-fluid"
-                              style={{ maxWidth: "80px", objectFit: "contain" }}
-                            />
-                          </td>
-                          <td>
-                            <strong>Order No:</strong>{" "}
-                            <span className="text-dark">{order.order_no}</span>
-                            <br />
-                            <span>{order.product_name}</span>
-                          </td>
-                          <td>
-                            <strong>${order.price.toFixed(2)}</strong>
-                          </td>
-                          <td>
-                            <div>
-                              <small>Size: {order.size}</small>
-                              <br />
-                              <small>Quantity: {order.quantity}</small>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="badge badge-info">{order.status}</span>
-                            {order.delivered_date && (
-                              <div className="text-muted small">
-                                Delivered: {order.delivered_date}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
+                      {filteredOrders.map((order) => (
+                        <React.Fragment key={order.id}>
+                          <tr
+                            onClick={() => toggleExpand(order.id)}
+                            style={{
+                              cursor: "pointer",
+                              background: expandedOrderId === order.id ? "#f9f9f9" : undefined,
+                              transition: "background 0.2s ease-in-out",
+                            }}
+                          >
+                            <td><strong>{order.id}</strong></td>
+                            <td>{formatDate(order.creationTime)}</td>
+                            <td>{order.getItemsCount()}</td>
+                            <td><strong>${order.finalOrderTotal.toFixed(2)}</strong></td>
+                            <td style={{ color: "#000" }}>
+                              {order.orderAcceptStatus || "Pending"}
+                            </td>
+                          </tr>
+
+                          {expandedOrderId === order.id && (
+                            <tr>
+                              <td colSpan={5} className="p-0">
+                                <div className="p-3 bg-light border-top">
+                                  <h6 className="mb-3">Order Details</h6>
+                                  <table className="table table-sm table-striped">
+                                    <thead className="thead-light">
+                                      <tr>
+                                        <th>Image</th>
+                                        <th>Product</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {Object.values(order.orderItems).map((item: OrderItemsModel, idx) => {
+                                        const status = item?.status ?? {};
+                                        const statusKey = Object.keys(status).find(key => status[key]) ?? "Pending";
+
+                                        return (
+                                          <tr key={idx}>
+                                            <td style={{ width: "80px" }}>
+                                              <img
+                                                src={item.url || item.orderKitItems?.[0]?.img?.[0] || "/images/product-sidebar/001.jpg"}
+                                                alt={item.name}
+                                                className="img-fluid rounded"
+                                                style={{ maxWidth: "70px", objectFit: "contain" }}
+                                              />
+                                            </td>
+                                            <td>{item.name}</td>
+                                            <td>{item.categoryName || "N/A"}</td>
+                                            <td>${item.choosedPrice?.toFixed(2) ?? "0.00"}</td>
+                                            <td>{item.cartItemCount}</td>
+                                            <td style={{ color: "#000" }}>
+                                              {statusKey}
+                                              {status.deliver && (
+                                                <div className="text-muted small">
+                                                  Delivered: {new Date(status.deliver).toLocaleDateString()}
+                                                </div>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>

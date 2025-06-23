@@ -118,7 +118,7 @@ export class APIService {
   // Banners
   async getBanners(): Promise<BannerModel[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/fetch-banners`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/fetch-banners`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -168,7 +168,7 @@ export class APIService {
   // Business Details
   async getBusinessDetails(): Promise<BusinessDetails> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-business`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-business`, {
         tenant_id: tenantId,
       });
 
@@ -185,7 +185,7 @@ export class APIService {
   // Tenant Onboarding Status
   async getTenantOnboardingStatus(): Promise<string> {
     try {
-      const response = await this.get<string>(`${API_BASE_URL}/get-tenant-onboarding-status`, {
+      const response = await this.get<string>(`${DEV_API_BASE_URL}/get-tenant-onboarding-status`, {
         tenant_id: tenantId,
       });
       return response;
@@ -198,7 +198,7 @@ export class APIService {
   // Stores
   async getStoresBaseDetails(): Promise<Map<string, StoreBaseDetails>> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/fetch-store-base-details`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/fetch-store-base-details`, {
         tenant_id: tenantId,
       });
 
@@ -222,7 +222,7 @@ export class APIService {
 
   public async getCurrentStoreBaseDetails(): Promise<StoreBaseDetails> {
     try {
-      const response = await this.get<{ data: any }>(`${API_BASE_URL}/fetch-single-store-base-details`, {
+      const response = await this.get<{ data: any }>(`${DEV_API_BASE_URL}/fetch-single-store-base-details`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -239,7 +239,7 @@ export class APIService {
   // Store Announce
   async getStoreAnnounce(): Promise<StoreAnnounce> {
     try {
-      const response = await this.get<{ data: any }>(`${API_BASE_URL}/fetch-store-announce`, {
+      const response = await this.get<{ data: any }>(`${DEV_API_BASE_URL}/fetch-store-announce`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -253,7 +253,7 @@ export class APIService {
   // Store Price Ranges
   async getStorePriceRanges(): Promise<StorePriceRanges> {
     try {
-      const response = await this.get<{ data: any }>(`${API_BASE_URL}/fetch-store-price-ranges`, {
+      const response = await this.get<{ data: any }>(`${DEV_API_BASE_URL}/fetch-store-price-ranges`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -277,7 +277,7 @@ export class APIService {
   async getStoreContactDetails(): Promise<StoreContactDetails> {
     try {
       let contactDetails = StoreContactDetails.emptyContactDetails();
-      const response = await this.get<any[]>(`${API_BASE_URL}/get-app-settings`, {
+      const response = await this.get<any[]>(`${DEV_API_BASE_URL}/get-app-settings`, {
         tenant_id: tenantId,
       });
 
@@ -306,7 +306,7 @@ export class APIService {
   // Jobs
   async getJobs(): Promise<Job[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/fetch-jobs`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/fetch-jobs`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -333,7 +333,7 @@ export class APIService {
   // Premium Products
   async getPremium(): Promise<Map<CategoryRender, Product[]>> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/fetch-premium-products`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/fetch-premium-products`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -373,7 +373,7 @@ export class APIService {
   // Non-Premium Products
   async getNonPremium(): Promise<Map<CategoryRender,Product[]>> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/fetch-non-premium-products`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/fetch-non-premium-products`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -455,7 +455,7 @@ export class APIService {
   // Discounts
   async getDiscounts(): Promise<Discount[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/fetch-discounts-details`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/fetch-discounts-details`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -507,7 +507,7 @@ export class APIService {
   // Kits
   async getKits(): Promise<Kit[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/fetch-kits`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/fetch-kits`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -534,7 +534,7 @@ export class APIService {
   // Categories
   async getCategories(): Promise<Category[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/fetch-active-categories`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/fetch-active-categories`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -621,7 +621,7 @@ export class APIService {
         },
       };
 
-      await this.put(`${API_BASE_URL}/insert-visitor`, requestBody);
+      await this.put(`${DEV_API_BASE_URL}/insert-visitor`, requestBody);
     } catch (error) {
       console.error('Error inserting visitor:', error);
       throw error;
@@ -638,7 +638,7 @@ export class APIService {
         order_id: orderId,
       };
 
-      await this.put(`${API_BASE_URL}/update-kit-rating`, data);
+      await this.put(`${DEV_API_BASE_URL}/update-kit-rating`, data);
     } catch (error) {
       console.error('Error updating kit rating:', error);
       throw error;
@@ -654,7 +654,7 @@ export class APIService {
         order_id: orderId,
       };
 
-      await this.put(`${API_BASE_URL}/update-product-rating`, data);
+      await this.put(`${DEV_API_BASE_URL}/update-product-rating`, data);
     } catch (error) {
       console.error('Error updating product rating:', error);
       throw error;
@@ -679,7 +679,7 @@ export class APIService {
         },
       };
 
-      await this.post(`${API_BASE_URL}/save-app-log`, payload);
+      await this.post(`${DEV_API_BASE_URL}/save-app-log`, payload);
     } catch (error) {
       console.error('Error saving app logs:', error);
       throw error;
@@ -689,7 +689,7 @@ export class APIService {
   // Onboarding
   async getOnboardingDetails(): Promise<OnBoardingModel[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-onboarding`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-onboarding`, {
         tenant_id: tenantId,
       });
 
@@ -706,7 +706,7 @@ export class APIService {
   // App Settings
   async getAppSettings(): Promise<AppSettingsModel> {
     try {
-      const response = await this.get<any[]>(`${API_BASE_URL}/get-app-settings`, {
+      const response = await this.get<any[]>(`${DEV_API_BASE_URL}/get-app-settings`, {
         tenant_id: tenantId,
       });
 
@@ -723,7 +723,7 @@ export class APIService {
   // Orders
   async getOrders(phoneNumber: string): Promise<OrderModel[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-orders`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-orders`, {
         tenant_id: tenantId,
       });
 
@@ -750,7 +750,7 @@ export class APIService {
   // Coupons
   async getCoupons(phoneNumber: string): Promise<CouponModel[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-coupons`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-coupons`, {
         tenant_id: tenantId,
         store_id: storeId,
       });
@@ -784,7 +784,7 @@ export class APIService {
         doc: order.toJsonObj(),
       };
 
-      await this.post(`${API_BASE_URL}/create-order`, data);
+      await this.post(`${DEV_API_BASE_URL}/create-order`, data);
     } catch (error) {
       let errorMessage = 'Failed to complete order';
       if (axios.isAxiosError(error) && error.response) {
@@ -810,7 +810,7 @@ export class APIService {
         doc: order.toJsonObj(),
       };
 
-      await this.post(`${API_BASE_URL}/save-order-status`, data);
+      await this.post(`${DEV_API_BASE_URL}/save-order-status`, data);
     } catch (error) {
       let errorMessage = 'Failed to save order status';
       if (axios.isAxiosError(error) && error.response) {
@@ -837,7 +837,7 @@ export class APIService {
         coupon_doc: coupon.toJsonObj(),
       };
 
-      await this.put(`${API_BASE_URL}/update-order-details-in-coupon`, data);
+      await this.put(`${DEV_API_BASE_URL}/update-order-details-in-coupon`, data);
     } catch (error) {
       console.error('Error updating order details in coupon:', error);
       throw error;
@@ -847,7 +847,7 @@ export class APIService {
   // App Credits
   async getAppCredits(): Promise<AppCreditModel[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-app-credits`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-app-credits`, {
         tenant_id: tenantId,
         business_id: AppBootStrap.getBusinessDetails().id,
       });
@@ -865,7 +865,7 @@ export class APIService {
   // Returns and Refunds
   async getReturnsAndRefunds(): Promise<ReturnsAndRefund[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-returns-refund`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-returns-refund`, {
         tenant_id: tenantId,
         business_id: AppBootStrap.businessDetails.id,
       });
@@ -883,7 +883,7 @@ export class APIService {
   // Privacy Policy
   async getPrivacyPolicy(): Promise<PrivacyModel[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-privacy`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-privacy`, {
         tenant_id: tenantId,
         business_id: AppBootStrap.businessDetails.id,
       });
@@ -901,7 +901,7 @@ export class APIService {
   // Terms and Conditions
   async getTermsAndConditions(): Promise<TermsAndConditions[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-termsAndConditions`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-termsAndConditions`, {
         tenant_id: tenantId,
         business_id: AppBootStrap.businessDetails.id,
       });
@@ -924,13 +924,13 @@ export class APIService {
       formData.append('file', imageFile, fileName);
 
       const uploadResponse = await this.post<string>(
-        `${API_BASE_URL}/save-image-upload`,
+        `${DEV_API_BASE_URL}/save-image-upload`,
         formData,
         { bucket_name: tenantId }
       );
 
       const imageUrl = uploadResponse;
-      await this.put(`${API_BASE_URL}/save-order-image`, {
+      await this.put(`${DEV_API_BASE_URL}/save-order-image`, {
         tenant_id: tenantId,
         order_id: orderId,
         img: [imageUrl],
@@ -938,7 +938,7 @@ export class APIService {
 
       return imageUrl;
     } catch (error) {
-      await this.delete(`${API_BASE_URL}/delete-image-upload`, {
+      await this.delete(`${DEV_API_BASE_URL}/delete-image-upload`, {
         params: { fileName: `${Date.now()}.jpg`, bucket_name: tenantId },
       });
       console.error('Error uploading image:', error);
@@ -949,7 +949,7 @@ export class APIService {
   // OTP Operations
   async sendOtp(phoneNumber: string): Promise<void> {
     try {
-      await this.post(`${API_BASE_URL}/send-otp`, null, {
+      await this.post(`${DEV_API_BASE_URL}/send-otp`, null, {
         tenant_id: tenantId,
         phone_number: phoneNumber,
         app_name: appName,
@@ -962,7 +962,7 @@ export class APIService {
 
   async verifyOtp(userName: string, phoneNumber: string, otp: string): Promise<void> {
     try {
-      await this.post(`${API_BASE_URL}/verify-otp`, null, {
+      await this.post(`${DEV_API_BASE_URL}/verify-otp`, null, {
         tenant_id: tenantId,
         phone_number: phoneNumber,
         display_name: userName,
@@ -976,7 +976,7 @@ export class APIService {
 
   async resendOtp(phoneNumber: string): Promise<void> {
     try {
-      await this.post(`${API_BASE_URL}/resend-otp`, null, {
+      await this.post(`${DEV_API_BASE_URL}/resend-otp`, null, {
         tenant_id: tenantId,
         phone_number: phoneNumber,
         app_name: appName,
@@ -990,7 +990,7 @@ export class APIService {
   // Razorpay
   async getRazorPayDetails(): Promise<RazorpayModel[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-razorpay`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-razorpay`, {
         tenant_id: tenantId,
         business_id: AppBootStrap.businessDetails.id,
       });
@@ -1017,7 +1017,7 @@ export class APIService {
   // Users
   async getUserData(): Promise<UserModel[]> {
     try {
-      const response = await this.get<{ data: any[] }>(`${API_BASE_URL}/get-users`, {
+      const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-users`, {
         tenant_id: tenantId,
         business_id: AppBootStrap.getBusinessDetails().id,
       });
@@ -1064,7 +1064,7 @@ export class APIService {
 
   async getDeliveryAndPackageCost(distance: string): Promise<any> {
     try {
-      const response = await this.get(`${API_BASE_URL}/calculate-delivery-amount`, {
+      const response = await this.get(`${DEV_API_BASE_URL}/calculate-delivery-amount`, {
         tenant_id: tenantId,
         order_distance: distance,
         delivery_setup_id: AppBootStrap.getStoreBaseDetails().deliverySetupId,

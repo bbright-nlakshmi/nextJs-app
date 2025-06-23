@@ -67,40 +67,32 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
   return (
     <Fragment>
       <header id="stickyHeader">
-        <div className="mobile-fix-option" />
-        <TopBar />
-
-        {/* Header Layout */}
+        <div className="mobile-fix-option"></div>
+        {/* <TopBar /> */}
         <div className="layout-header2">
           <Container>
             <Row>
               <Col md="12">
                 <div className="main-menu-block">
-                  {/* Mobile Nav Toggle */}
-                  <div
-                    onClick={() => {
-                      setLeftMenu(!leftMenu);
-                      document.body.style.overflow = "hidden";
-                    }}
-                    className="sm-nav-block"
-                  >
-                    <span className="sm-nav-btn">
-                      <i className="fa fa-bars" />
-                    </span>
-                  </div>
+                  <div className="header-left">
+                    <div onClick={() => { setLeftMenu(!leftMenu); document.body.style.overflow = "hidden"; }}
+                      className="sm-nav-block" >
+                      <span className="sm-nav-btn">
+                        <i className="fa fa-bars"></i>
+                      </span>
+                    </div>
 
-                  {/* Dynamic Logo Block */}
-                  <div className="logo-block">
-                    <a href="/">
-                      <Media
-                        src={logoUrl || `/images/${layoutLogo}/logo/logo.png`}
-                        className="img-fluid"
-                        alt="logo"
-                      />
-                    </a>
+                    <div className="logo-block">
+                      <a href="/#">
+                        <Media src={`/images/${layoutLogo}/logo/logo.png`} className="img-fluid" alt="logo" />
+                      </a>
+                    </div>
                   </div>
-
-                  <Search />
+                  <div className="input-block">
+                    <div className="input-box">
+                      <Search />
+                    </div>
+                  </div>
                   <ShoppingCart position={cartPopupPosition} cartDisplay={display} layout="layout2" />
                 </div>
               </Col>

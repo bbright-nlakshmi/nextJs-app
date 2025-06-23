@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Media } from "reactstrap";
 import { useTranslation } from "react-i18next";
 import { CurrencyContext } from "../../../../helpers/currency/CurrencyContext";
+import { searchController } from "@/app/globalProvider";
 
 const ShoppingCart = ({ position, cartDisplay, layout }: any) => {
   const [openSide, setOpenSide] = useState(false);
@@ -11,7 +12,7 @@ const ShoppingCart = ({ position, cartDisplay, layout }: any) => {
   const { selectedCurr } = React.useContext(CurrencyContext);
   const symbol = selectedCurr.symbol;
   const { t } = useTranslation("common");
-
+  
   return (
     <Fragment>
       {layout === "layout3" ? (
@@ -91,7 +92,7 @@ const ShoppingCart = ({ position, cartDisplay, layout }: any) => {
                         </a>
                         <h4>
                           <span>
-                            {item.qty} x {symbol} {item.price}
+                            {item.qty} x {symbol} {searchController.getDetails(item.productId, 'getPrice')}
                           </span>
                         </h4>
                       </div>

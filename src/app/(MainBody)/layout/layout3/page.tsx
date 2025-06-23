@@ -15,7 +15,7 @@ import InstagramSection from "@/views/layouts/widgets/instagram/instagram1";
 import BannerSection from "@/views/layouts/layout3/Banner";
 import Contact from "@/views/layouts/widgets/contact-us";
 import Services from "@/views/layouts/widgets/services";
-import DiscountCoupon from "@/views/layouts/widgets/discountCoupon";
+import DiscountCoupon from "@/views/layouts/widgets/price_ranges";
 import NewsLatter from "@/views/Containers/news-letter";
 
 const Layout3 = () => {
