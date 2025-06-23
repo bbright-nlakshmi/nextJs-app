@@ -13,6 +13,7 @@ import HorizaontalMenu from "../Menu/horizontal";
 import MobileSearch from "./widgets/mobile-search";
 import MobileSetting from "./widgets/mobile-setting";
 import { MenuContext } from "@/helpers/menu/MenuContext";
+import { centralDataCollector, CentralDataCollector } from "@/app/globalProvider";
 
 interface header {
   cartPopupPosition: string;
@@ -20,7 +21,7 @@ interface header {
   category: boolean;
   layoutLogo: string;
 }
-
+//const centralDataCollectorObj: CentralDataCollector = centralDataCollector;
 const Header: NextPage<header> = ({ cartPopupPosition, display, category, layoutLogo }) => {
   const menuContext = useContext(MenuContext);
   const { setLeftMenu, leftMenu } = menuContext;
@@ -33,10 +34,14 @@ const Header: NextPage<header> = ({ cartPopupPosition, display, category, layout
   };
 
   useEffect(() => {
+    
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
+
+    // centralDataCollectorObj.getData();
+    // centralDataCollectorObj.scheduleGetData()
   }, []);
   return (
     <Fragment>

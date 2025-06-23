@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { NextPage } from "next";
 import { Input, DropdownToggle, DropdownMenu, InputGroupText, DropdownItem, InputGroup, ButtonDropdown, Form, Col, FormGroup, Media } from "reactstrap";
 import { useTranslation } from "react-i18next";
-import { searchController } from "@/app/globalProvider";
+import { Category, objCache, searchController } from "@/app/globalProvider";
 import ProductBox from "@/views/layouts/widgets/Product-Box/productbox";
 import Link from "next/link";
 import { SearchResults } from './search_results';
@@ -24,7 +24,16 @@ const Search: NextPage = () => {
       setShowResults(false);
 
   }
-  const blurEvent = () => {setShowResults(false)}
+  const blurEvent = () => { setShowResults(false) }
+  const [allCategories, setAllCategories] = useState<Category[]>();
+  useEffect(() => {
+    objCache.on('updateAllCategories', (data: Category[]) => {
+      console.log(data);
+      setAllCategories(data);
+
+
+    });
+  }, []);
 
   return (
 
@@ -46,8 +55,9 @@ const Search: NextPage = () => {
             </DropdownToggle>
             <DropdownMenu key={"search-menu"}>
               <DropdownItem>All Category</DropdownItem>
-              <DropdownItem>indurstrial</DropdownItem>
-              <DropdownItem>sports</DropdownItem>
+              {allCategories && allCategories.map((item: Category) => <DropdownItem>{item.name}</DropdownItem>)}
+
+
             </DropdownMenu>
           </ButtonDropdown>
         </InputGroup>

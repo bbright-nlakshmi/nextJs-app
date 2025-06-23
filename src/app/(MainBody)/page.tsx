@@ -47,7 +47,7 @@ useEffect(() => {
   objCache.on('updateCategories',(data: Category[]) => {
 
     setCategories(data);
-
+    console.log(data)
   });
 
   objCache.on('updateAllBanners',banners => {

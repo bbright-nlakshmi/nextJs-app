@@ -12,7 +12,7 @@ import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import CollectionBanner from "./CollectionBanner";
 import { useSearchParams } from "next/navigation";
-import { objCache } from "@/app/globalProvider";
+import { objCache, searchController } from "@/app/globalProvider";
 import { Discount } from "@/app/models/models";
 
 
@@ -46,8 +46,9 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
   const discountId = searchParams.get("id");
 
   useEffect(() => {
-    objCache.on('updateDiscountProducts',(data: Discount[]) => {
-      
+    objCache.discountList
+    //objCache.on('updateDiscountProducts',(data: Discount[]) => {
+      const data = objCache.discountList;
       if (data && data.length > 0) {
         const foundDiscount = data.find((item: Discount) => item.id === discountId);
         if (foundDiscount) {
@@ -55,10 +56,10 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
         }
         console.log(foundDiscount)
       }
-    });
-    return () => {
-      objCache.off('updateDiscountProducts', ()=>{});
-    };
+    // });
+    // return () => {
+    //   objCache.off('updateDiscountProducts', ()=>{});
+    // };
   }, []);
 
 const handleUserLogin = (userId) => {
@@ -134,6 +135,7 @@ const handleUserLogin = (userId) => {
                             data={item}
                             newLabel={item.new}
                             item={item}
+                            price={searchController.getDetails(item.productId,'getProductPrice')}
                             addCart={() => addToCart(item)}
                             addCompare={() => addToCompare(item)}
                             addWish={() => addToWish(item)}
