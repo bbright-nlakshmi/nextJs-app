@@ -28,7 +28,7 @@ import { Subscription } from 'rxjs';
 
 const Home = () => {
   const [products, setProducts] = useState<Discount[]>([]);
-  const [categories, setCategories] = useState<Array<Category>>();
+  const [categories, setCategories] = useState<Array<Category>>([]);
   const [allCategories, setAllCategories] = useState<Array<Category>>();
   const [banners, setBanners] = useState<Array<BannerModel>>();
   const [priceRanges, setPriceRanges] = useState<StorePriceRanges>();
@@ -40,7 +40,7 @@ useEffect(() => {
   });
 
   objCache.on('updateBanners', (newBanners) => {
-    console.log(newBanners)
+    
     setBanners(newBanners);
   });
 

@@ -29,7 +29,7 @@ const Search: NextPage = () => {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   useEffect(() => {
     objCache.on('updateAllCategories', (data: Category[]) => {
-      console.log(data);
+      
       setAllCategories(data);
     });
   }, []);

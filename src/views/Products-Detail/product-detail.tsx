@@ -53,8 +53,8 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
   const changeQty = (e: any) => {
     setQty(parseInt(e.target.value));
   };
-  const { id } = router.query; 
-  console.log("id", id);
+  // const { id } = router.query; 
+  // console.log("id", id);
   const uniqueColor: any[] = [];
   const uniqueSize: any[] = [];
   return (

@@ -12,8 +12,8 @@ const LeftSidebar: NextPage = () => {
 
   const [secondPart] = pathname
     .split("/")
-    .slice(2)
-    .map((item) => item.replace(symbolRegex, ""));
+    .slice(2);
+    
   console.log("📦 Final cleaned productId:", secondPart);
   return (
     <Layout1>
@@ -21,7 +21,7 @@ const LeftSidebar: NextPage = () => {
       <section className="section-big-pt-space bg-light">
         <LeftSidebarPage pathId={secondPart} />
       </section>
-      <RelatedProducts productId={secondPart} />
+      {/* <RelatedProducts productId={secondPart} /> */}
     </Layout1>
   );
 };

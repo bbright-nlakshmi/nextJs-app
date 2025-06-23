@@ -58,7 +58,7 @@ interface Props {
 
 const CollectionBanner: NextPage<Props> = ({categories}) => {
 
-    if(categories){
+    if(categories.length){
   return (<>
      <section className="w-full rts-category-area section-py-space">
       <div className="custom-container">

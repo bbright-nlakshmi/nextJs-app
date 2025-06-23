@@ -11,7 +11,7 @@ import { FilterContext } from "../../helpers/filter/filter.context";
 import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import CollectionBanner from "./CollectionBanner";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { objCache, searchController } from "@/app/globalProvider";
 import { Discount } from "@/app/models/models";
 
@@ -44,26 +44,30 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
   const discountId = searchParams.get("id");
 
   useEffect(() => {
-    objCache.discountList
-    //objCache.on('updateDiscountProducts',(data: Discount[]) => {
-      const data = objCache.discountList;
+    var foundDiscount;
+    foundDiscount = objCache.discountList.find((item: Discount) => item.id === discountId)
+    if (foundDiscount) {
+          setDiscount(foundDiscount);
+        }
+    objCache.on('updateDiscountProducts',(data: Discount[]) => {
+      
       if (data && data.length > 0) {
-        const foundDiscount = data.find((item: Discount) => item.id === discountId);
+         foundDiscount = data.find((item: Discount) => item.id === discountId);
         if (foundDiscount) {
           setDiscount(foundDiscount);
         }
         console.log(foundDiscount)
       }
-    // });
-    // return () => {
-    //   objCache.off('updateDiscountProducts', ()=>{});
-    // };
+    });
+    return () => {
+      objCache.off('updateDiscountProducts', ()=>{});
+    };
   }, []);
 
-const handleUserLogin = (userId) => {
-      console.log(`User ${userId} has logged in!`);
-      // Perform actions based on user login, e.g., fetch user-specific data
-    };
+// const handleUserLogin = (userId) => {
+//       console.log(`User ${userId} has logged in!`);
+//       // Perform actions based on user login, e.g., fetch user-specific data
+//     };
   const removeBrand = (val: any) => {
     const temp = [...selectedBrands];
     temp.splice(selectedBrands.indexOf(val), 1);

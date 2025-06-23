@@ -107,7 +107,7 @@ export class ObjCache extends EventEmitter {
    insertObjCacheCategoryList(lst: Category[]) {
     this.categories = lst;
     //this.categoryList.next(lst);
-     this.emit('Updatecategories', lst);
+     this.emit('updateCategories', lst);
   }
   
 

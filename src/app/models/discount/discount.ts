@@ -12,7 +12,7 @@ export class Discount {
   creationTime?: string;
   itemSpecific?: boolean;
   discount?: number;
-  discountItems?: DiscountItem[];
+  discountItems: DiscountItem[];
   discountEndDate?: Date;
 
   constructor({

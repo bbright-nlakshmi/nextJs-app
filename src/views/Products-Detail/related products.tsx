@@ -57,47 +57,12 @@ var settings = {
 };
 
 
-const RelatedProducts: NextPage = () => {
+const RelatedProducts: NextPage<RelatedProductsProps> = ({productId}) => {
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
   var loading, data ;
-    
-const GET_PRODUCTS = gql`
-  query getProducts($type: String!, $id: Int!) {
-    relatedProducts(type: $type, id: $id) {
-      id
-      title
-      description
-      type
-      brand
-      category
-      price
-      new
-      sale
-      discount
-      variants {
-        id
-        sku
-        size
-        color
-        image_id
-      }
-      images {
-        image_id
-        id
-        alt
-        src
-      }
-    }
-  }
-`;
-
-
-  if (error) {
-    console.error("GraphQL error:", error.message);
-  }
-
+  
   return (
     <section className="section-big-py-space  ratio_asos bg-light">
       <div className="custom-container">
@@ -107,14 +72,14 @@ const GET_PRODUCTS = gql`
           </Col>
         </Row>
 
-        {!data || !data.relatedProducts || data.relatedProducts.length === 0 || loading ? (
+        { !data || loading ? (
           <Skeleton />
         ) : (
           <Row>
             <Col className="product">
               <Slider {...settings}>
                 {data &&
-                  data.relatedProducts.map((item: any, i: any) => (
+                  data.map((item: any, i: any) => (
                     <div key={i}>
                       <ProductBox newLabel={item.new} {...item} item={item} addCart={() => addToCart(item)} addCompare={() => addToCompare(item)} addWish={() => addToWish(item)} />
                     </div>
