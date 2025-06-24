@@ -45,9 +45,9 @@ const DEV_API_BASE_URL = 'https://devqarupeecomservice.rupeecom.in/v1';
 const TENANT_SERVICE_URL = 'https://tenantservice.1rpapp.in/v1';
 
 // Get tenantId from environment variables or config
-const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'dxrhudtb';
+const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'owuhhrlb';
 const appName = process.env.NEXT_PUBLIC_APP_NAME || '';
-const storeId = '5b547df0-967d-4aa4-8996-e02511c66e26'
+const storeId = 'b0aec458-86f7-4c29-8587-ec4271b9168c'
 
 export class APIService {
   private static instance: APIService;
