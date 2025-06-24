@@ -90,8 +90,9 @@ export class ObjCache extends EventEmitter {
     this.nonPremiumList.set(key, lst);
   }
 
-  insertObjCacheKitList(lst: Kit[]) {
-    this.kitList.push(...lst);
+   insertObjCacheKitList(lst: Kit[]) {
+    this.kitList = lst;
+    this.emit('updateKits', lst);
   }
 
   insertObjCacheDiscountList(lst: Discount[]) {
