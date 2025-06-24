@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { NextPage } from "next";
 import { Row, Col } from "reactstrap";
 import Sidebar from "../../views/Products-Detail/sidebar";
@@ -9,51 +9,34 @@ import ProductSlick from "../../views/Products-Detail/product-slick";
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client";
 import { FilterContext } from "@/helpers/filter/filter.context";
+import { Discount, DiscountItem, objCache } from "@/app/globalProvider";
 
 interface LeftSidebar {
   pathId: any;
 }
 
-const GET_SINGLE_PRODUCTS = gql`
-  query getProducts($id: Float!) {
-    product(id: $id) {
-      id
-      title
-      description
-      type
-      brand
-      category
-      price
-      new
-      sale
-      discount
-      stock
-      variants {
-        id
-        sku
-        size
-        color
-        image_id
-      }
-      images {
-        alt
-        src
-      }
-    }
-  }
-`;
 
 const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
   const filterContext = useContext(FilterContext);
   const { filterOpen, setFilterOpen } = filterContext;
-  var { loading, data } = useQuery(GET_SINGLE_PRODUCTS, {
-    variables: {
-      id: parseInt(pathId),
-    },
-  });
+  const [discount, setDiscount] = useState<DiscountItem>();
+  var loading, data;
+  
+  useEffect(() => {
+    objCache.discountList.map((products: Discount) => {
+      
+      const foundDiscount = products.discountItems.findIndex((item: DiscountItem) => item.id === pathId);
+      
+      if (foundDiscount != -1) {
+          console.log(foundDiscount, pathId)
+        setDiscount(products.discountItems[foundDiscount]);
+      }
+    });
+  }, []);
+
   return (
     <div className="collection-wrapper">
-      {data && data.product && !loading && (
+      {discount && (
         <div className="custom-container">
           <Row>
             <Col
@@ -77,7 +60,7 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
                 </Col>
               </Row>
               <Row>
-                <ProductSlick item={data.product} bundle={false} swatch={false} />
+                <ProductSlick item={discount} bundle={false} swatch={false} />
               </Row>
               <TabProduct />
             </Col>

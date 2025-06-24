@@ -10,7 +10,7 @@ interface LogMessage {
   timestamp: Date;
 }
 
- class Logger {
+ export class Logger {
   private static instance: Logger;
   private logLevel: LogLevel;
   private isProduction: boolean;

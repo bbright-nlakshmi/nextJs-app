@@ -4,20 +4,26 @@ import { NextPage } from "next";
 import { CartContext } from "../../../helpers/cart/cart.context";
 import Breadcrumb from "../../../views/Containers/Breadcrumb";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
+import { searchController } from "@/app/globalProvider";
 
 const CartPage: NextPage = () => {
   const { cartItems, updateQty, removeFromCart, cartTotal } = React.useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
   const [quantityError, setQuantityError] = useState<Boolean>(false);
-  const handleQtyUpdate = (item:any, quantity:any) => {
+  const handleQtyUpdate = (item: any, quantity: any) => {
     if (quantity >= 1) {
       setQuantityError(false);
       updateQty(item, quantity);
     } else {
       setQuantityError(true);
     }
+
   };
+  const getPrice = (productId) => {
+    return searchController.getDetails(productId, 'getPrice')
+  };
+
   return (
     <>
       <Breadcrumb parent="home" title="cart" />
@@ -38,7 +44,7 @@ const CartPage: NextPage = () => {
                         <th scope="col">total</th>
                       </tr>
                     </thead>
-                    {cartItems.map((item:any, index:number) => (
+                    {cartItems.map((item: any, index: number) => (
                       <tbody key={`cart-list-${index}`}>
                         <tr>
                           <td>
@@ -48,7 +54,7 @@ const CartPage: NextPage = () => {
                           </td>
                           <td>
                             <a href="#" onClick={(e) => e.preventDefault()}>
-                              {item.title}
+                              {item.name}
                             </a>
                             <div className="mobile-cart-content row">
                               <div className="col-xs-3 col-3">
@@ -61,7 +67,7 @@ const CartPage: NextPage = () => {
                               <div className="col-xs-3 col-3">
                                 <h2 className="td-color">
                                   {symbol}
-                                  {item.price}
+                                  {getPrice(item.productId)}
                                 </h2>
                               </div>
                               <div className="col-xs-3 col-3">
@@ -76,7 +82,7 @@ const CartPage: NextPage = () => {
                           <td>
                             <h2>
                               {symbol}
-                              {item.price}
+                              {getPrice(item.productId)}
                             </h2>
                           </td>
                           <td>

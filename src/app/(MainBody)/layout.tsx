@@ -11,14 +11,14 @@ import { ToastContainer } from "react-toastify";
 import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
 
 
-const client = new ApolloClient({
-  uri: "https://bigdeal-api-git-main-pixelstrapthemes.vercel.app/"  ,
-  cache: new InMemoryCache(),
-});
+// const client = new ApolloClient({
+//   uri: "https://bigdeal-api-git-main-pixelstrapthemes.vercel.app/"  ,
+//   cache: new InMemoryCache(),
+// });
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ApolloProvider client={client}>
+    // <ApolloProvider>
       <div>
         <CurrencyContextProvider>
           <MenuContextProvider>
@@ -33,9 +33,9 @@ const layout = ({ children }: { children: React.ReactNode }) => {
         </CurrencyContextProvider>
         <ToastContainer />
         <TaptoTop />
-        <Customizer />
+        {/* <Customizer /> */}
       </div>
-    </ApolloProvider>
+    // </ApolloProvider>
   );
 };
 

@@ -1,190 +1,228 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { NextPage } from "next";
-import { Media, Row, Col } from "reactstrap";
+import { Row, Col, Spinner, Input, FormGroup, Label, Button } from "reactstrap";
 import Breadcrumb from "../../views/Containers/Breadcrumb";
+import { API } from "@/app/services/api.service";
+import { OrderModel } from "@/app/models/order_model/order";
+import { OrderItemsModel } from "@/app/models/order_item_model/order_item_model";
 
 const OrderHistoryPage: NextPage = () => {
-  return (
-    <div className="bg-light">
-      {/* <!-- breadcrumb start --> */}
-      <Breadcrumb title="order history" parent="home" />
-      {/* <!-- breadcrumb End --> */}
+  const [orders, setOrders] = useState<OrderModel[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<OrderModel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-      {/* <!--section start--> */}
-      <section className="cart-section order-history section-big-py-space">
-        <div className="custom-container">
-          <Row>
-            <Col sm="12">
-              <table className="table cart-table table-responsive-xs">
-                <thead>
-                  <tr className="table-head">
-                    <th scope="col">product</th>
-                    <th scope="col">description</th>
-                    <th scope="col">price</th>
-                    <th scope="col">detail</th>
-                    <th scope="col">status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <a href="#">
-                        <Media src="/images/product-sidebar/001.jpg" alt="product" className="img-fluid" />
-                      </a>
-                    </td>
-                    <td>
-                      <a href="#">
-                        order no: <span className="dark-data">15454841</span> <br />
-                        cotton shirt
-                      </a>
-                      <div className="mobile-cart-content row">
-                        <div className="col-xs-3 col-3">
-                          <div className="qty-box">
-                            <div className="input-group">
-                              <input type="text" name="quantity" className="form-control input-number" defaultValue="1" />
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-xs-3 col-3">
-                          <h4 className="td-color">$63.00</h4>
-                        </div>
-                        <div className="col-xs-3 col-3">
-                          <h2 className="td-color">
-                            <a href="#" className="icon">
-                              <i className="ti-close"></i>
-                            </a>
-                          </h2>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <h4>$63.00</h4>
-                    </td>
-                    <td>
-                      <span>Size: L</span>
-                      <br />
-                      <span>Quntity: 1</span>
-                    </td>
-                    <td>
-                      <div className="responsive-data">
-                        <h4 className="price">$63.00</h4>
-                        <span>Size: L</span>|<span>Quntity: 1</span>
-                      </div>
-                      <span className="dark-data">Delivered</span> (jul 01, 2019)
-                    </td>
-                  </tr>
-                </tbody>
-                <tbody>
-                  <tr>
-                    <td>
-                      <a href="#">
-                        <Media src="/images/product-sidebar/002.jpg" alt="product" className="  img-fluid" />
-                      </a>
-                    </td>
-                    <td>
-                      <a href="#">
-                        order no: <span className="dark-data">15454841</span> <br />
-                        cotton shirt
-                      </a>
-                      <div className="mobile-cart-content row">
-                        <div className="col-xs-3 col-3">
-                          <div className="qty-box">
-                            <div className="input-group">
-                              <input type="text" name="quantity" className="form-control input-number" defaultValue="1" />
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-xs-3 col-3">
-                          <h4 className="td-color">$63.00</h4>
-                        </div>
-                        <div className="col-xs-3 col-3">
-                          <h2 className="td-color">
-                            <a href="#" className="icon">
-                              <i className="ti-close"></i>
-                            </a>
-                          </h2>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <h4>$63.00</h4>
-                    </td>
-                    <td>
-                      <span>Size: L</span>
-                      <br />
-                      <span>Quntity: 1</span>
-                    </td>
-                    <td>
-                      <div className="responsive-data">
-                        <h4 className="price">$63.00</h4>
-                        <span>Size: L</span>|<span>Quntity: 1</span>
-                      </div>
-                      <span className="dark-data">Delivered</span> (jul 01, 2019)
-                    </td>
-                  </tr>
-                </tbody>
-                <tbody>
-                  <tr>
-                    <td>
-                      <a href="#">
-                        <Media src="/images/product-sidebar/001.jpg" alt="product" className="  img-fluid" />
-                      </a>
-                    </td>
-                    <td>
-                      <a href="#">
-                        order no: <span className="dark-data">15454841</span> <br />
-                        cotton shirt
-                      </a>
-                      <div className="mobile-cart-content row">
-                        <div className="col-xs-3 col-3">
-                          <div className="qty-box">
-                            <div className="input-group">
-                              <input type="text" name="quantity" className="form-control input-number" defaultValue="1" />
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-xs-3 col-3">
-                          <h4 className="td-color">$63.00</h4>
-                        </div>
-                        <div className="col-xs-3 col-3">
-                          <h2 className="td-color">
-                            <a href="#" className="icon">
-                              <i className="ti-close"></i>
-                            </a>
-                          </h2>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <h4>$63.00</h4>
-                    </td>
-                    <td>
-                      <span>Size: L</span>
-                      <br />
-                      <span>Quntity: 1</span>
-                    </td>
-                    <td>
-                      <div className="responsive-data">
-                        <h4 className="price">$63.00</h4>
-                        <span>Size: L</span>|<span>Quntity: 1</span>
-                      </div>
-                      <span className="dark-data">Delivered</span> (jul 01, 2019)
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+
+  const phoneNumber = "9346716572";
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const fetchedOrders = await API.getOrders(phoneNumber);
+
+        // Sort newest first
+        fetchedOrders.sort((a, b) => new Date(b.creationTime).getTime() - new Date(a.creationTime).getTime());
+
+        setOrders(fetchedOrders);
+        setFilteredOrders(fetchedOrders);
+      } catch (err) {
+        console.error("❌ Error fetching orders:", err);
+        setError("Could not load your orders.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [phoneNumber]);
+
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrderId(prev => (prev === orderId ? null : orderId));
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
+  const handleFilter = () => {
+    if (!fromDate || !toDate) return;
+
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    to.setHours(23, 59, 59, 999); // include entire day
+
+    const filtered = orders.filter(order => {
+      const orderDate = new Date(order.creationTime);
+      return orderDate >= from && orderDate <= to;
+    });
+
+    setFilteredOrders(filtered);
+    setExpandedOrderId(null); // collapse all on filter
+  };
+
+  const handleClearFilter = () => {
+    setFromDate("");
+    setToDate("");
+    setFilteredOrders(orders);
+    setExpandedOrderId(null);
+  };
+
+  return (
+    <div className="bg-light py-4">
+      <Breadcrumb title="Order History" parent="Home" />
+      <section className="order-history-section">
+        <div className="container">
+          <Row className="mb-4">
+            <Col md="4">
+              <FormGroup>
+                <Label>From Date</Label>
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+              </FormGroup>
+            </Col>
+            <Col md="4">
+              <FormGroup>
+                <Label>To Date</Label>
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
+              </FormGroup>
+            </Col>
+            <Col md="4" className="d-flex align-items-end gap-2">
+              <Button color="primary" onClick={handleFilter}>
+                Apply Filter
+              </Button>
+              <Button color="secondary" onClick={handleClearFilter}>
+                Clear
+              </Button>
             </Col>
           </Row>
-          <Row className="cart-buttons">
-            <Col xs="12" className="pull-right">
-              <a href="#" className="btn btn-normal btn-sm">
-                show all orders
-              </a>
+
+          <Row>
+            <Col sm="12">
+              {loading ? (
+                <div className="text-center py-5">
+                  <Spinner color="primary" />
+                </div>
+              ) : error ? (
+                <div className="text-center py-5 text-danger">{error}</div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="text-center py-5">
+                  <h4 className="mb-3">No orders found for selected date</h4>
+                  <Button color="primary" onClick={handleClearFilter}>Show All</Button>
+                </div>
+              ) : (
+                <div className="table-responsive rounded shadow-sm bg-white">
+                  <table className="table table-bordered table-hover mb-0">
+                    <thead className="thead-dark">
+                      <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Total Items</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredOrders.map((order) => (
+                        <React.Fragment key={order.id}>
+                          <tr
+                            onClick={() => toggleExpand(order.id)}
+                            style={{
+                              cursor: "pointer",
+                              background: expandedOrderId === order.id ? "#f9f9f9" : undefined,
+                              transition: "background 0.2s ease-in-out",
+                            }}
+                          >
+                            <td><strong>{order.id}</strong></td>
+                            <td>{formatDate(order.creationTime)}</td>
+                            <td>{order.getItemsCount()}</td>
+                            <td><strong>${order.finalOrderTotal.toFixed(2)}</strong></td>
+                            <td style={{ color: "#000" }}>
+                              {order.orderAcceptStatus || "Pending"}
+                            </td>
+                          </tr>
+
+                          {expandedOrderId === order.id && (
+                            <tr>
+                              <td colSpan={5} className="p-0">
+                                <div className="p-3 bg-light border-top">
+                                  <h6 className="mb-3">Order Details</h6>
+                                  <table className="table table-sm table-striped">
+                                    <thead className="thead-light">
+                                      <tr>
+                                        <th>Image</th>
+                                        <th>Product</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {Object.values(order.orderItems).map((item: OrderItemsModel, idx) => {
+                                        const status = item?.status ?? {};
+                                        const statusKey = Object.keys(status).find(key => status[key]) ?? "Pending";
+
+                                        return (
+                                          <tr key={idx}>
+                                            <td style={{ width: "80px" }}>
+                                              <img
+                                                src={item.url || item.orderKitItems?.[0]?.img?.[0] || "/images/product-sidebar/001.jpg"}
+                                                alt={item.name}
+                                                className="img-fluid rounded"
+                                                style={{ maxWidth: "70px", objectFit: "contain" }}
+                                              />
+                                            </td>
+                                            <td>{item.name}</td>
+                                            <td>{item.categoryName || "N/A"}</td>
+                                            <td>${item.choosedPrice?.toFixed(2) ?? "0.00"}</td>
+                                            <td>{item.cartItemCount}</td>
+                                            <td style={{ color: "#000" }}>
+                                              {statusKey}
+                                              {status.deliver && (
+                                                <div className="text-muted small">
+                                                  Delivered: {new Date(status.deliver).toLocaleDateString()}
+                                                </div>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </Col>
           </Row>
         </div>
       </section>
-      {/* <!--section end--> */}
     </div>
   );
 };

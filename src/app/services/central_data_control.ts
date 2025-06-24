@@ -41,6 +41,7 @@ export class CentralDataCollector {
 
   private refreshInterval: number = 60; // Default 60 seconds
   private dataScheduler?: NodeJS.Timeout;
+  announceLiveData: any;
   
   
   constructor() {
@@ -156,10 +157,12 @@ export class CentralDataCollector {
   public async  getAllProducts(): Promise<void> {
     try {
       const allProducts = await API.getAllProducts();
-      allProducts.forEach(([category, products]) => {
-        //objCache.insertObjCachePremiumList(category.name, products);
-        objCache.insertObjCacheAllProducts(category.name,products);
-      });
+      //console.log(allProducts)
+      objCache.insertObjCacheAllProducts(allProducts);
+      // allProducts.forEach(([category, products]) => {
+        
+      //   objCache.insertObjCacheAllProducts(category.name,products);
+      // });
       
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -227,7 +230,8 @@ export class CentralDataCollector {
   public async getAnnounce(): Promise<void> {
     try {
       const announcement = await API.getStoreAnnounce();
-      //this.announceLiveData.setValue(announcement);
+      this.announceLiveData.setValue(announcement);
+      objCache.insertObjCacheAnnouncementStream(announcement)
     } catch (error) {
       console.error('Error fetching announcement:', error);
     }

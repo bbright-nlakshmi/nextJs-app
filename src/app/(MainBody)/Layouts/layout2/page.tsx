@@ -54,7 +54,7 @@ const Layout2 = () => {
         <MediaBanner />
         <BlogSection />
         <section className="box-category section-py-space">
-          <DiscountCoupon />
+          <DiscountCoupon priceRanges={undefined} />
         </section>
         <div className="title1 section-my-space">
           <h4>Special Products</h4>

@@ -46,12 +46,13 @@ const categories = ["FLOWER", "FASHION", "BAGS", "SHOES", "WATCH"];
 
 const Portfolio: NextPage<PortfolioProps> = ({ cols }) => {
   const [activeTab, setActiveTab] = useState("FLOWER");
-  var { loading, data } = useQuery(GET_PRODUCTS, {
-    variables: {
-      type: activeTab,
-      indexFrom: 0,
-    },
-  });
+  // var { loading, data } = useQuery(GET_PRODUCTS, {
+  //   variables: {
+  //     type: activeTab,
+  //     indexFrom: 0,
+  //   },
+  // });
+  var  loading, data;
 
   return (
     <section className="portfolio-section grid-portfolio ratio2_3 portfolio-padding section-big-pt-space bg-light">

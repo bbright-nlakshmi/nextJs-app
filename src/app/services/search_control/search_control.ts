@@ -7,7 +7,7 @@ class SearchPageControl extends EventEmitter {
     // State properties
     kits: Kit[] = [];
     allKits: Kit[] = [];
-    allProducts: Product[] = [];
+    allProducts: any = [];
     products: Product[] = [];
     nonPremProducts: Product[] = [];
     premProducts: Product[] = [];
@@ -115,6 +115,7 @@ class SearchPageControl extends EventEmitter {
     }
 
     refreshGrid(str: string) {
+
         this.searchInput = str;
         this.searchStr = str;
 
@@ -122,20 +123,30 @@ class SearchPageControl extends EventEmitter {
             kit.name.toLowerCase().includes(str.toLowerCase())
         );
 
-        this.products = this.allProducts.filter(product =>
-            product.name.toLowerCase().includes(str.toLowerCase())
-        );
-
+        
+        var result =[];
+       
+             for (const [category, items] of this.allProducts) {
+            const foundItem = items.findIndex(item => item.name === str);
+            if (foundItem != -1) {
+                result.push(items[foundItem]); // Return item with category info
+            }
+        }
+        
+        
+        this.products =result;
         this.showEmptySearchResult = this.kits.length === 0 && this.products.length === 0;
         this.update();
     }
+   
 
     getAllProducts(): Product[] {
         const allProducts: Product[] = [];
-        for (const category of objCache.categories) {
-            const products = objCache.getCategoryProducts(category.name);
-            allProducts.push(...products);
-        }
+        objCache.on('updateAllProducts', (data) => {
+           // console.log(data);
+            this.allProducts = data;
+        });
+        
         return allProducts;
     }
 
@@ -254,6 +265,24 @@ class SearchPageControl extends EventEmitter {
 
         return this.sortByPrice();
     }
+
+    getDetails(productId, eventName) {
+        for (const [category, items] of this.allProducts) {
+                const foundItem = items.find(item => item.id === productId);
+                   
+                if (foundItem || foundItem?.length) {
+                  
+                    if(eventName == 'getPrice')
+                    return  foundItem.getPrice(); 
+                  else if(eventName == 'getPriceWithDiscount')
+                    return  foundItem.getPriceWithDiscount();
+                    else if(eventName == 'getProductPrice')
+                        return foundItem.getProductPrice();
+                    
+                }
+            }
+            return 0;
+      }
 }
 
 // Export a singleton instance or create new instances as needed

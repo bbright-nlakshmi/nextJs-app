@@ -11,10 +11,9 @@ import { FilterContext } from "../../helpers/filter/filter.context";
 import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import CollectionBanner from "./CollectionBanner";
-import { useSearchParams } from "next/navigation";
-import { objCache } from "@/app/globalProvider";
+import { useRouter, useSearchParams } from "next/navigation";
+import { objCache, searchController } from "@/app/globalProvider";
 import { Discount } from "@/app/models/models";
-
 
 type CollectionProps = {
   cols: any;
@@ -29,27 +28,31 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
     selectedPrice,
     setSelectedColor,
     setSelectedBrands,
-    setLeftSidebarOpen,
-    leftSidebarOpen,
+    
   } = useContext(FilterContext);
   const { addToCart } = useContext(CartContext);
   const { addToWish } = useContext(WishlistContext);
   const { addToCompare } = useContext(CompareContext);
   const [grid, setGrid] = useState(cols);
   const [sortBy, setSortBy] = useState("ASC_ORDER");
-  const [pageLimit, setPageLimit] = useState(10);
+  const [pageLimit, setPageLimit] = useState(5);
   const [layout, setLayout] = useState(layoutList);
   const [discount, setDiscount] = useState<Discount>();
   const [isLoading, setIsLoading] = useState(false);
-
+  const router = useRouter();
   const searchParams = useSearchParams();
   const discountId = searchParams.get("id");
 
   useEffect(() => {
+    var foundDiscount;
+    foundDiscount = objCache.discountList.find((item: Discount) => item.id === discountId)
+    if (foundDiscount) {
+          setDiscount(foundDiscount);
+        }
     objCache.on('updateDiscountProducts',(data: Discount[]) => {
       
       if (data && data.length > 0) {
-        const foundDiscount = data.find((item: Discount) => item.id === discountId);
+         foundDiscount = data.find((item: Discount) => item.id === discountId);
         if (foundDiscount) {
           setDiscount(foundDiscount);
         }
@@ -61,10 +64,10 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
     };
   }, []);
 
-const handleUserLogin = (userId) => {
-      console.log(`User ${userId} has logged in!`);
-      // Perform actions based on user login, e.g., fetch user-specific data
-    };
+// const handleUserLogin = (userId) => {
+//       console.log(`User ${userId} has logged in!`);
+//       // Perform actions based on user login, e.g., fetch user-specific data
+//     };
   const removeBrand = (val: any) => {
     const temp = [...selectedBrands];
     temp.splice(selectedBrands.indexOf(val), 1);
@@ -128,12 +131,13 @@ const handleUserLogin = (userId) => {
                   ) : (
                     discount.discountItems.slice(0, pageLimit).map((item: any, i: number) => (
                       <div className={grid} key={i}>
-                        <div className="product">
+                        <div className="product" >
                           <ProductBox
                             layout="layout-one"
                             data={item}
                             newLabel={item.new}
                             item={item}
+                            price={searchController.getDetails(item.productId,'getProductPrice')}
                             addCart={() => addToCart(item)}
                             addCompare={() => addToCompare(item)}
                             addWish={() => addToWish(item)}

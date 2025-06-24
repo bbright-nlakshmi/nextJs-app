@@ -25,12 +25,12 @@ import { Subscription } from 'rxjs';
 import Kits from "@/views/Kits/kits_list";
 
 
-const centralDataCollectorObj: CentralDataCollector = centralDataCollector;
+//const centralDataCollectorObj: CentralDataCollector = centralDataCollector;
 
 const Home = () => {
   const [kits, setKits] = useState<Kit[]>([]);
   const [products, setProducts] = useState<Discount[]>([]);
-  const [categories, setCategories] = useState<Array<Category>>();
+  const [categories, setCategories] = useState<Array<Category>>([]);
   const [allCategories, setAllCategories] = useState<Array<Category>>();
   const [banners, setBanners] = useState<Array<BannerModel>>();
   const [priceRanges, setPriceRanges] = useState<StorePriceRanges>();
@@ -48,14 +48,14 @@ useEffect(() => {
   });
 
   objCache.on('updateBanners', (newBanners) => {
-    console.log(newBanners)
+    
     setBanners(newBanners);
   });
 
   objCache.on('updateCategories',(data: Category[]) => {
 
     setCategories(data);
-
+    console.log(data)
   });
 
   objCache.on('updateAllBanners',banners => {
@@ -76,8 +76,8 @@ return () => {
 
   useEffect(() => {
 
-    centralDataCollectorObj.getData();
-    centralDataCollectorObj.scheduleGetData()
+    centralDataCollector.getData();
+    centralDataCollector.scheduleGetData()
   }, []);
 
 
@@ -90,7 +90,7 @@ return () => {
           <SliderBanner banners={banners} />
           <CollectionBanner categories={categories} />
           <TabProduct effect="icon-inline" categories={allCategories} />
-          <DiscountBanner />
+          {/* <DiscountBanner /> */}
 
           {/* <CollectionBannerTwo /> */}
           <DiscountProducts products={products} />

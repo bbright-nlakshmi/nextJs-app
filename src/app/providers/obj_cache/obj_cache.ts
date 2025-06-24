@@ -1,4 +1,4 @@
-import { Product, Kit, Discount, Category, Tags, PriceBetween, KitProduct, BannerModel, StorePriceRanges } from "@/app/models/models";
+import { Product, Kit, Discount, Category, Tags, PriceBetween, KitProduct, BannerModel, StorePriceRanges, StoreAnnounce } from "@/app/models/models";
 import EventEmitter from "events";
 import { BehaviorSubject, Subject } from "rxjs";
 
@@ -108,12 +108,14 @@ export class ObjCache extends EventEmitter {
    insertObjCacheCategoryList(lst: Category[]) {
     this.categories = lst;
     //this.categoryList.next(lst);
-     this.emit('Updatecategories', lst);
+     this.emit('updateCategories', lst);
   }
   
 
-   insertObjCacheAllProducts(key: string, lst: Product) {
-    this.allProducts.set(key, lst);
+   insertObjCacheAllProducts(lst: any) {
+    //this.allProducts.set(key, lst);
+    
+    this.emit('updateAllProducts',lst);
     //this.allProducstsList.next(lst);
   }
 
@@ -126,6 +128,11 @@ export class ObjCache extends EventEmitter {
   }
    insertObjCachePriceRangeStream(lst: StorePriceRanges) {
     this.emit('UpdatePriceRanges',lst);
+   // this.priceRangeStream.next(lst);
+  }
+
+   insertObjCacheAnnouncementStream(lst: StoreAnnounce) {
+    this.emit('UpdateAnnouncement',lst);
    // this.priceRangeStream.next(lst);
   }
 
@@ -191,6 +198,7 @@ export class ObjCache extends EventEmitter {
   }
 
    getCategoryProducts(str: string): Product[] {
+    
     return this.premiumList.get(str) || this.nonPremiumList.get(str) || [];
   }
 

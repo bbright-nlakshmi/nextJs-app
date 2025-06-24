@@ -9,22 +9,23 @@ import Link from "next/link";
 import Img from "@/utils/BgImgRatio";
 
 interface productType {
-  id: number;
-  title: string;
-  newLabel: boolean;
-  sale: Boolean;
-  stock: number;
-  price: number;
+  img: any;
+  id?: number;
+  title?: string;
+  newLabel?: boolean;
+  sale?: Boolean;
+  stock?: number;
+  price?: number;
   item: any;
-  discount: number;
-  images: any;
-  layout: string;
+  discount?: number;
+  images?: any;
+  layout?: string;
   addCart: Function;
   addWish: Function;
   addCompare: Function;
-  incrementQty: Function;
-  hoverEffect: any;
-  type: Array<string>;
+  incrementQty?: Function;
+  hoverEffect?: any;
+  type?: Array<string>;
 }
 
 const ProductBox2: React.FC<productType> = (data) => {
@@ -74,11 +75,11 @@ const ProductBox2: React.FC<productType> = (data) => {
   });
   return (
     <Fragment>
-      <Masonry className="masonary-banner-main">
+      {/* <Masonry className="masonary-banner-main"> */}
         <div className="product-box">
           <div className="product-imgbox">
             <div className="product-front" onClick={clickProductDetail}>
-              <Img src={`/images/${data.images[0].src}`} className="img-fluid" alt="product" />
+              <img src={`${data.item.img[0]}`} className="img-fluid" alt="product" />
             </div>
             <div className="product-icon">
               <button onClick={() => data.addCart()}>
@@ -130,7 +131,8 @@ const ProductBox2: React.FC<productType> = (data) => {
               {(data.price * selectedCurr.value).toFixed(2)}
               <span>
                 {selectedCurr.symbol}
-                {((data.price - data.price * (data.discount / 100)) * selectedCurr.value).toFixed(2)}
+                {(data.discount) ? ((data.price - data.price * (data.discount / 100)) * selectedCurr.value).toFixed(2)
+                :(data.price * selectedCurr.value).toFixed(2)}
               </span>
             </span>
           </div>
@@ -156,7 +158,7 @@ const ProductBox2: React.FC<productType> = (data) => {
             </div>
           </div>
         </div>
-      </Masonry>
+      {/* </Masonry> */}
       {data.item.variants &&
         data.item.variants.map((vari:any) => {
           var findItemSize = uniqueSize.find((x) => x === vari.size);
@@ -170,7 +172,7 @@ const ProductBox2: React.FC<productType> = (data) => {
           <div className="row">
             <div className="col-lg-6 col-xs-12">
               <div className="quick-view-img">
-                <img src={`/images/${data?.item?.variants ? data?.item?.images[0].src : data?.item?.images[0].src}`} alt="" className="img-fluid" />
+                <img src={`${data?.item.img[0]}`} alt="" className="img-fluid" />
               </div>
             </div>
             <div className="col-lg-6 rtl-text">
