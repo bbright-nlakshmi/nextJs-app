@@ -50,6 +50,7 @@ const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'dxrhudtb';
 const appName = process.env.NEXT_PUBLIC_APP_NAME || 'big-deal';
 const storeId = '5b547df0-967d-4aa4-8996-e02511c66e26'
 
+
 export class APIService {
   private static instance: APIService;
   private axiosInstance = axios.create();
