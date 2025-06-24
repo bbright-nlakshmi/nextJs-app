@@ -127,7 +127,7 @@ class SearchPageControl extends EventEmitter {
         var result =[];
        
              for (const [category, items] of this.allProducts) {
-            const foundItem = items.findIndex(item => item.name === str);
+            const foundItem = items.findIndex((item:Product) => item.name === str);
             if (foundItem != -1) {
                 result.push(items[foundItem]); // Return item with category info
             }
@@ -160,11 +160,11 @@ class SearchPageControl extends EventEmitter {
 
     setPriceRangeValues() {
         const minProdPrice = this.allProducts.length > 0
-            ? Math.min(...this.allProducts.map(e => e.getBasePriceInCart()))
+            ? Math.min(...this.allProducts.map((e:Product) => e.getBasePriceInCart()))
             : 0;
 
         const maxProdPrice = this.allProducts.length > 0
-            ? Math.max(...this.allProducts.map(e => e.getBasePriceInCart()))
+            ? Math.max(...this.allProducts.map((e:Product) => e.getBasePriceInCart()))
             : 0;
 
         const minKitPrice = this.kits.length > 0
@@ -232,7 +232,7 @@ class SearchPageControl extends EventEmitter {
     filteredItems(): (Product | Kit)[] {
         const searchText = this.searchStr.toLowerCase();
 
-        let filteredProducts = this.allProducts.filter(product => {
+        let filteredProducts = this.allProducts.filter((product:Product) => {
             const matchesSearch = searchText === '' ||
                 product.name.toLowerCase().includes(searchText);
             const matchesTags = this.selectedTags.length === 0 ||
@@ -266,9 +266,9 @@ class SearchPageControl extends EventEmitter {
         return this.sortByPrice();
     }
 
-    getDetails(productId, eventName) {
+    getDetails(productId: string, eventName: string) {
         for (const [category, items] of this.allProducts) {
-                const foundItem = items.find(item => item.id === productId);
+                const foundItem = items.find((item:Product) => item.id === productId);
                    
                 if (foundItem || foundItem?.length) {
                   
@@ -278,6 +278,8 @@ class SearchPageControl extends EventEmitter {
                     return  foundItem.getPriceWithDiscount();
                     else if(eventName == 'getProductPrice')
                         return foundItem.getProductPrice();
+                    else if(eventName == 'getProductById')
+                        return foundItem;
                     
                 }
             }

@@ -27115,7 +27115,11 @@ select {
     background: #fff;
     padding: 15px
 }
-
+/*******   CUStom CSS ******/
+.app-logo{
+    
+    height:100px;
+}
 .search-results-wrapper {
     position: absolute;
      max-height:250px;
@@ -27139,4 +27143,17 @@ select {
         height:50px;
     }
     li{display:flex;}
+}
+.dropdown-menu{
+    position: absolute;
+    right: 0px;
+    top: 60px !important;
+    width: 25%;
+    left:auto !important;
+    height:400px;
+    overflow-y: scroll;
+}
+.rts-category-area .swiper-button-prev, .rts-banner-area-one .swiper-button-prev,
+.rts-category-area .swiper-button-next, .rts-banner-area-one .swiper-button-next{
+    display: none;
 }

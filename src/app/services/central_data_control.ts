@@ -22,18 +22,7 @@ import { UserController } from '@/views/user_auth/user_controller';
 
 
 export class CentralDataCollector {
-  // Data streams
   
-  // public premiumStream = new LiveData<Map<CategoryRender, Product[]>>(new Map());
-  // public nonPremiumStream = new LiveData<Map<CategoryRender, Product[]>>(new Map());
-  // public priceRangeStream = new LiveData<StorePriceRanges>(StorePriceRanges.emptyPriceRanges());
-  // public discountLiveData = new LiveData<Discount[]>([]);
-  // public kitStream = new LiveData<Kit[]>([]);
-  // public categoryStream = new LiveData<Category[]>([]);
-  // public tagsLiveData = new LiveData<Tags>(Tags.emptyTags());
-  // public jobLiveData = new LiveData<Job[]>([]);
-  // public announceLiveData = new LiveData<StoreAnnounce>(StoreAnnounce.emptyAnnounce());
-
   // Loading states
   public isLoading = false;
   public isInitialLoading = true;
@@ -51,7 +40,7 @@ export class CentralDataCollector {
   private initialize(): void {
     this.resetInitialLoad();
      this.refreshInterval = parseInt(process.env.NEXT_PUBLIC_REFRESH_INTERVAL || '60');
-    // this.getData(); 
+     
   }
 
    scheduleGetData(): void { 

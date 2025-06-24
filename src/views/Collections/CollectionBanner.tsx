@@ -7,7 +7,10 @@ interface Props {
   details?: string;
 }
 
-const CollectionBanner: NextPage<Props> = ({ img, name = "fashion", details }) => (
+const CollectionBanner: NextPage<Props> = ({ img, name , details }) => { 
+
+  console.log(img,name)
+  return (
   <div className="top-banner-wrapper" >
     <a href="#">
       <Media src={img} className="img-fluid full-width"  alt={name} />
@@ -22,6 +25,6 @@ const CollectionBanner: NextPage<Props> = ({ img, name = "fashion", details }) =
       </p>
     </div>
   </div>
-);
+)};
 
 export default CollectionBanner;

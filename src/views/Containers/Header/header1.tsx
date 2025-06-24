@@ -13,7 +13,7 @@ import HorizaontalMenu from "../Menu/horizontal";
 import MobileSearch from "./widgets/mobile-search";
 import MobileSetting from "./widgets/mobile-setting";
 import { MenuContext } from "@/helpers/menu/MenuContext";
-import { API } from "@/app/services/api.service";
+
 
 interface HeaderProps {
   cartPopupPosition: string;
@@ -24,9 +24,9 @@ interface HeaderProps {
 
 }
 
-const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, layoutLogo }) => {
+const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, layoutLogo, appLogo }) => {
   const { setLeftMenu, leftMenu } = useContext(MenuContext);
-  const [logoUrl, setLogoUrl] = useState<string>("");
+ 
 
   // Handle sticky header on scroll
   const handleScroll = () => {
@@ -42,26 +42,9 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
     }
   };
 
-  // Fetch dynamic logo from API on mount
-  useEffect(() => {
-  const fetchLogo = async () => {
-    try {
-      const res = await API.getAppLogo();
-      const logo = res?.appLogo;
-      if (logo) {
-        setLogoUrl(logo);
-      } else {
-        console.warn("Logo not found in response", res);
-      }
-    } catch (err) {
-      console.error("Error fetching logo:", err);
-    }
-  };
-
-  fetchLogo();
   window.addEventListener("scroll", handleScroll);
-  return () => window.removeEventListener("scroll", handleScroll);
-}, []);
+  //return () => window.removeEventListener("scroll", handleScroll);
+
 
 
   return (
@@ -84,7 +67,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
 
                     <div className="logo-block">
                       <a href="/#">
-                        <Media src={`/images/${layoutLogo}/logo/logo.png`} className="img-fluid" alt="logo" />
+                        <Media src={`${appLogo}`} className=" app-logo" alt="logo" />
                       </a>
                     </div>
                   </div>
@@ -93,7 +76,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                       <Search />
                     </div>
                   </div>
-                  <ShoppingCart position={cartPopupPosition} cartDisplay={display} layout="layout2" />
+                  {/* <ShoppingCart position={cartPopupPosition} cartDisplay={display} layout="layout2" /> */}
                 </div>
               </Col>
             </Row>

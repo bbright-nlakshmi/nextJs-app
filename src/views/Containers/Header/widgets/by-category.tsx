@@ -19,6 +19,9 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
   const [categories, setCategories] = useState<ICategory[]>([]);
 
   useEffect(() => {
+
+     setCategories(objCache.allCategories);
+    
     objCache.on('updateAllCategories',(data: Category[]) => {
           
               setCategories(data);
