@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Slider from "react-slick";
 import { Col, Media, Row } from "reactstrap";
 import ProductDetail from "./product-detail";
+import { Discount, Product, searchController } from "@/app/globalProvider";
 
 
 interface ProductSlickProps {
@@ -31,7 +32,8 @@ const ProductSlick: React.FC<ProductSlickProps> = ({ item, bundle, swatch }) => 
   const changeColorVar = (img_id: number) => {
     nav1?.slickGoTo(img_id);
   };
-  console.log(item,123);
+ const productPriceDetails:Product | Discount = searchController.getDetails(item.productId,'getProductById');
+ console.log(productPriceDetails)
   return (
     <>
       <Col lg="5">
@@ -61,7 +63,7 @@ const ProductSlick: React.FC<ProductSlickProps> = ({ item, bundle, swatch }) => 
         </Row> */}
       </Col>
       <Col lg="7" className="rtl-text">
-        <ProductDetail item={item} changeColorVar={changeColorVar} bundle={bundle} swatch={swatch} />
+        <ProductDetail item={productPriceDetails} changeColorVar={changeColorVar} bundle={bundle} swatch={swatch} />
       </Col>
     </>
   );

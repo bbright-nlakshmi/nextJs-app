@@ -28,6 +28,7 @@ const Search: NextPage = () => {
   const blurEvent = () => { setShowResults(false) }
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   useEffect(() => {
+     setAllCategories(objCache.allCategories);
     objCache.on('updateAllCategories', (data: Category[]) => {
       
       setAllCategories(data);
@@ -56,7 +57,7 @@ const Search: NextPage = () => {
                 {t("All Category")}
               </DropdownToggle>
               <DropdownMenu>
-                <DropdownItem key="all">{t("All Category")}</DropdownItem>
+                {/* <DropdownItem key="all">{t("All Category")}</DropdownItem> */}
                 {allCategories.map((cat) => (
                   <DropdownItem key={cat.id}>{cat.name}</DropdownItem>
                 ))}

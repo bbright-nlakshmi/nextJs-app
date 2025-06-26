@@ -9,7 +9,7 @@ import ProductSlick from "../../views/Products-Detail/product-slick";
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client";
 import { FilterContext } from "@/helpers/filter/filter.context";
-import { Discount, DiscountItem, objCache } from "@/app/globalProvider";
+import { Category, Discount, DiscountItem, objCache } from "@/app/globalProvider";
 
 interface LeftSidebar {
   pathId: any;
@@ -20,26 +20,20 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
   const filterContext = useContext(FilterContext);
   const { filterOpen, setFilterOpen } = filterContext;
   const [discount, setDiscount] = useState<DiscountItem>();
+  const [productData, setProductData] = useState<any>();
   var loading, data;
-  
+  var foundDiscount;
   useEffect(() => {
-    objCache.discountList.map((products: Discount) => {
-      
-      const foundDiscount = products.discountItems.findIndex((item: DiscountItem) => item.id === pathId);
-      
-      if (foundDiscount != -1) {
-          console.log(foundDiscount, pathId)
-        setDiscount(products.discountItems[foundDiscount]);
-      }
-    });
+   data = objCache.getProductsById(pathId);
+    setProductData(data);
   }, []);
-
+console.log(productData,pathId);
   return (
     <div className="collection-wrapper">
-      {discount && (
+      {productData && (
         <div className="custom-container">
           <Row>
-            <Col
+            {/* <Col
               sm="3"
               className="collection-filter"
               style={{
@@ -48,7 +42,7 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
               <Sidebar />
               <ProductService />
               <NewProduct />
-            </Col>
+            </Col> */}
             <Col sm="12" lg="9" xs="12">
               <Row>
                 <Col xl="12">
@@ -60,7 +54,7 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
                 </Col>
               </Row>
               <Row>
-                <ProductSlick item={discount} bundle={false} swatch={false} />
+                <ProductSlick item={productData} bundle={false} swatch={false} />
               </Row>
               <TabProduct />
             </Col>

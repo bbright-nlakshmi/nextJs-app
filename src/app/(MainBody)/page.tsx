@@ -18,7 +18,7 @@ import Category_View from "@/views/layouts/widgets/roundedCategory";
 import Testimonial from "@/views/layouts/widgets/testimonial";
 import SpecialProduct from "@/views/layouts/widgets/title-section";
 import DiscountProducts from "@/views/layouts/layout1/discounts";
-import { centralDataCollector, CentralDataCollector } from '@/app/services/central_data_control';
+
 import { useEffect, useState } from "react";
 import { BannerModel, Category, Discount, Kit, ObjCache, StorePriceRanges, objCache } from "../globalProvider";
 import { Subscription } from 'rxjs';
@@ -55,7 +55,7 @@ useEffect(() => {
   objCache.on('updateCategories',(data: Category[]) => {
 
     setCategories(data);
-    console.log(data)
+   
   });
 
   objCache.on('updateAllBanners',banners => {
@@ -70,17 +70,8 @@ useEffect(() => {
     setPriceRanges(priceRanges)
   })
 
-return () => {
-    };
+
   }, []);
-
-  useEffect(() => {
-
-    centralDataCollector.getData();
-    centralDataCollector.scheduleGetData()
-  }, []);
-
-
 
   return (
     <>

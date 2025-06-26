@@ -82,7 +82,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                         className="btn btn-normal"
                         href={{
                           pathname: "/collections/no-sidebar",
-                          query: { id: banner.id },
+                          query: { id: banner.id,type:'discount' },
                         }}
                       >
                         Shop Now
