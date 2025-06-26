@@ -41,7 +41,7 @@ class SearchPageControl extends EventEmitter {
     }
 
     // State update method (replaces GetX's update)
-    private update() {
+     update() {
         this.emit('update');
     }
 
@@ -109,35 +109,67 @@ class SearchPageControl extends EventEmitter {
     loadSearchData() {
         this.allProducts = this.getAllProducts();
         this.allKits = objCache.getAllKits();
-        this.kits = [...this.allKits];
+        // Listen for kit updates
+    objCache.on('updateKits', (kits: Kit[]) => {
+        this.allKits = kits;
+        this.kits = [...kits];
+        this.update();
+    });
+        console.log("Search String:",this.kits);
+        console.log("Search String:",this.allKits);
         this.products = [...this.allProducts];
         this.allTags = this.getAllTags();
     }
 
-    refreshGrid(str: string) {
+refreshGrid(str: string) {
+  this.searchInput = str;
+  this.searchStr = str.trim().toLowerCase();
 
-        this.searchInput = str;
-        this.searchStr = str;
+  if (!this.searchStr) {
+    this.kits = this.allKits;
+    this.products = Array.isArray(this.allProducts)
+      ? this.allProducts
+      : Array.from(this.allProducts.values()).flat();
+    this.showEmptySearchResult = false;
+    this.update();
+    return;
+  }
 
-        this.kits = this.allKits.filter(kit =>
-            kit.name.toLowerCase().includes(str.toLowerCase())
-        );
+  const matchScore = (name: string): number => {
+    const lowerName = name.toLowerCase();
+    if (lowerName.startsWith(this.searchStr)) return 2;
+    if (lowerName.includes(this.searchStr)) return 1;
+    return 0;
+  };
 
-        
-        var result =[];
-       
-             for (const [category, items] of this.allProducts) {
-            const foundItem = items.findIndex((item:Product) => item.name === str);
-            if (foundItem != -1) {
-                result.push(items[foundItem]); // Return item with category info
-            }
-        }
-        
-        
-        this.products =result;
-        this.showEmptySearchResult = this.kits.length === 0 && this.products.length === 0;
-        this.update();
-    }
+  const filterAndSort = <T extends { name: string }>(items: T[]): T[] => {
+    return items
+      .map(item => ({
+        item,
+        score: matchScore(item.name)
+      }))
+      .filter(entry => entry.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(entry => entry.item);
+  };
+
+  // Filter kits
+  this.kits = filterAndSort(this.allKits);
+
+  // Filter products
+  const allProductsArray: Product[] = this.allProducts instanceof Map
+    ? Array.from(this.allProducts.values()).flat()
+    : Array.isArray(this.allProducts)
+    ? this.allProducts
+    : [];
+
+  this.products = filterAndSort(allProductsArray);
+
+  // Show/hide "no results"
+  this.showEmptySearchResult = this.kits.length === 0 && this.products.length === 0;
+
+  this.update();
+}
    
 
     getAllProducts(): Product[] {
