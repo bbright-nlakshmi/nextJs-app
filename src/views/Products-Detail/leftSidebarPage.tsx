@@ -25,9 +25,10 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
   var foundDiscount;
   useEffect(() => {
    data = objCache.findProductById(pathId);
+   
     setProductData(data);
   }, []);
-console.log(productData,pathId,data);
+
   return (
     <div className="collection-wrapper">
       {productData && (
@@ -56,7 +57,7 @@ console.log(productData,pathId,data);
               <Row>
                 <ProductSlick item={productData} bundle={false} swatch={false} />
               </Row>
-              <TabProduct description={productData.description[0].description}/>
+              <TabProduct description={productData.description?productData.description[0].description:''}/>
             </Col>
           </Row>
         </div>

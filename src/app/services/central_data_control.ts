@@ -206,11 +206,13 @@ export class CentralDataCollector {
   public async getAllNonPremiumProducts(): Promise<void> {
     try {
       const nonPremiumData = await API.getNonPremium();
-      //this.nonPremiumStream.setValue(nonPremiumData);
+      
       objCache.resetObjCacheNonPremiumList();
-      nonPremiumData.forEach(([category, products]) => {
-        objCache.insertObjCacheNonPremiumList(category.name, products);
-      });
+     
+      // nonPremiumData.forEach(([category, products]) => {
+      //    objCache.nonPremiumProducts.set(category.name, products);
+      // });
+      objCache.insertObjCacheNonPremiumList(nonPremiumData);
     } catch (error) {
       console.error('Error fetching non-premium products:', error);
     }

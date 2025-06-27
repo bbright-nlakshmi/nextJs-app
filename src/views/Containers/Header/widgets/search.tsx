@@ -49,6 +49,7 @@ console.log("🔁 UI re-rendering from controller");
     };
 
     searchController.on("update", updateListener);
+    setAllCategories(objCache.allCategories);
     objCache.on("updateAllCategories", (data: Category[]) => setAllCategories(data));
 
     return () => {

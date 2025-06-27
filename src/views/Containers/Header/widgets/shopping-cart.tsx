@@ -29,10 +29,10 @@ const ShoppingCart = ({ layout }: { layout?: string }) => {
                 </li>
               </ul>
             </div>
-            <div className="cart-item">
+            {/* <div className="cart-item">
               <h5>{t("shopping")}</h5>
               <h5>{t("cart")}</h5>
-            </div>
+            </div> */}
           </Link>
         </div>
       )}

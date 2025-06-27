@@ -466,7 +466,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     <span className="text-muted ms-2">({products.length} items)</span>
                   </h5>
                 </div>
-                
+                <section className=" ratio_asos product" >
+                <div className="custom-container  addtocart_count ">
                 <Swiper
                   slidesPerView={3}
                   navigation
@@ -534,6 +535,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     );
                   })}
                 </Swiper>
+                </div>
+                </section>
               </>
             ) : activeRange !== null ? (
               <div className="text-center text-muted py-5">
