@@ -32,8 +32,8 @@ const ProductSlick: React.FC<ProductSlickProps> = ({ item, bundle, swatch }) => 
   const changeColorVar = (img_id: number) => {
     nav1?.slickGoTo(img_id);
   };
- const productPriceDetails:Product | Discount = searchController.getDetails(item.productId,'getProductById');
- console.log(productPriceDetails)
+ //const productPriceDetails:Product | Discount = searchController.getDetails(item.productId,'getProductById');
+ //console.log(productPriceDetails)
   return (
     <>
       <Col lg="5">
@@ -63,7 +63,7 @@ const ProductSlick: React.FC<ProductSlickProps> = ({ item, bundle, swatch }) => 
         </Row> */}
       </Col>
       <Col lg="7" className="rtl-text">
-        <ProductDetail item={productPriceDetails} changeColorVar={changeColorVar} bundle={bundle} swatch={swatch} />
+        <ProductDetail item={item} changeColorVar={changeColorVar} bundle={bundle} swatch={swatch} />
       </Col>
     </>
   );

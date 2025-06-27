@@ -9,13 +9,13 @@ import Link from "next/link";
 import Img from "@/utils/BgImgRatio";
 
 interface productType {
-  img: any;
+  img?: any;
   id?: number;
   title?: string;
   newLabel?: boolean;
   sale?: Boolean;
-  stock?: number;
-  price?: number;
+  stock: number;
+  price: number;
   item: any;
   discount?: number;
   images?: any;
@@ -38,7 +38,7 @@ const ProductBox2: React.FC<productType> = (data) => {
   const [modal, setModal] = useState(false);
   const uniqueSize: any[] = [];
   const { selectedCurr } = currencyContext;
-  const titleProps = data.title.split(" ").join("");
+  const titleProps = data.title?.split(" ").join("");
   const minusQty = () => {
     if (quantity > 1) {
       setstock("InStock");
@@ -65,7 +65,7 @@ const ProductBox2: React.FC<productType> = (data) => {
   };
 
   const clickProductDetail = () => {
-    router.push(`/product-details/${data.id}` + "-" + `${titleProps}`);
+    router.push(`/product-details/${data.item.id}`);
   };
 
   useEffect(() => {
@@ -127,8 +127,8 @@ const ProductBox2: React.FC<productType> = (data) => {
             </Link>
 
             <span className="detail-price">
-              {selectedCurr.symbol}
-              {(data.price * selectedCurr.value).toFixed(2)}
+              {/* {selectedCurr.symbol}
+              {(data.price * selectedCurr.value).toFixed(2)} */}
               <span>
                 {selectedCurr.symbol}
                 {(data.discount) ? ((data.price - data.price * (data.discount / 100)) * selectedCurr.value).toFixed(2)
@@ -159,11 +159,11 @@ const ProductBox2: React.FC<productType> = (data) => {
           </div>
         </div>
       {/* </Masonry> */}
-      {data.item.variants &&
+      {/* {data.item.variants &&
         data.item.variants.map((vari:any) => {
           var findItemSize = uniqueSize.find((x) => x === vari.size);
           if (!findItemSize && vari.size) uniqueSize.push(vari.size);
-        })}
+        })} */}
       <Modal className="fade bd-example-modal-lg theme-modal show quick-view-modal" isOpen={modal} toggle={() => setModal(!modal)} centered size="lg">
         <ModalBody>
           <button type="button" className="close" onClick={() => setModal(!modal)}>
@@ -177,15 +177,15 @@ const ProductBox2: React.FC<productType> = (data) => {
             </div>
             <div className="col-lg-6 rtl-text">
               <div className="product-right">
-                <h2>{data?.item?.title}</h2>
+                <h2>{data?.item?.name}</h2>
                 <h3>
                   {selectedCurr.symbol}
-                  {data?.item?.price * selectedCurr.value}
+                  {data?.item?.getPrice() * selectedCurr.value}
                 </h3>
 
                 <div className="border-product">
                   <h6 className="product-title">product details</h6>
-                  <p>{data?.item?.description}</p>
+                  <p dangerouslySetInnerHTML={{ __html: data?.item?.description[0].description }}></p>
                 </div>
                 <div className="product-description border-product">
                   <div className="size-box">

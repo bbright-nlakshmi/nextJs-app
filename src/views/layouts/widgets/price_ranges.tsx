@@ -79,15 +79,12 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
 
-  const switchPriceRage = (range) => {
-    
+  const switchPriceRange = (range: number) => {
+
     const result = objCache.getItemsInPriceRange({ price: range, before: -1 });
     setProducts(result);
   };
-  const getPrice = (productId) => {
-    const price = searchController.getDetails(productId, 'getProductPrice');
-    return price;
-  };
+
   if (priceRanges)
     return (
       <>
@@ -99,7 +96,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                 <Slider {...settings}>
                   {price_ranges.map((data, i) => {
                     return (
-                      <div key={i} onClick={() => switchPriceRage(data)} >
+                      <div key={i} onClick={() => switchPriceRange(data)} >
                         <a >
                           <div className="box-category-contain">
                             <h4>{data}</h4>
@@ -113,34 +110,38 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
             </Col>
           </Row>
         </Container>
-        <Swiper
-          slidesPerView={3}
-          navigation
-          spaceBetween={30}
-          pagination={{ type: "bullets", clickable: true }}
+         <section className="ratio_asos product">
+        <div className="custom-container addtocart_count">
+          <div className="cover-card-main-over">
+            <Swiper
+              slidesPerView={3}
+              navigation
+              spaceBetween={30}
+              
 
-          loop={false}
-          mousewheel={true}
-          breakpoints={{
-            0: { slidesPerView: 1, spaceBetween: 0 },
-            320: { slidesPerView: 2, spaceBetween: 20 },
-            480: { slidesPerView: 3, spaceBetween: 20 },
-            640: { slidesPerView: 4, spaceBetween: 20 },
-            840: { slidesPerView: 5, spaceBetween: 20 },
-            1140: { slidesPerView: 6, spaceBetween: 20 },
-          }}
-          modules={[Autoplay, Navigation, Pagination, Mousewheel, Keyboard]}
-        >
+              loop={false}
+              mousewheel={true}
+              breakpoints={{
+                0: { slidesPerView: 1, spaceBetween: 0 },
+                320: { slidesPerView: 2, spaceBetween: 20 },
+                480: { slidesPerView: 3, spaceBetween: 20 },
+                640: { slidesPerView: 4, spaceBetween: 20 },
+                840: { slidesPerView: 5, spaceBetween: 20 },
+                1140: { slidesPerView: 6, spaceBetween: 20 },
+              }}
+              modules={[Autoplay, Navigation, Pagination, Mousewheel, Keyboard]}
+            >
 
-          {products?.length && products.map((item: any, i: any) => (
+              {products?.length && products.map((item: any, i: any) => (
 
-            <SwiperSlide key={item.id}>
-              <ProductBox2 item={item} price={getPrice(item.productId)} title={item.name} addCart={() => addToCart(item)} addCompare={() => addToCompare(item)} addWish={() => addToWish(item)} img={undefined} />
-            </SwiperSlide>
+                <SwiperSlide key={item.id}>
+                  <ProductBox2 item={item} stock={item.stock} price={item.getPrice()} title={item.name} addCart={() => addToCart(item)} addCompare={() => addToCompare(item)} addWish={() => addToWish(item)} />
+                </SwiperSlide>
 
-          ))}
-        </Swiper>
-
+              ))}
+            </Swiper>
+          </div></div>
+          </section>
       </>
     );
 };

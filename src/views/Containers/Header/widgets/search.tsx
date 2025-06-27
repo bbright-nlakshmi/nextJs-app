@@ -39,6 +39,7 @@ const Search: NextPage = () => {
 
       // Force React state update
       setKits([...searchController.kits]);
+      
       setProducts([...searchController.products]);
 
       const hasResults = searchController.kits.length > 0 || searchController.products.length > 0;

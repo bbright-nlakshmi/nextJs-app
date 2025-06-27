@@ -167,7 +167,7 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
                             data={item}
                             newLabel={item.new}
                             item={item}
-                            price={searchController.getDetails(item.productId, 'getProductPrice')}
+                            price={searchController.getDetails(item.id, 'gePrice')}
                             addCart={() => addToCart(item)}
                             addCompare={() => addToCompare(item)}
                             addWish={() => addToWish(item)}
