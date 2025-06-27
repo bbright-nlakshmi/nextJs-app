@@ -146,9 +146,9 @@ const OrderHistoryPage: NextPage = () => {
                       <tr>
                         <th>Order ID</th>
                         <th>Date</th>
-                        <th>Total Items</th>
+                        <th>Total Products</th>
                         <th>Total Amount</th>
-                        <th>Status</th>
+                        <th>Delivery Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -164,8 +164,8 @@ const OrderHistoryPage: NextPage = () => {
                           >
                             <td><strong>{order.id}</strong></td>
                             <td>{formatDate(order.creationTime)}</td>
-                            <td>{order.getItemsCount()}</td>
-                            <td><strong>₹{order.finalOrderTotal.toFixed(2)}</strong></td>
+                            <td>{Object.keys(order.orderItems).length}</td>
+                            <td><strong>${order.finalOrderTotal.toFixed(2)}</strong></td>
                             <td className="text-capitalize">{order.orderAcceptStatus || "Pending"}</td>
                           </tr>
 
@@ -202,7 +202,7 @@ const OrderHistoryPage: NextPage = () => {
                                             </td>
                                             <td>{item.name}</td>
                                             <td>{item.categoryName || "N/A"}</td>
-                                            <td>₹{item.choosedPrice?.toFixed(2) ?? "0.00"}</td>
+                                            <td>${item.choosedPrice?.toFixed(2) ?? "0.00"}</td>
                                             <td>{item.cartItemCount}</td>
                                             <td className="text-capitalize">
                                               {statusKey}

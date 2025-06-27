@@ -10,6 +10,9 @@ import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { toast } from "react-toastify";
 import { searchController } from "@/app/globalProvider";
+import { API } from "@/app/services/api.service";
+import { CouponModel } from "@/app/models/coupon/coupon";
+import dayjs from "dayjs";
 
 interface formType {
   firstName: string;
@@ -23,16 +26,41 @@ interface formType {
   pincode: string;
 }
 
-const CheckoutPage: NextPage = () => {
+interface CouponState {
+  applied: boolean;
+  coupon: CouponModel | null;
+  discount: number;
+}
+
+// PayPal configuration - moved outside component
+const paypalOptions = {
+  clientId: "AZ4S98zFa01vym7NVeo_qthZyOnBhtNvQDsjhaZSMH-2_Y9IAJFbSD3HPueErYqN8Sa8WYRbjP7wWtd_",
+  currency: "USD",
+  intent: "capture"
+};
+
+// Main checkout component without PayPal provider
+const CheckoutPageContent: React.FC = () => {
   const router = useRouter();
   const { selectedCurr } = useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
 
   const { cartItems, emptyCart } = useContext(CartContext);
 
-  const [payment, setPayment] = useState("stripe");
+  const [payment, setPayment] = useState("cod");
   const [shippingOption, setShippingOption] = useState("standard");
   const [taxRate] = useState(0.10); // 10% tax rate
+  
+  // Coupon states
+  const [availableCoupons, setAvailableCoupons] = useState<CouponModel[]>([]);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponState>({
+    applied: false,
+    coupon: null,
+    discount: 0
+  });
+  const [showCoupons, setShowCoupons] = useState(false);
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
 
   const {
     register,
@@ -53,11 +81,34 @@ const CheckoutPage: NextPage = () => {
     }
   });
 
-  // Helper function to get product by ID (assuming this exists in your system)
+  // Fetch coupons on component mount
+  useEffect(() => {
+    fetchCoupons();
+  }, []);
+
+  const fetchCoupons = async () => {
+    try {
+      setIsLoadingCoupons(true);
+      const phoneNumber = "8185015406"; // TODO: Replace with actual logged-in user phone
+      const result = await API.getCoupons(phoneNumber);
+
+      // Filter only active (non-expired) coupons
+      const activeCoupons = result.filter((coupon: CouponModel) => 
+        dayjs(coupon.expireDate).isAfter(dayjs())
+      );
+
+      setAvailableCoupons(activeCoupons);
+    } catch (error) {
+      console.error("Failed to fetch coupons:", error);
+      toast.error("Failed to load coupons");
+    } finally {
+      setIsLoadingCoupons(false);
+    }
+  };
+
+  // Helper function to get product by ID
   const getProductById = (productId: string) => {
     try {
-      // Replace this with your actual product fetching logic
-      // This might be from a global state, API call, or product context
       return searchController?.getProductById?.(productId) || null;
     } catch (error) {
       console.warn("Error fetching product:", error);
@@ -69,12 +120,9 @@ const CheckoutPage: NextPage = () => {
     if (!item) return 0;
     
     try {
-      // First try to get the product/kit from the system
       const product = getProductById(item.productId);
       
-      // If we have the product, try to get price from it using methods first
       if (product) {
-        // Try Kit getPrice method
         if (product.constructor?.name === 'Kit' && typeof product.getPrice === "function") {
           try {
             const price = product.getPrice({ cartQuantity: item.qty });
@@ -86,7 +134,6 @@ const CheckoutPage: NextPage = () => {
           }
         }
         
-        // Try Product getPrice method
         if (product?.getPrice && typeof product.getPrice === "function") {
           try {
             const price = product.getPrice({
@@ -102,46 +149,37 @@ const CheckoutPage: NextPage = () => {
         }
       }
       
-      // Enhanced price extraction - same logic as working PriceRanges component
       const extractPriceFromObject = (obj: any): number => {
         if (!obj || typeof obj !== 'object') return 0;
         
-        // Check standard price fields first
         if ('price' in obj && typeof obj.price === 'number' && obj.price > 0) {
           return obj.price;
         }
         
-        // Check Kit-specific price fields
         if ('kitPrice' in obj && typeof obj.kitPrice === 'number' && obj.kitPrice > 0) {
           return obj.kitPrice;
         }
         
-        // Check for discount price (prioritize over original price)
         if (obj.discountPrice && typeof obj.discountPrice === 'number' && obj.discountPrice > 0) {
           return obj.discountPrice;
         }
         
-        // Check for sale price
         if (obj.salePrice && typeof obj.salePrice === 'number' && obj.salePrice > 0) {
           return obj.salePrice;
         }
         
-        // Check for finalPrice
         if (obj.finalPrice && typeof obj.finalPrice === 'number' && obj.finalPrice > 0) {
           return obj.finalPrice;
         }
         
-        // Check for currentPrice
         if (obj.currentPrice && typeof obj.currentPrice === 'number' && obj.currentPrice > 0) {
           return obj.currentPrice;
         }
         
-        // Check for sellingPrice
         if (obj.sellingPrice && typeof obj.sellingPrice === 'number' && obj.sellingPrice > 0) {
           return obj.sellingPrice;
         }
         
-        // Try extracting from nested price objects
         const nestedPrice = obj.pricing || obj.priceInfo || obj.cost || obj.priceData;
         if (typeof nestedPrice === 'number' && nestedPrice > 0) {
           return nestedPrice;
@@ -156,23 +194,19 @@ const CheckoutPage: NextPage = () => {
         return 0;
       };
       
-      // Try extracting price from the item itself
       let price = extractPriceFromObject(item);
       if (price > 0) return price;
       
-      // Try extracting price from the product data
       if (item.product) {
         price = extractPriceFromObject(item.product);
         if (price > 0) return price;
       }
       
-      // Try extracting from the fetched product
       if (product) {
         price = extractPriceFromObject(product);
         if (price > 0) return price;
       }
       
-      // Legacy fallback - check if item has productId-based lookup
       if (item.productId) {
         const cartItem = cartItems.find((cartItem: any) => cartItem.productId === item.productId);
         if (cartItem) {
@@ -195,29 +229,97 @@ const CheckoutPage: NextPage = () => {
     }, 0);
   };
 
-  // const getShippingCost = (): number => {
-  //   switch (shippingOption) {
-  //     case "free":
-  //       return 0;
-  //     case "local":
-  //       return 50 * value;
-  //     case "express":
-  //       return 200 * value;
-  //     default: // standard
-  //       return 100 * value;
-  //   }
-  // };
-
   const getTaxAmount = (): number => {
     const subtotal = getSubtotal();
     return subtotal * taxRate;
   };
 
-  // Calculate final total including shipping and tax
+  const calculateCouponDiscount = (coupon: CouponModel, subtotal: number): number => {
+    if (!coupon) return 0;
+
+    // Check minimum cart value
+    if (subtotal < coupon.minimumCartValue) {
+      return 0;
+    }
+
+    let discount = 0;
+    if (coupon.isCouponPercentage) {
+      // Percentage discount
+      discount = (subtotal * coupon.couponAmount) / 100;
+      
+      // Apply max discount cap if specified
+      if (coupon.maxCouponAmount > 0 && discount > coupon.maxCouponAmount) {
+        discount = coupon.maxCouponAmount;
+      }
+    } else {
+      // Fixed amount discount
+      discount = Math.min(coupon.couponAmount, subtotal);
+    }
+
+    return discount;
+  };
+
+  const applyCoupon = (coupon: CouponModel) => {
+    const subtotal = getSubtotal();
+    
+    // Validate minimum cart value
+    if (subtotal < coupon.minimumCartValue) {
+      toast.error(`Minimum cart value should be ${symbol}${coupon.minimumCartValue.toFixed(2)}`);
+      return;
+    }
+
+    // Check if coupon is expired
+    if (dayjs(coupon.expireDate).isBefore(dayjs())) {
+      toast.error("This coupon has expired");
+      return;
+    }
+
+    const discount = calculateCouponDiscount(coupon, subtotal);
+    
+    setAppliedCoupon({
+      applied: true,
+      coupon: coupon,
+      discount: discount
+    });
+
+    setCouponCode(coupon.couponCode);
+    setShowCoupons(false);
+    toast.success(`Coupon applied! You saved ${symbol}${discount.toFixed(2)}`);
+  };
+
+  const applyCouponByCode = () => {
+    if (!couponCode.trim()) {
+      toast.error("Please enter a coupon code");
+      return;
+    }
+
+    const coupon = availableCoupons.find(c => 
+      c.couponCode.toLowerCase() === couponCode.toLowerCase()
+    );
+
+    if (!coupon) {
+      toast.error("Invalid coupon code");
+      return;
+    }
+
+    applyCoupon(coupon);
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon({
+      applied: false,
+      coupon: null,
+      discount: 0
+    });
+    setCouponCode("");
+    toast.info("Coupon removed");
+  };
+
+  // Calculate totals
   const subtotal = getSubtotal();
-  // const shippingCost = getShippingCost();
   const taxAmount = getTaxAmount();
-  const finalTotal = subtotal  + taxAmount;
+  const couponDiscount = appliedCoupon.applied ? appliedCoupon.discount : 0;
+  const finalTotal = subtotal + taxAmount - couponDiscount;
 
   const onSubmit = (data: formType) => {
     console.log("Form data:", data);
@@ -236,21 +338,34 @@ const CheckoutPage: NextPage = () => {
       return;
     }
 
-    // Store order data
+    // Store order data with coupon information
     const orderData = {
+      orderId: `ORD-${Date.now()}`, // Generate unique order ID
       items: cartItems,
       total: finalTotal,
       subtotal: subtotal,
-      // shipping: shippingCost,
       tax: taxAmount,
+      couponDiscount: couponDiscount,
+      appliedCoupon: appliedCoupon.applied ? {
+        code: appliedCoupon.coupon?.couponCode,
+        discount: couponDiscount,
+        type: appliedCoupon.coupon?.isCouponPercentage ? 'percentage' : 'fixed'
+      } : null,
       billingAddress: data,
       paymentMethod: payment,
-      orderDate: new Date().toISOString()
+      orderDate: new Date().toISOString(),
+      status: payment === "cod" ? "pending" : "processing"
     };
 
     try {
-      // Note: Replaced localStorage with sessionStorage for better practice
+      // Store order data for order success page
       sessionStorage.setItem("order-success-data", JSON.stringify(orderData));
+      
+      // Store order in order history (you can modify this based on your storage method)
+      const existingOrders = JSON.parse(sessionStorage.getItem("order-history") || "[]");
+      existingOrders.push(orderData);
+      sessionStorage.setItem("order-history", JSON.stringify(existingOrders));
+      
       emptyCart();
       toast.success("Order placed successfully!");
       router.push("/pages/order-success");
@@ -263,17 +378,30 @@ const CheckoutPage: NextPage = () => {
   const onSuccess = (data: any, actions: any) =>
     actions.order.capture().then(() => {
       const orderData = {
+        orderId: `ORD-${Date.now()}`,
         items: cartItems,
         total: finalTotal,
         subtotal: subtotal,
-        // shipping: shippingCost,
         tax: taxAmount,
+        couponDiscount: couponDiscount,
+        appliedCoupon: appliedCoupon.applied ? {
+          code: appliedCoupon.coupon?.couponCode,
+          discount: couponDiscount,
+          type: appliedCoupon.coupon?.isCouponPercentage ? 'percentage' : 'fixed'
+        } : null,
         paymentMethod: "paypal",
         paymentId: data.id,
-        orderDate: new Date().toISOString()
+        orderDate: new Date().toISOString(),
+        status: "completed"
       };
       
       sessionStorage.setItem("order-success-data", JSON.stringify(orderData));
+      
+      // Store in order history
+      const existingOrders = JSON.parse(sessionStorage.getItem("order-history") || "[]");
+      existingOrders.push(orderData);
+      sessionStorage.setItem("order-history", JSON.stringify(existingOrders));
+      
       emptyCart();
       toast.success("Payment successful!");
       router.push("/pages/order-success");
@@ -283,14 +411,6 @@ const CheckoutPage: NextPage = () => {
   const onError = (err: any) => {
     console.error("PayPal Error:", err);
     toast.error("Payment error occurred");
-  };
-
-  const paypalOptions = {
-    clientId: "AZ4S98zFa01vym7NVeo_qthZyOnBhtNvQDsjhaZSMH-2_Y9IAJFbSD3HPueErYqN8Sa8WYRbjP7wWtd_",
-  };
-
-  const handleShippingChange = (option: string) => {
-    setShippingOption(option);
   };
 
   return (
@@ -417,7 +537,6 @@ const CheckoutPage: NextPage = () => {
                           <option value="India">India</option>
                           <option value="South Africa">South Africa</option>
                           <option value="United States">United States</option>
-                          
                         </select>
                         {errors.country && (
                           <span className="error-message">
@@ -523,6 +642,109 @@ const CheckoutPage: NextPage = () => {
 
                 <Col lg="6">
                   <div className="checkout-details theme-form section-big-mt-space">
+                    
+                    {/* Coupon Section */}
+                    <div className="coupon-box">
+                      <h4>Apply Coupon</h4>
+                      <div className="coupon-input-section">
+                        <div className="input-group">
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Enter coupon code"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value)}
+                            disabled={appliedCoupon.applied}
+                          />
+                          <div className="input-group-append">
+                            {appliedCoupon.applied ? (
+                              <button 
+                                type="button" 
+                                className="btn btn-danger"
+                                onClick={removeCoupon}
+                              >
+                                Remove
+                              </button>
+                            ) : (
+                              <button 
+                                type="button" 
+                                className="btn btn-primary"
+                                onClick={applyCouponByCode}
+                              >
+                                Apply
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {!appliedCoupon.applied && (
+                          <div className="available-coupons-section">
+                            <button
+                              type="button"
+                              className="btn btn-link p-0 mt-2"
+                              onClick={() => setShowCoupons(!showCoupons)}
+                            >
+                              {showCoupons ? 'Hide' : 'View'} Available Coupons ({availableCoupons.length})
+                            </button>
+                            
+                            {showCoupons && (
+                              <div className="coupons-list">
+                                {isLoadingCoupons ? (
+                                  <div className="p-3">Loading coupons...</div>
+                                ) : availableCoupons.length > 0 ? (
+                                  availableCoupons.map((coupon, index) => (
+                                    <div key={index} className="coupon-item">
+                                      <div className="coupon-info">
+                                        <div className="coupon-code">
+                                          <strong>{coupon.couponCode}</strong>
+                                        </div>
+                                        <div className="coupon-details">
+                                          <span className="discount">
+                                            {coupon.isCouponPercentage 
+                                              ? `${coupon.couponAmount}% OFF` 
+                                              : `${symbol}${coupon.couponAmount} OFF`}
+                                            {coupon.maxCouponAmount > 0 && coupon.isCouponPercentage && 
+                                              ` (Max ${symbol}${coupon.maxCouponAmount})`}
+                                          </span>
+                                          <span className="min-cart">
+                                            Min: {symbol}{coupon.minimumCartValue}
+                                          </span>
+                                          <span className="expiry">
+                                            Expires: {dayjs(coupon.expireDate).format("DD MMM YYYY")}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-primary"
+                                        onClick={() => applyCoupon(coupon)}
+                                        disabled={subtotal < coupon.minimumCartValue}
+                                      >
+                                        Apply
+                                      </button>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="p-3">No coupons available.</div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {appliedCoupon.applied && (
+                          <div className="applied-coupon-info">
+                            <div className="alert alert-success mt-2">
+                              <i className="fa fa-check-circle"></i>
+                              <strong>{appliedCoupon.coupon?.couponCode}</strong> applied! 
+                              You saved {symbol}{appliedCoupon.discount.toFixed(2)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Order Summary */}
                     <div className="order-box">
                       <div className="title-box">
                         <div className="row">
@@ -573,8 +795,21 @@ const CheckoutPage: NextPage = () => {
                             </div>
                           </div>
                         </li>
-                        
-                        
+
+                        {appliedCoupon.applied && (
+                          <li>
+                            <div className="row">
+                              <div className="col-8">
+                                Coupon Discount ({appliedCoupon.coupon?.couponCode})
+                              </div>
+                              <div className="col-4 text-right">
+                                <span className="count text-success">
+                                  -{symbol}{couponDiscount.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </li>
+                        )}
 
                         <li>
                           <div className="row">
@@ -605,67 +840,186 @@ const CheckoutPage: NextPage = () => {
 
                     {/* Payment Options */}
                     <div className="payment-box">
-                      <h4>Payment Method</h4>
-                      <ul>
-                        {[
-                          
-                          { value: "cod", label: "Cash On Delivery" },
-                          { value: "Online Paymet", label: "Online Payment" }
-                        ].map((option, i) => (
-                          <li key={i}>
-                            <div className="radio-option">
-                              <input
-                                type="radio"
-                                name="payment-group"
-                                id={`payment-${i}`}
-                                checked={payment === option.value}
-                                onChange={() => setPayment(option.value)}
-                              />
-                              <label htmlFor={`payment-${i}`}>
-                                {option.label}
-                              </label>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-
-                      {finalTotal > 0 && (
-                        <div className="text-right mt-3">
-                          {payment === "stripe" || payment === "cod" ? (
-                            <button type="submit" className="btn-normal btn">
-                              {payment === "cod" ? "Place Order (COD)" : "Place Order"}
-                            </button>
-                          ) : (
-                            <PayPalScriptProvider
-                              options={{ 
-                                clientId: paypalOptions.clientId, 
-                                components: "buttons", 
-                                currency: "USD"
-                              }}
-                            >
-                              <PayPalButtons
-                                forceReRender={[finalTotal]}
-                                createOrder={(data, actions) =>
-                                  actions.order.create({
-                                    purchase_units: [
-                                      {
-                                        amount: {
-                                          currency_code: "USD",
-                                          value: finalTotal.toFixed(2),
-                                        },
-                                      },
-                                    ],
-                                    intent: "CAPTURE",
-                                  })
-                                }
-                                onApprove={onSuccess}
-                                onCancel={onCancel}
-                                onError={onError}
-                              />
-                            </PayPalScriptProvider>
-                          )}
+                      <div className="upper-box">
+                        <div className="payment-options">
+                          <ul>
+                            <li>
+                              <div className="radio-option">
+                                <input
+                                  id="payment-1"
+                                  type="radio"
+                                  name="payment-radio"
+                                  value="cod"
+                                  checked={payment === "cod"}
+                                  onChange={(e) => setPayment(e.target.value)}
+                                />
+                                <label htmlFor="payment-1">
+                                  <span></span>
+                                  Cash On Delivery
+                                </label>
+                              </div>
+                            </li>
+                            <li>
+                              <div className="radio-option">
+                                <input
+                                  id="payment-2"
+                                  type="radio"
+                                  name="payment-radio"
+                                  value="card"
+                                  checked={payment === "card"}
+                                  onChange={(e) => setPayment(e.target.value)}
+                                />
+                                <label htmlFor="payment-2">
+                                  <span></span>
+                                  Credit/Debit Card
+                                </label>
+                              </div>
+                            </li>
+                            <li>
+                              <div className="radio-option">
+                                <input
+                                  id="payment-3"
+                                  type="radio"
+                                  name="payment-radio"
+                                  value="paypal"
+                                  checked={payment === "paypal"}
+                                  onChange={(e) => setPayment(e.target.value)}
+                                />
+                                <label htmlFor="payment-3">
+                                  <span></span>
+                                  PayPal
+                                </label>
+                              </div>
+                            </li>
+                          </ul>
                         </div>
-                      )}
+                      </div>
+
+                      {/* Payment Method Specific Content */}
+                      <div className="payment-method-content">
+                        {payment === "cod" && (
+                          <div className="cod-info">
+                            <div className="alert alert-info">
+                              <i className="fa fa-info-circle"></i>
+                              Pay with cash upon delivery. Please keep exact change ready.
+                            </div>
+                          </div>
+                        )}
+
+                        {payment === "card" && (
+                          <div className="card-payment-form">
+                            <div className="row">
+                              <div className="col-12">
+                                <div className="form-group">
+                                  <label className="field-label">Card Number *</label>
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="1234 5678 9012 3456"
+                                    maxLength={19}
+                                    onChange={(e) => {
+                                      // Format card number with spaces
+                                      let value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
+                                      value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+                                      e.target.value = value;
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="col-8">
+                                <div className="form-group">
+                                  <label className="field-label">Expiry Date *</label>
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="MM/YY"
+                                    maxLength={5}
+                                    onChange={(e) => {
+                                      let value = e.target.value.replace(/\D/g, '');
+                                      if (value.length >= 2) {
+                                        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                                      }
+                                      e.target.value = value;
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="col-4">
+                                <div className="form-group">
+                                  <label className="field-label">CVV *</label>
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="123"
+                                    maxLength={4}
+                                    onChange={(e) => {
+                                      e.target.value = e.target.value.replace(/\D/g, '');
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="col-12">
+                                <div className="form-group">
+                                  <label className="field-label">Cardholder Name *</label>
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Enter cardholder name"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {payment === "paypal" && (
+                          <div className="paypal-payment">
+                            <div className="alert alert-info mb-3">
+                              <i className="fa fa-paypal"></i>
+                              You will be redirected to PayPal to complete your payment securely.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Place Order Button */}
+                      <div className="order-place">
+                        {payment === "paypal" ? (
+                          <PayPalButtons
+                            style={{
+                              layout: "vertical",
+                              color: "blue",
+                              shape: "rect",
+                              label: "paypal"
+                            }}
+                            createOrder={(data, actions) => {
+                              return actions.order.create({
+                                purchase_units: [
+                                  {
+                                    amount: {
+                                      value: finalTotal.toFixed(2),
+                                      currency_code: "USD"
+                                    },
+                                    description: `Order for ${cartItems.length} items`
+                                  }
+                                ],
+                                intent: "CAPTURE"
+                              });
+                            }}
+                            onApprove={onSuccess}
+                            onCancel={onCancel}
+                            onError={onError}
+                          />
+                        ) : (
+                          <button 
+                            type="submit" 
+                            className="btn-normal btn"
+                            disabled={cartItems.length === 0}
+                          >
+                            {payment === "card" ? "Pay Now" : "Place Order"}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Col>
@@ -676,111 +1030,340 @@ const CheckoutPage: NextPage = () => {
       </section>
 
       <style jsx>{`
-        .form-group {
-          margin-bottom: 1rem;
+        .coupon-box {
+          background: #f8f9fa;
+          padding: 20px;
+          border-radius: 8px;
+          margin-bottom: 25px;
         }
-        .form-control {
-          width: 100%;
-          padding: 0.375rem 0.75rem;
-          font-size: 1rem;
-          font-weight: 400;
-          line-height: 1.5;
-          color: #495057;
-          background-color: #fff;
-          background-clip: padding-box;
-          border: 1px solid #ced4da;
-          border-radius: 0.25rem;
-          transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+        .coupon-box h4 {
+          margin-bottom: 15px;
+          color: #333;
+          font-size: 18px;
+          font-weight: 600;
         }
-        .form-control:focus {
-          color: #495057;
-          background-color: #fff;
-          border-color: #80bdff;
-          outline: 0;
-          box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+
+        .coupon-input-section .input-group {
+          margin-bottom: 10px;
         }
-        .cart-item {
-          padding: 10px 0;
+
+        .coupon-input-section .form-control {
+          border-radius: 4px 0 0 4px;
+        }
+
+        .coupon-input-section .btn {
+          border-radius: 0 4px 4px 0;
+          font-size: 14px;
+          padding: 8px 16px;
+        }
+
+        .coupons-list {
+          max-height: 300px;
+          overflow-y: auto;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          margin-top: 10px;
+        }
+
+        .coupon-item {
+          padding: 15px;
           border-bottom: 1px solid #eee;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
+
+        .coupon-item:last-child {
+          border-bottom: none;
+        }
+
+        .coupon-info {
+          flex: 1;
+        }
+
+        .coupon-code {
+          font-size: 16px;
+          color: #007bff;
+          margin-bottom: 5px;
+        }
+
+        .coupon-details {
+          display: flex;
+          gap: 15px;
+          font-size: 12px;
+          color: #666;
+        }
+
+        .discount {
+          color: #28a745;
+          font-weight: 600;
+        }
+
+        .applied-coupon-info .alert {
+          padding: 10px 15px;
+          margin-bottom: 0;
+          font-size: 14px;
+        }
+
+        .order-box {
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .title-box {
+          background: #f8f9fa;
+          padding: 15px 20px;
+          border-bottom: 1px solid #ddd;
+          font-weight: 600;
+        }
+
+        .qty {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        .cart-item {
+          padding: 15px 20px;
+          border-bottom: 1px solid #f0f0f0;
+        }
+
         .cart-item:last-child {
           border-bottom: none;
         }
+
         .product-name {
           font-weight: 500;
           color: #333;
+          display: block;
+          margin-bottom: 4px;
         }
+
         .product-price {
+          font-size: 12px;
           color: #666;
-          font-size: 0.9em;
         }
+
         .qty-badge {
           background: #f8f9fa;
-          padding: 2px 8px;
+          padding: 4px 8px;
           border-radius: 12px;
+          font-size: 12px;
           font-weight: 500;
         }
+
         .item-total {
           font-weight: 600;
           color: #333;
         }
-        .order-box {
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          padding: 20px;
-          background: white;
-          margin-bottom: 20px;
+
+        .sub-total, .total {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          background: #f8f9fa;
         }
-        .title-box {
-          border-bottom: 2px solid #f8f9fa;
-          padding-bottom: 10px;
-          margin-bottom: 15px;
-        }
-        .payment-box {
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          padding: 20px;
-          background: white;
-        }
-        .form-check {
-          margin-bottom: 8px;
-        }
-        .form-check-label {
-          margin-left: 8px;
-          cursor: pointer;
-        }
+
         .sub-total li, .total li {
-          padding: 8px 0;
-          border-bottom: 1px solid #f0f0f0;
+          padding: 12px 20px;
+          border-bottom: 1px solid #e9ecef;
         }
+
+        .sub-total li:last-child, .total li:last-child {
+          border-bottom: none;
+        }
+
         .total {
-          border-top: 2px solid #333;
-          margin-top: 10px;
-          padding-top: 10px;
-        }
-        .error-message {
-          color: #dc3545;
-          font-size: 0.875em;
-          margin-top: 5px;
-          display: block;
-        }
-        .error_border {
-          border-color: #dc3545 !important;
-        }
-        .field-label {
+          background: #e9ecef;
           font-weight: 600;
-          margin-bottom: 5px;
         }
+
+        .count {
+          font-weight: 600;
+        }
+
+        .payment-box {
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          margin-top: 25px;
+          overflow: hidden;
+        }
+
+        .upper-box {
+          background: #f8f9fa;
+          padding: 20px;
+          border-bottom: 1px solid #ddd;
+        }
+
+        .payment-options ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        .payment-options li {
+          margin-bottom: 12px;
+        }
+
+        .payment-options li:last-child {
+          margin-bottom: 0;
+        }
+
         .radio-option {
           display: flex;
           align-items: center;
-          margin-bottom: 10px;
         }
+
         .radio-option input[type="radio"] {
-          margin-right: 8px;
+          margin-right: 10px;
+          transform: scale(1.2);
+        }
+
+        .radio-option label {
+          margin-bottom: 0;
+          font-weight: 500;
+          cursor: pointer;
+        }
+
+        .payment-method-content {
+          padding: 20px;
+        }
+
+        .card-payment-form .form-group {
+          margin-bottom: 15px;
+        }
+
+        .card-payment-form .field-label {
+          font-weight: 500;
+          margin-bottom: 5px;
+          display: block;
+        }
+
+        .card-payment-form .form-control {
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          padding: 8px 12px;
+        }
+
+        .order-place {
+          padding: 20px;
+          background: #f8f9fa;
+          text-align: center;
+        }
+
+        .btn-normal {
+          background: #007bff;
+          color: white;
+          border: none;
+          padding: 12px 30px;
+          border-radius: 4px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+          width: 100%;
+        }
+
+        .btn-normal:hover {
+          background: #0056b3;
+        }
+
+        .btn-normal:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+
+        .error_border {
+          border-color: #dc3545 !important;
+        }
+
+        .error-message {
+          color: #dc3545;
+          font-size: 12px;
+          margin-top: 4px;
+          display: block;
+        }
+
+        .field-label {
+          font-weight: 500;
+          margin-bottom: 5px;
+          display: block;
+        }
+
+        .form-group {
+          margin-bottom: 20px;
+        }
+
+        .form-control {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+
+        .form-control:focus {
+          outline: none;
+          border-color: #007bff;
+          box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .alert {
+          padding: 12px 15px;
+          border-radius: 4px;
+          margin-bottom: 15px;
+        }
+
+        .alert-info {
+          background-color: #d1ecf1;
+          border-color: #bee5eb;
+          color: #0c5460;
+        }
+
+        .alert-success {
+          background-color: #d4edda;
+          border-color: #c3e6cb;
+          color: #155724;
+        }
+
+        .text-success {
+          color: #28a745 !important;
+        }
+
+        @media (max-width: 768px) {
+          .coupon-details {
+            flex-direction: column;
+            gap: 5px;
+          }
+          
+          .coupon-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+          }
+          
+          .title-box .row > div {
+            font-size: 12px;
+          }
+          
+          .cart-item .row > div {
+            margin-bottom: 5px;
+          }
         }
       `}</style>
     </>
+  );
+};
+
+// Main component with PayPal provider wrapper
+const CheckoutPage: NextPage = () => {
+  return (
+    <PayPalScriptProvider options={paypalOptions}>
+      <CheckoutPageContent />
+    </PayPalScriptProvider>
   );
 };
 
