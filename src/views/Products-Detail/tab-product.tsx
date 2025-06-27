@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { Col, Form, Input, Label, Nav, NavItem, NavLink, Row, TabContent, TabPane } from "reactstrap";
 
-const TabProduct: React.FC = () => {
+type Props  = {
+  description:string;
+}
+const TabProduct: React.FC<Props> = ({description}) => {
   const [activeTab, setActiveTab] = useState("1");
 
   return (
@@ -30,7 +33,7 @@ const TabProduct: React.FC = () => {
           </Nav>
           <TabContent className="nav-material" activeTab={activeTab}>
             <TabPane tabId="1">
-              <p className="ps-0">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry&#39;s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
+              <p className="ps-0" dangerouslySetInnerHTML={{ __html: description }}></p>
               <div className="single-product-tables">
                 <table>
                   <tbody>

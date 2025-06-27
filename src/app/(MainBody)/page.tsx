@@ -34,43 +34,21 @@ const Home = () => {
   const [allCategories, setAllCategories] = useState<Array<Category>>();
   const [banners, setBanners] = useState<Array<BannerModel>>();
   const [priceRanges, setPriceRanges] = useState<StorePriceRanges>();
-useEffect(() => {
-  // Subscribe to the Subject
+  useEffect(() => {
+    // Subscribe to the Subject
+    objCache.on('update', () => {
+      setKits(objCache.kitList);
+      setProducts(objCache.discountList);
+      setBanners(objCache.allBannersList);
+      setCategories(objCache.categories);
+      setAllCategories(objCache.allCategories);
+       //setPriceRanges(objCache.priceRanges);
 
-  objCache.on('updateKits',(kit_data) => {
-    console.log(kit_data)
-    setKits(kit_data);
-  });
-  
-  objCache.on('updateDiscountProducts',(data) => {
+    })
     
-    setProducts(data);
-  });
-
-  objCache.on('updateBanners', (newBanners) => {
-    
-    setBanners(newBanners);
-  });
-
-  objCache.on('updateCategories',(data: Category[]) => {
-
-    setCategories(data);
-   
-  });
-
-  objCache.on('updateAllBanners',banners => {
-    setBanners(banners);
-  })
-  objCache.on('updateAllCategories', (data: Category[]) => {
-
-    setAllCategories(data);
-
-  });
-  objCache.on('UpdatePriceRanges',(priceRanges: StorePriceRanges) => {
-    setPriceRanges(priceRanges)
-  })
-
-
+    objCache.on('UpdatePriceRanges',(priceRanges: StorePriceRanges) => {
+      setPriceRanges(priceRanges)
+    })
   }, []);
 
   return (
@@ -86,7 +64,7 @@ useEffect(() => {
           {/* <CollectionBannerTwo /> */}
           <DiscountProducts products={products} />
 
-          <Kits kits = {kits}/>
+          <Kits kits={kits} />
 
           {/* <DiscountBanner /> */}
 
