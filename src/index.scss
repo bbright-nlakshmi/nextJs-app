@@ -10870,7 +10870,7 @@ iframe {
 
 /* Removing the underline on link in the announcement bar */
 .sqs-announcement-bar-text {
-    // width: 100%;
+     width: 100%;
 
 
     a {
@@ -10886,7 +10886,7 @@ iframe {
     padding: 10px 0;
     background-color: var(--theme-color1);
     width: 100%;
-    position: absolute;
+   // position: absolute;
 }
 
 /* Starting the text off of the screen and adjusting width, change the animation: 15s to however long you want the marquee to take in seconds */

@@ -15,26 +15,26 @@ interface LeftSidebar {
   pathId: any;
 }
 
-
+var data:any;
 const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
   const filterContext = useContext(FilterContext);
   const { filterOpen, setFilterOpen } = filterContext;
   const [discount, setDiscount] = useState<DiscountItem>();
   const [productData, setProductData] = useState<any>();
-  var loading, data;
+  
   var foundDiscount;
   useEffect(() => {
    data = objCache.findProductById(pathId);
    
     setProductData(data);
   }, []);
-
+console.log(data);
   return (
     <div className="collection-wrapper">
       {productData && (
         <div className="custom-container">
           <Row>
-            {/* <Col
+            <Col
               sm="3"
               className="collection-filter"
               style={{
@@ -43,7 +43,7 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
               <Sidebar />
               <ProductService />
               <NewProduct />
-            </Col> */}
+            </Col>
             <Col sm="12" lg="9" xs="12">
               <Row>
                 <Col xl="12">

@@ -308,19 +308,19 @@ export class SearchPageControl extends EventEmitter {
     }
 
     getDetails(productId: string, eventName: string) {
-       
-            const foundItem = this.allProducts.values().find((item: Product) => item.id === productId);
-            
-            if (foundItem || foundItem?.length) {
+      var foundItem;
+             foundItem = objCache.getAllProducts().find((item: Product) => item.id == productId);
 
+            if (foundItem) {
+ 
                 if (eventName == 'getPrice')
                     return foundItem.getPrice();
                 else if (eventName == 'getPriceWithDiscount')
                     return foundItem.getPriceWithDiscount();
                 else if (eventName == 'getProductPrice')
                     return foundItem.getProductPrice();
-                else if (eventName == 'getProductById')
-                    return foundItem;
+                // else if (eventName == 'getProductById')
+                //     return foundItem;
 
             }
         

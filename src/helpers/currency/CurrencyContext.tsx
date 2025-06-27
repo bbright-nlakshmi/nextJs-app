@@ -7,7 +7,7 @@ interface ContextProps {
 export const Context = createContext({} as ContextProps);
 
 export const Provider = (props: any) => {
-  const [selectedCurr, selectedCurrency] = useState({ currency: "USD", symbol: "$", value: 1 });
+  const [selectedCurr, selectedCurrency] = useState({ currency: "In", symbol: "₹", value: 1 });
 
   const currencyContext = {
     selectedCurr,
