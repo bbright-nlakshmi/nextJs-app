@@ -134,8 +134,7 @@ const handleUserLogin = (userId) => {
                             item={item}
                             addCart={() => addToCart(item)}
                             addCompare={() => addToCompare(item)}
-                            addWish={() => addToWish(item)}
-                          />
+                            addWish={() => addToWish(item)} price={0}                          />
                         </div>
                       </div>
                     ))

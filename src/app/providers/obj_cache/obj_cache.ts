@@ -8,6 +8,9 @@ interface allProductsProps {
 }
 // objCache.ts
 export class ObjCache extends EventEmitter {
+  getAllProducts() {
+    throw new Error("Method not implemented.");
+  }
   public  premiumList: Map<string, Product[]> = new Map();
   public  nonPremiumList: Map<string, Product[]> = new Map();
   public  kitList: Kit[] = [];

@@ -61,6 +61,8 @@ export class Product {
   cartItemCount: number;
   cartPurchaseOptionStr: string;
   INCLUSIVE_TAX: string = INCLUSIVE_TAX;
+  specs: {};
+  images: boolean;
 
   constructor(params: {
     id: string;

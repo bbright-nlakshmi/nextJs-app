@@ -1,9 +1,36 @@
-import { createContext } from "react";
+import React, { createContext, PropsWithChildren } from "react";
+import { useWishlistStore, WishlistProduct } from "../wishlist/wishlistStore";
 
-interface WishlistContextProps {
-  wishlistItems: any;
-  addToWish: Function;
-  removeFromWish: Function;
+// ✅ Define the shape of the context (Zustand-style)
+interface WishlistContextType {
+  wishlistItems: WishlistProduct[];
+  addToWish: (product: WishlistProduct) => void;
+  removeFromWish: (product: WishlistProduct) => void;
+  setWishlistItems: (items: WishlistProduct[]) => void;
 }
 
-export const WishlistContext = createContext({} as WishlistContextProps);
+// ✅ Create the context
+export const WishlistContext = createContext<WishlistContextType>({
+  wishlistItems: [],
+  addToWish: () => {},
+  removeFromWish: () => {},
+  setWishlistItems: () => {},
+});
+
+// ✅ Provider component using Zustand underneath
+export const WishlistProvider = ({ children }: PropsWithChildren<{}>) => {
+  const {
+    wishlistItems,
+    addToWish,
+    removeFromWish,
+    setWishlistItems,
+  } = useWishlistStore();
+
+  return (
+    <WishlistContext.Provider
+      value={{ wishlistItems, addToWish, removeFromWish, setWishlistItems }}
+    >
+      {children}
+    </WishlistContext.Provider>
+  );
+};
