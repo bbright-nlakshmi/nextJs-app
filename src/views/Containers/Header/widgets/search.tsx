@@ -39,6 +39,7 @@ const Search: NextPage = () => {
 
       // Force React state update
       setKits([...searchController.kits]);
+      
       setProducts([...searchController.products]);
 
       const hasResults = searchController.kits.length > 0 || searchController.products.length > 0;
@@ -64,6 +65,8 @@ console.log("🔁 UI re-rendering from controller");
 
   const blurEvent = () => {
     setTimeout(() => {
+      setKits([]);
+      setProducts([]);
       setShowResults(false);
     }, 150);
   };

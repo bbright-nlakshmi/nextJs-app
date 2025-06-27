@@ -9,7 +9,7 @@ interface Props {
 
 const CollectionBanner: NextPage<Props> = ({ img, name , details }) => { 
 
-  console.log(img,name)
+  
   return (
   <div className="top-banner-wrapper" >
     <a href="#">

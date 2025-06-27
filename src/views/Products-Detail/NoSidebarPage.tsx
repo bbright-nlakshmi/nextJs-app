@@ -2,8 +2,7 @@ import React from "react";
 import { NextPage } from "next";
 import { Row } from "reactstrap";
 import ProductSlick from "../../views/Products-Detail/product-slick";
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client";
+
 
 const NoSidebarPage: NextPage = () => {
   var loading, data ;
