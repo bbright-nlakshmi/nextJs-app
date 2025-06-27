@@ -9,22 +9,21 @@ interface allProductsProps {
 // objCache.ts
 export class ObjCache extends EventEmitter {
   public premiumList: Map<string, Product[]> = new Map();
-  public nonPremiumList: Map<string, Product[]> = new Map();
+  
+  public nonPremiumProducts: Map<string, Product[]> = new Map();
+  public nonPremiumList: Product[] = [];
   public kitList: Kit[] = [];
   public allBannersList: BannerModel[] = [];
-
   public discountList: Discount[] = [];
   public discountProducts = new Subject<Discount[]>();
   public allCategories: Category[] = [];
-
   public allProducts: Map<string, Product> = new Map();
-
-  public allProducstsList = new Subject<Product[]>();
-
-
-  public tags: Tags;
+  public allProducstsList: Product[] = [];
+  public priceRanges: StorePriceRanges | undefined;
+  public announcement: StoreAnnounce | undefined;
+  public tags: Tags | undefined;
   public refreshControllers: (() => void)[] = [];
-  categories: Category[];
+  public categories: Category[];
 
 
   constructor() {
@@ -40,7 +39,7 @@ export class ObjCache extends EventEmitter {
 
   resetAllObjCaches() {
     this.premiumList.clear();
-    this.nonPremiumList.clear();
+   // this.nonPremiumList.clear();
     this.kitList = [];
     this.discountList = [];
     this.discountProducts.next([])
@@ -56,7 +55,7 @@ export class ObjCache extends EventEmitter {
   }
 
   resetObjCacheNonPremiumList() {
-    this.nonPremiumList = new Map();
+   // this.nonPremiumList = new Map();
   }
 
   resetObjCacheKitList() {
@@ -82,31 +81,38 @@ export class ObjCache extends EventEmitter {
     this.tags = Tags.emptyTags();
   }
 
-  insertObjCachePremiumList(key: string, lst: Product[]) {
+  insertObjCachePremiumList(key: string, lst: any) {
     this.premiumList.set(key, lst);
+    this.emit('update');
   }
 
-  insertObjCacheNonPremiumList(key: string, lst: Product[]) {
-    this.nonPremiumList.set(key, lst);
+  insertObjCacheNonPremiumList(lst: any) {
+    this.nonPremiumList = lst;
+    this.emit('updateNonPremiumList', lst);
+    this.emit('update');
   }
 
-   insertObjCacheKitList(lst: Kit[]) {
+  insertObjCacheKitList(lst: Kit[]) {
     this.kitList = lst;
+    this.emit('update');
     this.emit('updateKits', lst);
   }
 
   insertObjCacheDiscountList(lst: Discount[]) {
     this.discountList = lst;
+    this.emit('update');
     this.emit('updateDiscountProducts', lst);
   }
 
   insertObjCacheAllBannersList(lst: BannerModel[]) {
-    this.allBannersList = lst
+    this.allBannersList = lst;
+    this.emit('update');
     this.emit('updateAllBanners', lst);
   }
 
   insertObjCacheCategoryList(lst: Category[]) {
     this.categories = lst;
+    this.emit('update');
     //this.categoryList.next(lst);
     this.emit('updateCategories', lst);
   }
@@ -114,7 +120,8 @@ export class ObjCache extends EventEmitter {
 
   insertObjCacheAllProducts(lst: any) {
     //this.allProducts.set(key, lst);
-
+    //this.emit('update');
+    this.allProducstsList = lst;
     this.emit('updateAllProducts', lst);
     //this.allProducstsList.next(lst);
   }
@@ -122,18 +129,23 @@ export class ObjCache extends EventEmitter {
 
   insertObjCacheAllCategoryList(lst: Category[]) {
     this.allCategories = lst;
+    this.emit('update');
     this.emit('updateAllCategories', lst)
     // console.log(lst)
     //this.allCategoryList.next(lst);
   }
   insertObjCachePriceRangeStream(lst: StorePriceRanges) {
+
+    //this.priceRanges = lst;
     this.emit('UpdatePriceRanges', lst);
-    // this.priceRangeStream.next(lst);
+    this.emit('update');
   }
 
   insertObjCacheAnnouncementStream(lst: StoreAnnounce) {
+    this.announcement = lst;
+    this.emit('update');
     this.emit('UpdateAnnouncement', lst);
-    // this.priceRangeStream.next(lst);
+
   }
 
 
@@ -153,7 +165,7 @@ export class ObjCache extends EventEmitter {
     this.tags = t;
   }
 
-  getTags(): Tags {
+  getTags(): Tags | undefined {
     return this.tags;
   }
 
@@ -161,19 +173,20 @@ export class ObjCache extends EventEmitter {
     let count = 0;
 
     this.premiumList.forEach((products) => {
-      for (const product of products) {
-        if (product.getSearchTags().includes(name)) {
-          count++;
-        }
-      }
+      console.log(products)
+      // for (const product of products) {
+      //   if (product.getSearchTags().includes(name)) {
+      //     count++;
+      //   }
+      // }
     });
 
-    this.nonPremiumList.forEach((products) => {
-      for (const product of products) {
+    this.nonPremiumList.forEach((product) => {
+      //for (const product of products) {
         if (product.getSearchTags().includes(name)) {
           count++;
         }
-      }
+      //}
     });
 
     return count;
@@ -184,30 +197,34 @@ export class ObjCache extends EventEmitter {
   }
 
   getProductById(id: string): Product | null {
-    for (const products of this.premiumList.values()) {
-      const product = products.find(p => p.id === id);
+    var product;
+    
+      product = this.getAllPremiumProducts().find(p => p.id === id);
       if (product) return product;
-    }
+    
+    
+    
+      product = this.getAllNonPremiumProducts().find(p => p.id === id);
+      if (product) return product;
+   
 
-    for (const products of this.nonPremiumList.values()) {
-      const product = products.find(p => p.id === id);
+    product = this.getAllProducts().find(p => p.id === id);
       if (product) return product;
-    }
 
     return null;
   }
 
   getCategoryProducts(str: string): Product[] {
 
-    return this.premiumList.get(str) || this.nonPremiumList.get(str) || [];
+    return this.premiumList.get(str) || this.nonPremiumProducts.get(str) || [];
   }
 
   getCategoryCount(str: string): number {
-    return this.premiumList.get(str)?.length || this.nonPremiumList.get(str)?.length || 0;
+    return this.premiumList.get(str)?.length || this.nonPremiumProducts.get(str)?.length || 0;
   }
 
   getOtherCategoryProductsExcept(cateName: string, prdId: string): Product[] {
-    const products = this.premiumList.get(cateName) || this.nonPremiumList.get(cateName) || [];
+    const products = this.premiumList.get(cateName) || this.nonPremiumProducts.get(cateName) || [];
     return products.filter(element => !element.id.includes(prdId)).slice(0, 8);
   }
 
@@ -221,6 +238,10 @@ export class ObjCache extends EventEmitter {
 
   getAllNonPremiumProducts(): Product[] {
     return Array.from(this.nonPremiumList.values()).flat();
+  }
+
+  getAllProducts(): Product[] {
+    return Array.from(this.allProducts.values()).flat();
   }
 
   getAllKits(): Kit[] {
@@ -257,8 +278,8 @@ export class ObjCache extends EventEmitter {
     const results: Product[] = [];
     const searchStr = str.toLowerCase();
 
-    this.nonPremiumList.forEach((products) => {
-      for (const p of products) {
+    this.nonPremiumList.forEach((p) => {
+      //for (const p of products) {
         const matchesDescription = p.description.some(map =>
           Object.values(map).some(value =>
             value.toString().toLowerCase().includes(searchStr)
@@ -269,7 +290,7 @@ export class ObjCache extends EventEmitter {
         if (matchProductName || matchesDescription) {
           results.push(p);
         }
-      }
+      //}
     });
 
     return results;
@@ -316,62 +337,71 @@ export class ObjCache extends EventEmitter {
     }
 
     // Check premium products
-    this.premiumList.forEach((products) => {
-      for (const p of products) {
-        const vPrice = p.getProductPrice();
+    this.getAllPremiumProducts().forEach((p) => {
+      
+      const vPrice = p.getProductPrice();
 
-        if (filter.before === -1) {
-          if (vPrice <= filter.price) {
-            results.push(p);
-          }
-        } else if (vPrice > filter.before && vPrice <= filter.price) {
+      if (filter.before === -1) {
+        if (vPrice <= filter.price) {
           results.push(p);
         }
+      } else if (vPrice > filter.before && vPrice <= filter.price) {
+        results.push(p);
       }
+      
     });
 
     // Check non-premium products
-    this.nonPremiumList.forEach((products) => {
-      for (const p of products) {
-        const vPrice = p.getProductPrice();
+    this.getAllNonPremiumProducts().forEach((p) => {
+      
+      const vPrice = p.getProductPrice();
 
-        if (filter.before === -1) {
-          if (vPrice <= filter.price) {
-            results.push(p);
-          }
-        } else if (vPrice > filter.before && vPrice <= filter.price) {
+      if (filter.before === -1) {
+        if (vPrice <= filter.price) {
           results.push(p);
         }
+      } else if (vPrice > filter.before && vPrice <= filter.price) {
+        results.push(p);
       }
+     
     });
 
     return results;
   }
-  getProductsById(pathId: string) {
+  findProductById(pathId: string) {
     var found, foundItem;
     this.allCategories.map((products: Category) => {
 
       found = products.category_products.findIndex((item: any) => item.productId === pathId);
 
       if (found != -1) {
-        console.log(found, pathId)
-        foundItem = products.category_products[found];
+
+         foundItem = products.category_products[found];
       }
     });
     if (foundItem) return foundItem;
 
+    foundItem = this.getProductById(pathId)
+
+    if (foundItem) return foundItem;
+    
+    console.log(this.discountList)
     this.discountList.map((products: Discount) => {
 
       found = products.discountItems.findIndex((item: DiscountItem) => item.id === pathId);
 
       if (found != -1) {
-        console.log(found, pathId)
-        foundItem = products.discountItems[found];
+         foundItem = products.discountItems[found];
       }
     });
     if (foundItem) return foundItem;
+    return null;
+
   }
+
+
 }
+
 
 export const objCache = new ObjCache();
 

@@ -107,7 +107,7 @@ export class CentralDataCollector {
       //this.premiumStream.setValue(premiumData);
       objCache.resetObjCachePremiumList();
       premiumData.forEach(([category, products]) => {
-        //objCache.insertObjCachePremiumList(category.name, products);
+        objCache.insertObjCachePremiumList(category.name, products);
       });
     } catch (error) {
       console.error('Error fetching premium data:', error);
@@ -147,11 +147,11 @@ export class CentralDataCollector {
     try {
       const allProducts = await API.getAllProducts();
       //console.log(allProducts)
-      objCache.insertObjCacheAllProducts(allProducts);
-      // allProducts.forEach(([category, products]) => {
-        
-      //   objCache.insertObjCacheAllProducts(category.name,products);
-      // });
+      //objCache.insertObjCacheAllProducts(allProducts);
+      allProducts.forEach(([category, products]) => {
+         objCache.allProducts.set(category.name,products);  
+      });
+      objCache.insertObjCacheAllProducts(objCache.allProducts);
       
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -206,11 +206,13 @@ export class CentralDataCollector {
   public async getAllNonPremiumProducts(): Promise<void> {
     try {
       const nonPremiumData = await API.getNonPremium();
-      //this.nonPremiumStream.setValue(nonPremiumData);
+      
       objCache.resetObjCacheNonPremiumList();
-      nonPremiumData.forEach(([category, products]) => {
-       // objCache.insertObjCacheNonPremiumList(category.name, products);
-      });
+     
+      // nonPremiumData.forEach(([category, products]) => {
+      //    objCache.nonPremiumProducts.set(category.name, products);
+      // });
+      objCache.insertObjCacheNonPremiumList(nonPremiumData);
     } catch (error) {
       console.error('Error fetching non-premium products:', error);
     }

@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import { Kit, Product, Category, Tags, objCache } from '@/app/globalProvider'
 
 
-class SearchPageControl extends EventEmitter {
+export class SearchPageControl extends EventEmitter {
     // State properties
     kits: Kit[] = [];
     allKits: Kit[] = [];
@@ -41,7 +41,7 @@ class SearchPageControl extends EventEmitter {
     }
 
     // State update method (replaces GetX's update)
-     update() {
+    update() {
         this.emit('update');
     }
 
@@ -65,7 +65,7 @@ class SearchPageControl extends EventEmitter {
 
     resetFilter() {
         this.searchInput = '';
-        this.products = [...this.allProducts];
+        this.products = [];
         this.kits = [...this.allKits];
         this.setPriceRangeValues();
         this.resetSelectedRanges();
@@ -107,80 +107,89 @@ class SearchPageControl extends EventEmitter {
     }
 
     loadSearchData() {
-        this.allProducts = this.getAllProducts();
-        this.allKits = objCache.getAllKits();
-        // Listen for kit updates
-    objCache.on('updateKits', (kits: Kit[]) => {
-        this.allKits = kits;
-        this.kits = [...kits];
-        this.update();
-    });
-        console.log("Search String:",this.kits);
-        console.log("Search String:",this.allKits);
-        this.products = [...this.allProducts];
+        this.getAllProducts();
+        this.getKits();
+        this.products = this.allProducts.values();
         this.allTags = this.getAllTags();
     }
 
-refreshGrid(str: string) {
-  this.searchInput = str;
-  this.searchStr = str.trim().toLowerCase();
+   refreshGrid(str: string) {
+    this.searchInput = str;
+    this.searchStr = str.trim().toLowerCase();
 
-  if (!this.searchStr) {
-    this.kits = this.allKits;
-    this.products = Array.isArray(this.allProducts)
-      ? this.allProducts
-      : Array.from(this.allProducts.values()).flat();
-    this.showEmptySearchResult = false;
-    this.update();
-    return;
-  }
-
-  const matchScore = (name: string): number => {
-    const lowerName = name.toLowerCase();
-    if (lowerName.startsWith(this.searchStr)) return 2;
-    if (lowerName.includes(this.searchStr)) return 1;
-    return 0;
-  };
-
-  const filterAndSort = <T extends { name: string }>(items: T[]): T[] => {
-    return items
-      .map(item => ({
-        item,
-        score: matchScore(item.name)
-      }))
-      .filter(entry => entry.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(entry => entry.item);
-  };
-
-  // Filter kits
-  this.kits = filterAndSort(this.allKits);
-
-  // Filter products
-  const allProductsArray: Product[] = this.allProducts instanceof Map
-    ? Array.from(this.allProducts.values()).flat()
-    : Array.isArray(this.allProducts)
-    ? this.allProducts
-    : [];
-
-  this.products = filterAndSort(allProductsArray);
-
-  // Show/hide "no results"
-  this.showEmptySearchResult = this.kits.length === 0 && this.products.length === 0;
-
-  this.update();
-}
-   
-
-    getAllProducts(): Product[] {
-        const allProducts: Product[] = [];
-        objCache.on('updateAllProducts', (data) => {
-           // console.log(data);
-            this.allProducts = data;
-        });
-        
-        return allProducts;
+    if (!this.searchStr) {
+        this.kits = []; 
+        this.products = Array.isArray(this.allProducts)
+            ? this.allProducts
+            : Array.from(this.allProducts.values()).flat();
+        this.showEmptySearchResult = false;
+        this.update();
+        return;
     }
+
+    const matchScore = (name: string): number => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.startsWith(this.searchStr)) return 2;
+        if (lowerName.includes(this.searchStr)) return 1;
+        return 0;
+    };
+
+    const filterAndSort = <T extends { name: string }>(items: T[]): T[] => {
+        return items
+            .map(item => ({
+                item,
+                score: matchScore(item.name)
+            }))
+            .filter(entry => entry.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .map(entry => entry.item);
+    };
+
+    // Filter kits
+    this.kits = filterAndSort(this.allKits);
+
+    const allProductsArray: Product[] = this.allProducts;
+    this.products = filterAndSort(allProductsArray);
+
+    // Show/hide "no results"
+    this.showEmptySearchResult = this.kits.length === 0 && this.products.length === 0;
+
+    this.update();
+}
+
+    convertAllProducts() {
+        return this.allProducts instanceof Map
+            ? Array.from(this.allProducts.values()).flat()
+            : Array.isArray(this.allProducts)
+                ? this.allProducts
+                : [];
+    }
+    getAllProducts() {
+
+        objCache.on('updateAllProducts', (data) => {
+            this.allProducts = data instanceof Map
+            ? Array.from(data.values()).flat()
+            : Array.isArray(data)
+                ? data
+                : [];
+            
+            this.update();
+        });
+
+    }
+
+  getKits() {
+  objCache.on("updateKits", (kits) => {
+    this.allKits = kits;
+
+    // Only update visible kits if user is searching
+    if (this.searchInput && this.searchInput.trim() !== "") {
+      this.kits = [...kits]; // Reapply current filter or refresh
+      this.refreshGrid(this.searchInput);
+    }
+    // Do NOT call this.update() unless you really want UI to refresh!
+  });
+}
 
     resetFilters() {
         this.setPriceRangeValues();
@@ -192,11 +201,11 @@ refreshGrid(str: string) {
 
     setPriceRangeValues() {
         const minProdPrice = this.allProducts.length > 0
-            ? Math.min(...this.allProducts.map((e:Product) => e.getBasePriceInCart()))
+            ? Math.min(...this.allProducts.map((e: Product) => e.getBasePriceInCart()))
             : 0;
 
         const maxProdPrice = this.allProducts.length > 0
-            ? Math.max(...this.allProducts.map((e:Product) => e.getBasePriceInCart()))
+            ? Math.max(...this.allProducts.map((e: Product) => e.getBasePriceInCart()))
             : 0;
 
         const minKitPrice = this.kits.length > 0
@@ -264,7 +273,7 @@ refreshGrid(str: string) {
     filteredItems(): (Product | Kit)[] {
         const searchText = this.searchStr.toLowerCase();
 
-        let filteredProducts = this.allProducts.filter((product:Product) => {
+        let filteredProducts = this.allProducts.filter((product: Product) => {
             const matchesSearch = searchText === '' ||
                 product.name.toLowerCase().includes(searchText);
             const matchesTags = this.selectedTags.length === 0 ||
@@ -299,24 +308,24 @@ refreshGrid(str: string) {
     }
 
     getDetails(productId: string, eventName: string) {
-        for (const [category, items] of this.allProducts) {
-                const foundItem = items.find((item:Product) => item.id === productId);
-                   
-                if (foundItem || foundItem?.length) {
-                  
-                    if(eventName == 'getPrice')
-                    return  foundItem.getPrice(); 
-                  else if(eventName == 'getPriceWithDiscount')
-                    return  foundItem.getPriceWithDiscount();
-                    else if(eventName == 'getProductPrice')
-                        return foundItem.getProductPrice();
-                    else if(eventName == 'getProductById')
-                        return foundItem;
-                    
-                }
+       
+            const foundItem = this.allProducts.values().find((item: Product) => item.id === productId);
+            
+            if (foundItem || foundItem?.length) {
+
+                if (eventName == 'getPrice')
+                    return foundItem.getPrice();
+                else if (eventName == 'getPriceWithDiscount')
+                    return foundItem.getPriceWithDiscount();
+                else if (eventName == 'getProductPrice')
+                    return foundItem.getProductPrice();
+                else if (eventName == 'getProductById')
+                    return foundItem;
+
             }
-            return 0;
-      }
+        
+        return 0;
+    }
 }
 
 // Export a singleton instance or create new instances as needed

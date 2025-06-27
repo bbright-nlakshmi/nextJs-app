@@ -13,7 +13,7 @@ import {
 } from "reactstrap";
 import Breadcrumb from "../../views/Containers/Breadcrumb";
 import { API } from "@/app/services/api.service";
-import { OrderModel } from "@/app/models/order_model/order";
+import { OrderModel } from "@/app/models/order/order";
 import { OrderItemsModel } from "@/app/models/order_item_model/order_item_model";
 
 const OrderHistoryPage: NextPage = () => {
@@ -188,7 +188,7 @@ const OrderHistoryPage: NextPage = () => {
                                     <tbody>
                                       {Object.values(order.orderItems).map((item: OrderItemsModel, idx) => {
                                         const status = item?.status ?? {};
-                                        const statusKey = Object.keys(status).find(key => status[key]) ?? "Pending";
+                                        const statusKey = Object.keys(status).find((key) => status[key]) ?? "Pending";
 
                                         return (
                                           <tr key={idx}>

@@ -6,15 +6,6 @@ import dataa from "@/data/langConfig.json";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { useRouter } from "next/navigation";
 
-const GET_CURRENCY = gql`
-  query getCurrency {
-    currency {
-      currency
-      symbol
-      value
-    }
-  }
-`;
 
 const TopBar: React.FC = () => {
   const router = useRouter();
@@ -22,7 +13,7 @@ const TopBar: React.FC = () => {
   const { i18n } = useTranslation();
   const [openLang, setOpenLang] = useState(false);
   const [openUsd, setOpenUsd] = useState(false);
-  const { data = { currency: [] } } = useQuery(GET_CURRENCY);
+  const data = { currency: [] } ;
   const currencyContext = useContext(CurrencyContext);
   const { selectedCurrency, selectedCurr } = currencyContext;
   const [lang, setSelectedLang] = useState<{ lang: string, val: string }| undefined>({ lang: "English", val: "en" });

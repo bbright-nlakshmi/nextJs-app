@@ -28,7 +28,7 @@ interface productType {
 
 }
 // { layout, id, item, title, newLabel, sale, price, discount, stock, images, addCart, addCompare, addWish, hoverEffect }
-const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, newLabel, addCart, addCompare, addWish }) => {
+const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, item, addCart, addCompare, addWish }) => {
 
   const currencyContext = useContext(CurrencyContext);
   const { selectedCurr } = currencyContext;
@@ -144,7 +144,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
         </div>
 
       </div>
-      {/* <Modal className="fade bd-example-modal-lg theme-modal show quick-view-modal" isOpen={modal} toggle={() => setModal(!modal)} centered size="lg">
+      <Modal className="fade bd-example-modal-lg theme-modal show quick-view-modal" isOpen={modal} toggle={() => setModal(!modal)} centered size="lg">
         <ModalBody>
           <button type="button" className="close" onClick={() => setModal(!modal)}>
             <span>&times;</span>
@@ -153,10 +153,10 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
             <div className="col-lg-6 col-xs-12">
               <Slider asNavFor={nav1!} ref={(slider1) => setNav1(slider1)}>
                 {item &&
-                  item.images.map((img: any, i: any) => {
+                  item.img.map((img: any, i: any) => {
                     return (
                       <div key={i}>
-                        <Media src={`/images/${img.src}`} alt="" className="img-fluid  image_zoom_cls-0" />
+                        <Media src={img} alt="" className="img-fluid  image_zoom_cls-0" />
                       </div>
                     );
                   })}
@@ -164,7 +164,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
             </div>
             <div className="col-lg-6 rtl-text">
               <div className="product-right">
-                <h2>{item?.title}</h2>
+                <h2>{item?.name}</h2>
                 <h3>${item?.price}</h3>
                 <ul className="color-variant">
                   {uniqueColor.map((vari, i) => {
@@ -173,7 +173,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
                 </ul>
                 <div className="border-product">
                   <h6 className="product-title">product details</h6>
-                  <p>{item?.description}</p>
+                  {/* <p>{item?.description}</p> */}
                 </div>
                 <div className="product-description border-product">
                   <div className="size-box">
@@ -217,7 +217,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
             </div>
           </div>
         </ModalBody>
-      </Modal> */}
+      </Modal>
     </Fragment>
 
   );
