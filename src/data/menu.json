@@ -441,6 +441,16 @@
         "type": "link"
       },
       {
+        "path": "/pages/privacy",
+        "title": "Privacy Policy",
+        "type": "link"
+      },
+      {
+        "path": "/pages/terms",
+        "title": "Terms & Conditions",
+        "type": "link"
+      },
+      {
         "path": "/pages/faq",
         "title": "faq",
         "type": "link"
@@ -474,3 +484,4 @@
     ]
   }
 ]
+

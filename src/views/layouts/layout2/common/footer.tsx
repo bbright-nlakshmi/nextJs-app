@@ -1,7 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 import React from "react";
 import { NextPage } from "next";
+import { useRouter } from "next/router";
 
+const router = useRouter();
 const Footer: NextPage = () => (
   <footer>
     <div className="app-link-block">
@@ -93,8 +95,11 @@ const Footer: NextPage = () => (
                           <li>
                             <a href="#">contact us</a>
                           </li>
+                         <li>
+                            <a onClick={() => router.push("/pages/terms")} style={{ cursor: "pointer" }}>terms & conditions</a>
+                          </li>
                           <li>
-                            <a href="#">terms & conditions</a>
+                            <a onClick={() => router.push("/pages/privacy")} style={{ cursor: "pointer" }}>Privacy Policy</a>
                           </li>
                           <li>
                             <a href="#">returns & exchanges</a>

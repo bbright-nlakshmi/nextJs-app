@@ -885,7 +885,7 @@ export class APIService {
     try {
       const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-privacy`, {
         tenant_id: tenantId,
-        business_id: AppBootStrap.businessDetails.id,
+        business_id:"wnysgv7k67z",
       });
 
       if (Array.isArray(response.data)) {
@@ -903,7 +903,7 @@ export class APIService {
     try {
       const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-termsAndConditions`, {
         tenant_id: tenantId,
-        business_id: AppBootStrap.businessDetails.id,
+        business_id:"wnysgv7k67z",
       });
 
       if (Array.isArray(response.data)) {
