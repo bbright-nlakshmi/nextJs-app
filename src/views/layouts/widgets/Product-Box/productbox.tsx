@@ -164,7 +164,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
             </div>
             <div className="col-lg-6 rtl-text">
               <div className="product-right">
-                <h2>{item?.title}</h2>
+                <h2>{item?.name}</h2>
                 <h3>${item?.price}</h3>
                 <ul className="color-variant">
                   {uniqueColor.map((vari, i) => {

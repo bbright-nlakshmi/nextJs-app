@@ -72,7 +72,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
       </h4>:''}
       <h3>
         {symbol}
-        {(item.getPriceWithDiscount() * value).toFixed(2)}
+        {(searchController.getDetails(item.id,'getPriceWithDiscount') * value).toFixed(2)}
       </h3>{" "}
       {/* {item.variants &&
         item.variants.map((vari:any) => {
@@ -176,10 +176,10 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
       </div>
       <div className="border-product">
         <h6 className="product-title">product details</h6>
-        <p dangerouslySetInnerHTML={{ __html: item?.description[0].description }}>
+        {/* <p dangerouslySetInnerHTML={{ __html: item?.description[0].description }}> */}
           {/* {item.description.map((d:any) => {return (d.description)})} */}
           {/* {item.description[0]} */}
-        </p>
+        {/* </p> */}
       </div>
       <div className="border-product">
         <div className="product-icon">
