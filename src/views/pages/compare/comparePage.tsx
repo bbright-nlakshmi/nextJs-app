@@ -50,7 +50,7 @@ const Compare: NextPage = () => {
                           <th className="product-name">Product Image</th>
                           {compareItems.map((item:any, i:number) => (
                             <td className="item-row" key={i}>
-                              <Media src={`/images/${item.images[0].src}`} alt="product" className="featured-image" />
+                              <Media src={`${item.img[0]}`} alt="product" className="featured-image" />
                               <div className="product-price product_price">
                                 <strong>On Sale: </strong>
                                 <span>$89,00</span>

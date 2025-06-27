@@ -179,7 +179,7 @@ class AllStoreCentralDataCollector {
       }
 
       ObjCache.refreshAllControllers();
-      this.update();
+      
     }
   }
 
@@ -280,15 +280,12 @@ class AllStoreCentralDataCollector {
 
   updateView({ isList }: { isList: boolean }): void {
     this.isListView.value = isList;
-    this.update();
+    
   }
 
   updateStoreView({ isPopular }: { isPopular: boolean }): void {
     this.isPopular.value = isPopular;
-    this.update();
+    
   }
 
-  update(): void {
-    // Implementation of update method similar to GetX's update
-  }
 }

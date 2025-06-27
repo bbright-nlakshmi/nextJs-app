@@ -7,7 +7,7 @@ import Breadcrumb from "@/views/Containers/Breadcrumb";
 
 const NoSidebar: NextPage = () => (
   <Layout1>
-    <Breadcrumb parent="Category" title="No Sidebar" />
+    {/* <Breadcrumb parent="Category" title="No Sidebar" /> */}
     <section className="section-big-pt-space ratio_asos bg-light">
       <div className="collection-wrapper">
         <div className="custom-container section-big-pb-space">

@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import Slider from "react-slick";
 import { Col, Media, Row } from "reactstrap";
 import ProductDetail from "./product-detail";
-import { getBanners } from '../../app/services/api.service';
+import { Discount, Product, searchController } from "@/app/globalProvider";
+
 
 interface ProductSlickProps {
   item: any;
@@ -31,25 +32,26 @@ const ProductSlick: React.FC<ProductSlickProps> = ({ item, bundle, swatch }) => 
   const changeColorVar = (img_id: number) => {
     nav1?.slickGoTo(img_id);
   };
-  console.log(item,123);
+ const productPriceDetails:Product | Discount = searchController.getDetails(item.productId,'getProductById');
+ console.log(productPriceDetails)
   return (
     <>
       <Col lg="5">
-        <Slider {...setting} className="product-slick" asNavFor={nav2!} ref={(slider1) => setNav1(slider1)}>HI
+        {/* <Slider {...setting} className="product-slick" asNavFor={nav2!} ref={(slider1) => setNav1(slider1)}>HI */}
           {item &&
-            item.images.map((img: any, i: any) => {
+            item.img.map((img: any, i: any) => {
               return (
                 <div key={i}>
-                  <Media src={`/images/${img.src}`} alt="" className="img-fluid  image_zoom_cls-0" />
+                  <Media src={`${img}`} alt="" className="img-fluid  image_zoom_cls-0" />
                 </div>
               );
             })}
-        </Slider>
-        <Row>
+        {/* </Slider> */}
+        {/* <Row>
           <Col>
-            <Slider {...setting1} className="slider-nav" asNavFor={nav1!} ref={(slider2) => setNav2(slider2)} slidesToShow={item.images.length >= 3 ? 3 :item.images.length} >
+            <Slider {...setting1} className="slider-nav" asNavFor={nav1!} ref={(slider2) => setNav2(slider2)} slidesToShow={item.img.length >= 3 ? 3 :item.img.length} >
               {item &&
-                item.images.map((img: any, i: any) => {
+                item.img.map((img: any, i: any) => {
                   return (
                     <div key={i}>
                       <Media src={`/images/${img.src}`} alt="" className="img-fluid  image_zoom_cls-0" />
@@ -58,10 +60,10 @@ const ProductSlick: React.FC<ProductSlickProps> = ({ item, bundle, swatch }) => 
                 })}
             </Slider>
           </Col>
-        </Row>
+        </Row> */}
       </Col>
       <Col lg="7" className="rtl-text">
-        <ProductDetail item={item} changeColorVar={changeColorVar} bundle={bundle} swatch={swatch} />
+        <ProductDetail item={productPriceDetails} changeColorVar={changeColorVar} bundle={bundle} swatch={swatch} />
       </Col>
     </>
   );

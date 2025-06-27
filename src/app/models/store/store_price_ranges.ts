@@ -1,8 +1,8 @@
 export class StorePriceRanges {
-  priceRanges: number[];
+  price_ranges: number[];
 
   constructor(priceRanges: number[]) {
-    this.priceRanges = priceRanges;
+    this.price_ranges = priceRanges;
   }
 
   static fromMap(map: Record<string, any>): StorePriceRanges {
@@ -11,7 +11,7 @@ export class StorePriceRanges {
 
   toMap(): Record<string, any> {
     return {
-      price_ranges: this.priceRanges,
+      price_ranges: this.price_ranges,
     };
   }
 

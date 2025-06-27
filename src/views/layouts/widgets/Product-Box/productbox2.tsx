@@ -1,225 +1,313 @@
-/* eslint-disable @next/next/no-img-element */
-import React, { Fragment, useState, useContext, useEffect } from "react";
-import { Input, Modal, ModalBody } from "reactstrap";
-import { CartContext } from "../../../../helpers/cart/cart.context";
-import Masonry from "react-masonry-css";
-import { CurrencyContext } from "../../../../helpers/currency/CurrencyContext";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Img from "@/utils/BgImgRatio";
+"use client";
 
-interface productType {
-  id: number;
-  title: string;
-  newLabel: boolean;
-  sale: Boolean;
-  stock: number;
-  price: number;
-  item: any;
-  discount: number;
-  images: any;
-  layout: string;
-  addCart: Function;
-  addWish: Function;
-  addCompare: Function;
-  incrementQty: Function;
-  hoverEffect: any;
-  type: Array<string>;
+import React, { useState, useContext, useRef, Fragment } from "react";
+import { NextPage } from "next";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Media, Modal, ModalBody } from "reactstrap";
+import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
+import Slider from "react-slick";
+
+interface ProductBox2Props {
+  id?: number;
+  title?: string;
+  newLabel?: boolean;
+  sale?: boolean;
+  price?: number;
+  discount?: number;
+  stock?: number;
+  images?: any[];
+  layout?: string;
+  addCart?: Function;
+  addWish?: Function;
+  addCompare?: Function;
+  hoverEffect?: any;
+  data: any;
+  type?: Array<string>;
+  img?: string;
+  className?: string;
 }
 
-const ProductBox2: React.FC<productType> = (data) => {
-  const { cartItems, updateQty, removeFromCart } = useContext(CartContext);
+const ProductBox2: NextPage<ProductBox2Props> = ({
+  layout,
+  hoverEffect,
+  price,
+  data,
+  newLabel,
+  addCart,
+  addCompare,
+  addWish,
+  img,
+  className = "",
+}) => {
   const currencyContext = useContext(CurrencyContext);
-  const [openQty, setOpenQty] = useState(false);
-  const [quantity, setQuantity] = useState(1);
-  const [stock1, setstock] = useState("InStock");
-  const router = useRouter();
-  const [modal, setModal] = useState(false);
-  const uniqueSize: any[] = [];
   const { selectedCurr } = currencyContext;
-  const titleProps = data.title.split(" ").join("");
+  const [imgsrc, setImgsrc] = useState("");
+  const [modal, setModal] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [stockState, setStockState] = useState("InStock");
+  
+  const slider2 = useRef<Slider | null>(null);
+  const [nav1, setNav1] = useState<Slider | null>();
+  const router = useRouter();
+
+  const titleProps = data?.name?.split(" ").join("") || "";
+
+  // Image change handler
+  const imgChange = (src: React.SetStateAction<string>) => {
+    setImgsrc(src);
+  };
+
+  // Color variant change handler
+  const changeColorVar = (img_id: number) => {
+    slider2.current?.slickGoTo(img_id);
+  };
+
+  // Quantity handlers
   const minusQty = () => {
     if (quantity > 1) {
-      setstock("InStock");
-      const qty = quantity - 1;
-      setQuantity(qty);
-      updateQty(data.item, qty);
-    } else {
-      setOpenQty(false);
-      removeFromCart(data);
-    }
-  };
-  const plusQty = () => {
-    if (+data.stock >= +quantity) {
-      const qty = quantity + 1;
-      setQuantity(qty);
-      updateQty(data.item, qty);
-    } else {
-      setstock("Out of Stock !");
+      setQuantity(quantity - 1);
+      setStockState("InStock");
     }
   };
 
+  const plusQty = () => {
+    if (data?.active) setQuantity(quantity + 1);
+    else setStockState("Out of Stock !");
+  };
+
+  const changeQty = (e: { target: { value: string } }) => {
+    setQuantity(parseInt(e.target.value));
+  };
+
+  // Quick view modal toggle
   const QuickView = () => {
     setModal(!modal);
   };
 
+  // Navigate to product detail
   const clickProductDetail = () => {
-    router.push(`/product-details/${data.id}` + "-" + `${titleProps}`);
+    if (data?.productId) {
+      router.push(`/product-details/${data.productId}`);
+    }
   };
 
-  useEffect(() => {
-    cartItems.filter((elem:any) => {
-      elem.id === data.item.id && setQuantity(elem.qty);
-    });
-  });
+  // Format price display
+  const formatPrice = (priceValue: number | undefined): string => {
+    if (!priceValue && priceValue !== 0) return "Price unavailable";
+    return `${selectedCurr.symbol}${(priceValue * selectedCurr.value).toFixed(2)}`;
+  };
+
+  // Get product image
+  const getProductImage = () => {
+    if (img) return img;
+    if (data?.img && Array.isArray(data.img) && data.img.length > 0) return data.img[0];
+    if (data?.image) return data.image;
+    return "/images/default.jpg";
+  };
+
+  // Render star rating
+  const renderStars = (rating: number = 0) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<i key={i} className="fa fa-star"></i>);
+    }
+    
+    if (hasHalfStar) {
+      stars.push(<i key="half" className="fa fa-star-half-o"></i>);
+    }
+    
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<i key={`empty-${i}`} className="fa fa-star"></i>);
+    }
+    
+    return stars;
+  };
+
+  const productImage = getProductImage();
+  const productName = data?.name || data?.title || "Product";
+  const productRating = data?.rating || 4.5;
+
   return (
     <Fragment>
-      <Masonry className="masonary-banner-main">
-        <div className="product-box">
-          <div className="product-imgbox">
-            <div className="product-front" onClick={clickProductDetail}>
-              <Img src={`/images/${data.images[0].src}`} className="img-fluid" alt="product" />
-            </div>
-            <div className="product-icon">
-              <button onClick={() => data.addCart()}>
-                <i className="ti-bag" aria-hidden="true"></i>
-              </button>
-              <a onClick={() => data.addWish()}>
-                <i className="ti-heart" aria-hidden="true"></i>
-              </a>
-              <a href="#" data-toggle="modal" data-target="#quick-view" title="Quick View" onClick={() => QuickView()}>
-                <i className="ti-search" aria-hidden="true"></i>
-              </a>
-              <a href="#" title="Compare" onClick={() => data.addCompare()}>
-                <i className="ti-reload" aria-hidden="true"></i>
-              </a>
-            </div>
-            {data.newLabel && (
-              <div className="new-label1">
-                <div>new</div>
-              </div>
-            )}
-            {data.sale && <div className="on-sale1">on sale</div>}
-            {data.stock <= 0 ? <span>Out Of Stock</span> : ""}
-            {stock1 !== "InStock" ? <span>Out Of Stock</span> : ""}
+      <div className={`product-box ${className}`}>
+        <div className="product-imgbox">
+          <div className="product-front" onClick={clickProductDetail}>
+            <a>
+              <Media 
+                src={productImage}
+                alt={productName}
+                className="img-fluid image_zoom_cls-0"
+              />
+            </a>
           </div>
-          <div className="product-detail detail-center1">
-            <ul className="rating-star">
-              <li>
-                <i className="fa fa-star"></i>
-              </li>
-              <li>
-                <i className="fa fa-star"></i>
-              </li>
-              <li>
-                <i className="fa fa-star"></i>
-              </li>
-              <li>
-                <i className="fa fa-star"></i>
-              </li>
-              <li>
-                <i className="fa fa-star"></i>
-              </li>
-            </ul>
-            <Link href={`/product-details/${data.id}` + "-" + `${titleProps}`}>
-              <h6 className="price-title">{data.title}</h6>
-            </Link>
 
-            <span className="detail-price">
-              {selectedCurr.symbol}
-              {(data.price * selectedCurr.value).toFixed(2)}
-              <span>
-                {selectedCurr.symbol}
-                {((data.price - data.price * (data.discount / 100)) * selectedCurr.value).toFixed(2)}
-              </span>
-            </span>
-          </div>
-          <div className="addtocart_btn">
-            <button
-              className="add-button add_cart"
-              title="Add to cart"
-              onClick={() => {
-                data.stock > 0 ? (setOpenQty(true), updateQty(data, quantity)) : "";
-              }}>
-              add to cart
+          <div className={`product-icon ${hoverEffect}`}>
+            <button onClick={() => addCart && addCart()}>
+              <i className="ti-bag"></i>
             </button>
-            <div className={`qty-box cart_qty ${openQty ? "open" : ""}`}>
-              <div className="input-group">
-                <button type="button" className="btn quantity-left-minus" data-type="minus" data-field="" onClick={minusQty}>
-                  <i className="fa fa-minus" aria-hidden="true"></i>
-                </button>
-                <Input type="text" name="quantity" value={quantity} className="form-control input-number qty-input" onChange={() => {}} />
-                <button type="button" className="btn quantity-right-plus" data-type="plus" data-field="" onClick={plusQty}>
-                  <i className="fa fa-plus" aria-hidden="true"></i>
-                </button>
+            <a onClick={() => addWish && addWish()}>
+              <i className="ti-heart" aria-hidden="true"></i>
+            </a>
+            <a href="#" title="Quick View" onClick={(e) => {
+              e.preventDefault();
+              QuickView();
+            }}>
+              <i className="ti-search" aria-hidden="true"></i>
+            </a>
+            <a href="#" title="Compare" onClick={(e) => {
+              e.preventDefault();
+              addCompare && addCompare();
+            }}>
+              <i className="ti-reload" aria-hidden="true"></i>
+            </a>
+          </div>
+
+          {newLabel && (
+            <div className="new-label1">
+              <div>new</div>
+            </div>
+          )}
+          {data?.sale && <div className="on-sale1">on sale</div>}
+        </div>
+
+        <div className="product-detail detail-inline">
+          <div className="detail-title">
+            <div className="detail-left">
+              <ul className="rating-star">
+                {renderStars(productRating)}
+              </ul>
+              
+              {layout === "list-view" && (
+                <p>
+                  {data?.description || "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book"}
+                </p>
+              )}
+
+              <Link href={`/product-details/${data?.productId}${titleProps ? '-' + titleProps : ''}`}>
+                <h6 className="price-title">{productName}</h6>
+              </Link>
+            </div>
+            
+            <div className="detail-right">
+              <div className="price">
+                <div className="price">
+                  {formatPrice(price)}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </Masonry>
-      {data.item.variants &&
-        data.item.variants.map((vari:any) => {
-          var findItemSize = uniqueSize.find((x) => x === vari.size);
-          if (!findItemSize && vari.size) uniqueSize.push(vari.size);
-        })}
-      <Modal className="fade bd-example-modal-lg theme-modal show quick-view-modal" isOpen={modal} toggle={() => setModal(!modal)} centered size="lg">
+      </div>
+
+      {/* Quick View Modal */}
+      <Modal 
+        className="fade bd-example-modal-lg theme-modal show quick-view-modal" 
+        isOpen={modal} 
+        toggle={() => setModal(!modal)} 
+        centered 
+        size="lg"
+      >
         <ModalBody>
           <button type="button" className="close" onClick={() => setModal(!modal)}>
             <span>&times;</span>
           </button>
           <div className="row">
             <div className="col-lg-6 col-xs-12">
-              <div className="quick-view-img">
-                <img src={`/images/${data?.item?.variants ? data?.item?.images[0].src : data?.item?.images[0].src}`} alt="" className="img-fluid" />
-              </div>
+              {data?.img && Array.isArray(data.img) && data.img.length > 1 ? (
+                <Slider asNavFor={nav1!} ref={(slider1) => setNav1(slider1)}>
+                  {data.img.map((image: any, i: number) => (
+                    <div key={i}>
+                      <Media 
+                        src={image} 
+                        alt={`${productName} ${i + 1}`} 
+                        className="img-fluid image_zoom_cls-0" 
+                      />
+                    </div>
+                  ))}
+                </Slider>
+              ) : (
+                <Media 
+                  src={productImage} 
+                  alt={productName} 
+                  className="img-fluid image_zoom_cls-0" 
+                />
+              )}
             </div>
             <div className="col-lg-6 rtl-text">
               <div className="product-right">
-                <h2>{data?.item?.title}</h2>
-                <h3>
-                  {selectedCurr.symbol}
-                  {data?.item?.price * selectedCurr.value}
-                </h3>
-
+                <h2>{productName}</h2>
+                <h3>{formatPrice(price)}</h3>
+                
+                <ul className="rating-star">
+                  {renderStars(productRating)}
+                </ul>
+                
                 <div className="border-product">
                   <h6 className="product-title">product details</h6>
-                  <p>{data?.item?.description}</p>
+                  <p>{data?.description || "High-quality product with excellent features and durability."}</p>
                 </div>
+                
                 <div className="product-description border-product">
-                  <div className="size-box">
-                    <ul>
-                      {uniqueSize.map((size, i) => (
-                        <li key={i}>
-                          <a href="#" onClick={(e) => e.preventDefault()}>
-                            {size}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {stock1 !== "InStock" ? <span className="instock-cls">Out Of Stock</span> : ""}
+                  {stockState !== "InStock" && (
+                    <span className="instock-cls">{stockState}</span>
+                  )}
+                  
                   <h6 className="product-title">quantity</h6>
                   <div className="qty-box">
                     <div className="input-group">
                       <span className="input-group-prepend">
-                        <button type="button" className="btn quantity-left-minus" onClick={minusQty}>
+                        <button 
+                          type="button" 
+                          className="btn quantity-left-minus" 
+                          onClick={minusQty}
+                        >
                           <i className="ti-angle-left"></i>
                         </button>
                       </span>
-                      <input type="text" name="quantity" className="form-control input-number" value={quantity} onChange={() => updateQty(data.item, quantity)} />
+                      <input 
+                        type="text" 
+                        name="quantity" 
+                        className="form-control input-number" 
+                        value={quantity} 
+                        onChange={changeQty} 
+                      />
                       <span className="input-group-prepend">
-                        <button type="button" className="btn quantity-right-plus" onClick={plusQty}>
+                        <button 
+                          type="button" 
+                          className="btn quantity-right-plus" 
+                          onClick={plusQty}
+                        >
                           <i className="ti-angle-right"></i>
                         </button>
                       </span>
                     </div>
                   </div>
                 </div>
+                
                 <div className="product-buttons">
-                  <a href="#" className="btn btn-normal" onClick={() => data.addCart()}>
+                  <a 
+                    href="#" 
+                    className="btn btn-normal" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (addCart) addCart(data, quantity);
+                    }}
+                  >
                     add to cart
                   </a>
-                  <a href="#" className="btn btn-normal" onClick={() => clickProductDetail()}>
+                  <a 
+                    href="#" 
+                    className="btn btn-normal" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      clickProductDetail();
+                    }}
+                  >
                     view detail
                   </a>
                 </div>
@@ -231,4 +319,5 @@ const ProductBox2: React.FC<productType> = (data) => {
     </Fragment>
   );
 };
+
 export default ProductBox2;

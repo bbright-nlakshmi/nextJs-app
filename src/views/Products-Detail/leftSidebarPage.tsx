@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { NextPage } from "next";
 import { Row, Col } from "reactstrap";
 import Sidebar from "../../views/Products-Detail/sidebar";
@@ -9,54 +9,31 @@ import ProductSlick from "../../views/Products-Detail/product-slick";
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client";
 import { FilterContext } from "@/helpers/filter/filter.context";
+import { Category, Discount, DiscountItem, objCache } from "@/app/globalProvider";
 
 interface LeftSidebar {
   pathId: any;
 }
 
-const GET_SINGLE_PRODUCTS = gql`
-  query getProducts($id: Float!) {
-    product(id: $id) {
-      id
-      title
-      description
-      type
-      brand
-      category
-      price
-      new
-      sale
-      discount
-      stock
-      variants {
-        id
-        sku
-        size
-        color
-        image_id
-      }
-      images {
-        alt
-        src
-      }
-    }
-  }
-`;
 
 const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
   const filterContext = useContext(FilterContext);
   const { filterOpen, setFilterOpen } = filterContext;
-  var { loading, data } = useQuery(GET_SINGLE_PRODUCTS, {
-    variables: {
-      id: parseInt(pathId),
-    },
-  });
+  const [discount, setDiscount] = useState<DiscountItem>();
+  const [productData, setProductData] = useState<any>();
+  var loading, data;
+  var foundDiscount;
+  useEffect(() => {
+   data = objCache.getProductsById(pathId);
+    setProductData(data);
+  }, []);
+console.log(productData,pathId);
   return (
     <div className="collection-wrapper">
-      {data && data.product && !loading && (
+      {productData && (
         <div className="custom-container">
           <Row>
-            <Col
+            {/* <Col
               sm="3"
               className="collection-filter"
               style={{
@@ -65,7 +42,7 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
               <Sidebar />
               <ProductService />
               <NewProduct />
-            </Col>
+            </Col> */}
             <Col sm="12" lg="9" xs="12">
               <Row>
                 <Col xl="12">
@@ -77,7 +54,7 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
                 </Col>
               </Row>
               <Row>
-                <ProductSlick item={data.product} bundle={false} swatch={false} />
+                <ProductSlick item={productData} bundle={false} swatch={false} />
               </Row>
               <TabProduct />
             </Col>

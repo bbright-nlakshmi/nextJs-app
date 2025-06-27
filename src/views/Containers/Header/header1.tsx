@@ -1,4 +1,4 @@
-import React, { Fragment, useContext, useEffect } from "react";
+import React, { Fragment, useContext, useEffect, useState } from "react";
 import { Container, Row, Col, Media } from "reactstrap";
 import TopBar from "./widgets/TopBar";
 import Search from "./widgets/search";
@@ -14,58 +14,76 @@ import MobileSearch from "./widgets/mobile-search";
 import MobileSetting from "./widgets/mobile-setting";
 import { MenuContext } from "@/helpers/menu/MenuContext";
 
-interface header {
+
+interface HeaderProps {
   cartPopupPosition: string;
   display: string;
   category: boolean;
   layoutLogo: string;
+  appLogo: string;
+
 }
 
-const Header: NextPage<header> = ({ cartPopupPosition, display, category, layoutLogo }) => {
-  const menuContext = useContext(MenuContext);
-  const { setLeftMenu, leftMenu } = menuContext;
+const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, layoutLogo, appLogo }) => {
+  const { setLeftMenu, leftMenu } = useContext(MenuContext);
+ 
+
+  // Handle sticky header on scroll
   const handleScroll = () => {
-    let number = window.pageXOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    if (number >= 300) {
-      if (window.innerWidth < 581) document.getElementById("stickyHeader")?.classList.remove("sticky");
-      else document.getElementById("stickyHeader")?.classList.add("sticky");
-    } else document.getElementById("stickyHeader")?.classList.remove("sticky");
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const header = document.getElementById("stickyHeader");
+
+    if (scrollTop >= 300) {
+      window.innerWidth < 581
+        ? header?.classList.remove("sticky")
+        : header?.classList.add("sticky");
+    } else {
+      header?.classList.remove("sticky");
+    }
   };
 
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+  window.addEventListener("scroll", handleScroll);
+  //return () => window.removeEventListener("scroll", handleScroll);
+
+
+
   return (
     <Fragment>
       <header id="stickyHeader">
         <div className="mobile-fix-option"></div>
-        <TopBar />
+        {/* <TopBar /> */}
         <div className="layout-header2">
           <Container>
             <Row>
               <Col md="12">
                 <div className="main-menu-block">
-                  <div onClick={() => { setLeftMenu(!leftMenu); document.body.style.overflow = "hidden"; }}
-                    className="sm-nav-block" >
-                    <span className="sm-nav-btn">
-                      <i className="fa fa-bars"></i>
-                    </span>
+                  <div className="header-left">
+                    <div onClick={() => { setLeftMenu(!leftMenu); document.body.style.overflow = "hidden"; }}
+                      className="sm-nav-block" >
+                      <span className="sm-nav-btn">
+                        <i className="fa fa-bars"></i>
+                      </span>
+                    </div>
+
+                    <div className="logo-block">
+                      <a href="/#">
+                        <Media src={`${appLogo}`} className=" app-logo" alt="logo" />
+                      </a>
+                    </div>
                   </div>
-                  <div className="logo-block">
-                    <a href="/#">
-                      <Media src={`/images/${layoutLogo}/logo/logo.png`} className="img-fluid" alt="logo" />
-                    </a>
+                  <div className="input-block">
+                    <div className="input-box">
+                      <Search />
+                    </div>
                   </div>
-                  <Search />
-                  <ShoppingCart position={cartPopupPosition} cartDisplay={display} layout="layout2" />
+                  {/* <ShoppingCart position={cartPopupPosition} cartDisplay={display} layout="layout2" /> */}
                 </div>
               </Col>
             </Row>
           </Container>
         </div>
+
+        {/* Category and Navigation */}
         <div className="category-header-2">
           <div className="custom-container">
             <Row>
@@ -96,4 +114,5 @@ const Header: NextPage<header> = ({ cartPopupPosition, display, category, layout
     </Fragment>
   );
 };
+
 export default Header;

@@ -1,6 +1,7 @@
 // models/Product.ts
+import { DoneDiscount, TrackDiscount } from '@/app/globalProvider';
 import { Discount, RatingModel, TaxGroupModel, TaxModel } from '@/app/models/models';
-
+const INCLUSIVE_TAX = 'inclusive'; // Define your tax type constant
 
 export class Product {
   // Core Product Properties
@@ -59,6 +60,9 @@ export class Product {
   // Cart Properties (Mutable)
   cartItemCount: number;
   cartPurchaseOptionStr: string;
+  INCLUSIVE_TAX: string = INCLUSIVE_TAX;
+  specs: {};
+  images: boolean;
 
   constructor(params: {
     id: string;
@@ -429,19 +433,19 @@ export class Product {
 
     let purchaseOptionIndex = 0;
     if (option !== '') {
-        purchaseOptionIndex = this.sellingDisplayOptions.findIndex(
-            item => item === this.cartPurchaseOptionStr
-        );
+      purchaseOptionIndex = this.sellingDisplayOptions.findIndex(
+        item => item === this.cartPurchaseOptionStr
+      );
     }
 
     if (this.saleMode === 'SALE_MODE_RANGE') {
-        return this.costPrice * quantity;
+      return this.costPrice * quantity;
     } else if (this.saleMode === 'SALE_MODE_CUSTOM' || this.saleMode === 'SALE_MODE_FLEXIBLE') {
-        return this.costPrices[purchaseOptionIndex] * quantity;
+      return this.costPrices[purchaseOptionIndex] * quantity;
     }
 
     return 0;
-}
+  }
 
   getPriceWithDiscount(params: { cartQuantity?: number; purchaseOptionStr?: string } = {}): number {
     const price = this.getPrice(params);
@@ -504,4 +508,107 @@ export class Product {
   getSearchTags(): string[] {
     return this.tags;
   }
+
+
+  getBasePriceInCart(options: { cartQuantity?: number; purchaseOptionStr?: string } = {}): number {
+    const { cartQuantity = 0, purchaseOptionStr = '' } = options;
+
+    const price = this.getPrice({ cartQuantity, purchaseOptionStr });
+    const discount = this.getPriceWithDiscount({ cartQuantity, purchaseOptionStr: '' });
+
+    if (this.taxType === INCLUSIVE_TAX) {
+      return price + this.getTaxAmountInCart(discount, cartQuantity);
+    }
+
+    return price;
+  };
+
+  getTaxAmountInCart(amount: number, cartQuantity: number): number {
+    let taxAmount = 0.0;
+
+    if (this.isTaxActive() && this.tax) {
+      for (const taxItem of this.tax.taxs) {
+        for (const taxRate of taxItem.tax) {
+          taxAmount += this.applyTax(taxItem, amount, taxRate, cartQuantity);
+        }
+      }
+    }
+
+    return taxAmount;
+  };
+
+  getDiscountPriceInCart(options: { quantity?: number } = {}): number {
+    const { quantity = 0 } = options;
+    const price = this.getPrice({ cartQuantity: quantity, purchaseOptionStr: '' });
+    const discount = this.getDiscountAmountInCart({ quantity, price });
+    const discountedPrice = price - discount;
+
+    if (this.taxType === this.INCLUSIVE_TAX) {
+      return discountedPrice + this.getTaxAmountInCart(discountedPrice, quantity);
+    }
+    return discountedPrice;
+  }
+
+  isDiscount(): boolean {
+    return this.discount != null;
+  }
+
+  getDiscountAmountInCart(options: { quantity?: number; price: number }): number {
+    const { quantity = 0, price } = options;
+    const actualQuantity = quantity === 0 ? this.cartItemCount : quantity;
+
+    if (!this.isDiscount() || this.isDiscountExpired() || !this.isDiscountActive()) {
+      return 0;
+    }
+
+    const discount = this.getDiscount();
+    const isDiscountPercentage = this.getDiscountPercentage();
+
+    if (isDiscountPercentage) {
+      return (price * discount) / 100;
+    }
+    return actualQuantity * discount;
+  }
+   isDiscountNotExpired():boolean {
+    const userPhoneNumber =  '8861821698';
+    if (this.discount == null) return false;
+    const isExcluded =
+        this.discount?.isDiscountExcludedToPhoneNumber(userPhoneNumber);
+    const isActive = this.discount?.active;
+    const isNotExpired = TrackDiscount.getItemDiscountExpireSec(this.id) > 0;
+    const isNotDone = !DoneDiscount.ids.includes(this.id);
+
+    return !isExcluded! && isActive! && isNotExpired && isNotDone;
+  }
+  getDiscountPercentage():boolean {
+    if (this.discount == null || this.discount?.isDiscountPercent == null) {
+      return false;
+    }
+    return this.discount!.isDiscountPercent!;
+  }
+
+  getDiscountStartDate(): string {
+    if (!this.discount || !this.discount.discountStartDate) {
+      return '';
+    }
+    return this.discount.discountStartDate.toISOString();
+  }
+
+  // Convert Dart's getDiscountEndDate()
+  getDiscountEndDate(): string {
+    if (!this.discount || !this.discount.discountEndDate) {
+      return '';
+    }
+    return this.discount.discountEndDate.toISOString();
+  }
+
+  getBasePrice(options: { cartQuantity?: number; purchaseOptionStr?: string } = {}): number {
+    const { cartQuantity = 1, purchaseOptionStr = '' } = options;
+    return this.getPrice({ cartQuantity, purchaseOptionStr });
+  }
+
+   isDiscountExcluded( phoneNumber):boolean {
+    return this.discount?.isDiscountExcludedToPhoneNumber(phoneNumber) ?? false;
+  }
+
 }

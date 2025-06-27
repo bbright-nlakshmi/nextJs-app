@@ -1,5 +1,6 @@
 import { DiscountItem } from "../models";
 export class Discount {
+  [x: string]: any;
   id: string;
   name?: string;
   details?: string;
@@ -11,7 +12,7 @@ export class Discount {
   creationTime?: string;
   itemSpecific?: boolean;
   discount?: number;
-  discountItems?: DiscountItem[];
+  discountItems: DiscountItem[];
   discountEndDate?: Date;
 
   constructor({

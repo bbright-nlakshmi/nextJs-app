@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+"use client";
 import React, { useContext, useState } from "react";
 import { Modal, ModalHeader, ModalBody, Input } from "reactstrap";
 import ImageGroup from "./common/ImageGroup";
@@ -7,9 +8,10 @@ import { CartContext } from "@/helpers/cart/cart.context";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import ImageSwatch from "./common/ImageSwatch";
-
+import router, { useRouter } from "next/router";
+import { Discount, Product, searchController } from "@/app/globalProvider";
 interface ProductRightProps {
-  item: any;
+  item: Product | Discount;
   changeColorVar: Function | any;
   bundle: boolean;
   swatch: boolean;
@@ -26,7 +28,9 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
 
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
-
+  
+  //const price = searchController.getDetails(item.productId,'getPrice');
+  //const discountedPrice = searchController.getDetails(item.productId,'getPriceWithDiscount');
   const onOpenModal = () => {
     setModal(true);
   };
@@ -52,30 +56,31 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
   const changeQty = (e: any) => {
     setQty(parseInt(e.target.value));
   };
-
+  // const { id } = router.query; 
+  // console.log("id", id);
   const uniqueColor: any[] = [];
   const uniqueSize: any[] = [];
   return (
     <div className="product-right">
-      <h2>{item.title}</h2>
-      <h4>
+      <h2>{item.name}</h2>
+      {item.discount? <h4>
         <del>
           {symbol}
-          {item.price * value}
+          {item.getProductPrice() * value}
         </del>
-        <span>{item.discount}% off</span>
-      </h4>
+        <span>{symbol}{item.getDiscountAmount()} off</span>
+      </h4>:''}
       <h3>
         {symbol}
-        {((item.price - item.price * (item.discount / 100)) * value).toFixed(2)}
+        {(item.getPriceWithDiscount() * value).toFixed(2)}
       </h3>{" "}
-      {item.variants &&
+      {/* {item.variants &&
         item.variants.map((vari:any) => {
           var findItem = uniqueColor.find((x) => x.color === vari.color);
           if (!findItem && vari.color) uniqueColor.push(vari);
           var findItemSize = uniqueSize.find((x) => x === vari.size);
           if (!findItemSize && vari.size) uniqueSize.push(vari.size);
-        })}
+        })} */}
       {swatch ? <ImageSwatch item={item} changeColorVar={changeColorVar} /> : ""}
       <div className="product-description border-product">
         <h6 className="product-title">select color</h6>

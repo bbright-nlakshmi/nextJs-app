@@ -25,6 +25,9 @@ export * from '@/app/providers/all_providers';
 
 export * from '@/app/services/global.services';
 
+//UTILS
+export * from '@/utils/logger';
+
 
 
 // DEPENDENCIES IMPORT

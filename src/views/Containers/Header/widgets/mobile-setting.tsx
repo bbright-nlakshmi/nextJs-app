@@ -6,19 +6,9 @@ import { useTranslation } from "react-i18next";
 import dataa from "../../../../data/langConfig.json";
 
 
-const GET_CURRENCY = gql`
-  query getCurrency {
-    currency {
-      currency
-      symbol
-      value
-    }
-  }
-`;
-
 const MobileSetting: React.FC = () => {
   const { i18n } = useTranslation();
-  const { data = { currency: [] } } = useQuery(GET_CURRENCY);
+  const  data = { currency: [] }  ;
   const currencyContext = useContext(CurrencyContext);
   const { selectedCurrency } = currencyContext;
   const [open, setOpen] = useState(false);

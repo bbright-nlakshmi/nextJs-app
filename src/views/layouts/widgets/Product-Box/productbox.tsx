@@ -7,27 +7,29 @@ import { Media, Modal, ModalBody } from "reactstrap";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import Slider from "react-slick";
 
+
 interface productType {
-  // id: Number;
-  // title: string;
-  // newLabel: boolean;
-  // sale: Boolean;
-  // price: number;
-  // discount: number;
-  // stock: number;
-  // images: any;
-  // layout: string;
+  id?: Number;
+  title?: string;
+  newLabel?: boolean;
+  sale?: Boolean;
+  price: number;
+  discount?: number;
+  stock?: number;
+  images?: any;
+  layout?: string;
   addCart: Function;
   addWish: Function;
   addCompare: Function;
-  hoverEffect: any;
-  // item: any;
-  data:any;
-  // type: Array<string>;
+  hoverEffect?: any;
+  item?: any;
+  data: any;
+  type?: Array<string>;
+
 }
 // { layout, id, item, title, newLabel, sale, price, discount, stock, images, addCart, addCompare, addWish, hoverEffect }
-const ProductBox: NextPage<any> = ({layout, hoverEffect, data, newLabel, addCart, addCompare, addWish} ) => {
-  
+const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, newLabel, addCart, addCompare, addWish }) => {
+
   const currencyContext = useContext(CurrencyContext);
   const { selectedCurr } = currencyContext;
   const [imgsrc, setImgsrc] = useState("");
@@ -44,7 +46,7 @@ const ProductBox: NextPage<any> = ({layout, hoverEffect, data, newLabel, addCart
   const uniqueSize: any[] = [];
   const uniqueColor: any[] = [];
   const titleProps = data?.name.split(" ").join("");
-  
+
   const changeColorVar = (img_id: number) => {
     slider2.current?.slickGoTo(img_id);
   };
@@ -70,35 +72,23 @@ const ProductBox: NextPage<any> = ({layout, hoverEffect, data, newLabel, addCart
   };
 
   const clickProductDetail = () => {
-    router.push(`/product-details/${data?.product_id}` + "-" + `${titleProps}`);
+
+    router.push(`/product-details/${data?.productId?data?.productId:data?.id}`);
   };
 
-  return (   
+
+
+  return (
+
     <Fragment>
       <div className="product-box" >
-      
+
         <div className="product-imgbox">
           <div className="product-front" onClick={clickProductDetail}>
-             <Media src={data?.img[0]} alt="" className="img-fluid  image_zoom_cls-0" />
+           <a><Media src={data?.img[0]} alt="" className="img-fluid  image_zoom_cls-0" /></a> 
             {/* <Img src={`${data?.img[0]}`} className="img-fluid" alt="product" /> */}
           </div>
-          {/* <ul className="product-thumb-list">
-            {data.img.map((pic: { src: string }, i: React.Key | null | undefined) => (
-              <li className={`grid_thumb_img ${pic.src === imgsrc ? "active" : ""}`} key={i}>
-                <a>
-                  <Img
-                    src={`/images/${pic.src}`}
-                    className="img-fluid"
-                    onMouseEnter={() => imgChange(pic.src)}
-                    alt={pic.src}
-                    onClick={() => {
-                      imgChange(pic.src);
-                    }}
-                  />
-                </a>
-              </li>
-            ))}
-          </ul> */}
+
           <div className={`product-icon ${hoverEffect}`}>
             <button onClick={() => addCart()}>
               <i className="ti-bag"></i>
@@ -131,19 +121,22 @@ const ProductBox: NextPage<any> = ({layout, hoverEffect, data, newLabel, addCart
                 <i className="fa fa-star"></i>
               </ul>
               {layout === "list-view" ? <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book</p> : ""}
-              <Link href={`/product-details/${data?.product_id}` + "-" + `${titleProps}`}>
+
+              <Link href={`/product-details/${data?.productId?data?.productId:data?.id}`}>
+
                 <h6 className="price-title">{data?.name}</h6>
-              </Link>
+                </Link>
+      
             </div>
             <div className="detail-right">
-              <div className="check-price">
+              {/* <div className="check-price">
                 {selectedCurr.symbol}
-                {/* {(price * selectedCurr.value).toFixed(2)}{" "} */}
-              </div>
+                {(getPrice(data.productId) * selectedCurr.value).toFixed(2)}{" "}
+              </div> */}
               <div className="price">
                 <div className="price">
                   {selectedCurr.symbol}
-                  {/* {((price - price * (discount / 100)) * selectedCurr.value).toFixed(2)} */}
+                  {(price * selectedCurr.value).toFixed(2)}
                 </div>
               </div>
             </div>
@@ -226,7 +219,7 @@ const ProductBox: NextPage<any> = ({layout, hoverEffect, data, newLabel, addCart
         </ModalBody>
       </Modal> */}
     </Fragment>
-      
+
   );
 };
 export default ProductBox;

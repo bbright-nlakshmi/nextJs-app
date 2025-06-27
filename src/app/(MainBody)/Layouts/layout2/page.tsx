@@ -12,7 +12,7 @@ import TopBrand from "@/views/layouts/widgets/TopBrand";
 import ContactBanner from "@/views/layouts/widgets/contact-us";
 import DealBanner from "@/views/layouts/widgets/dealBanner";
 import DiscountBanner from "@/views/layouts/widgets/discount-banner";
-import DiscountCoupon from "@/views/layouts/widgets/discountCoupon";
+import DiscountCoupon from "@/views/layouts/widgets/price_ranges";
 import InstagramSection from "@/views/layouts/widgets/instagram/Instagram2";
 import Category from "@/views/layouts/widgets/roundedCategory";
 import Services from "@/views/layouts/widgets/services";
@@ -54,7 +54,7 @@ const Layout2 = () => {
         <MediaBanner />
         <BlogSection />
         <section className="box-category section-py-space">
-          <DiscountCoupon />
+          <DiscountCoupon priceRanges={undefined} />
         </section>
         <div className="title1 section-my-space">
           <h4>Special Products</h4>

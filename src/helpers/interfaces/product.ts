@@ -15,6 +15,7 @@ interface ImageType {
 }
 
 export interface product {
+  cartItemId: any;
   id: number;
   title: string;
   description: string;
