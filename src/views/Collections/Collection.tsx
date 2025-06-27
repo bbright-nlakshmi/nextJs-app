@@ -11,9 +11,9 @@ import { FilterContext } from "../../helpers/filter/filter.context";
 import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import CollectionBanner from "./CollectionBanner";
-import { useSearchParams } from "next/navigation";
-import { objCache } from "@/app/globalProvider";
-import { Discount } from "@/app/models/models";
+import { useRouter, useSearchParams } from "next/navigation";
+import { objCache, searchController } from "@/app/globalProvider";
+import { Category, Discount } from "@/app/models/models";
 
 type CollectionProps = {
   cols: any;
@@ -28,7 +28,7 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
     selectedPrice,
     setSelectedColor,
     setSelectedBrands,
-    
+
   } = useContext(FilterContext);
   const { addToCart } = useContext(CartContext);
   const { addToWish } = useContext(WishlistContext);
@@ -38,31 +38,66 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
   const [pageLimit, setPageLimit] = useState(5);
   const [layout, setLayout] = useState(layoutList);
   const [discount, setDiscount] = useState<Discount>();
+  const [category, setCategory] = useState<Category>();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const discountId = searchParams.get("id");
-
+  const categoryId = searchParams.get("id");
+  const categoryType = searchParams.get("type");
+  const [product, setProduct] = useState<any>();
+  const [productData, setProductData] = useState<any>();
+  var foundItem: any = {};
   useEffect(() => {
-    objCache.on('updateDiscountProducts',(data: Discount[]) => {
-      
-      if (data && data.length > 0) {
-        const foundDiscount = data.find((item: Discount) => item.id === discountId);
-        if (foundDiscount) {
-          setDiscount(foundDiscount);
-        }
-        console.log(foundDiscount)
+
+    if (categoryType == 'discount') {
+      foundItem = objCache.discountList.find((item: Discount) => item.id === categoryId)
+      if (foundItem) {
+        setProduct(foundItem);
       }
-    });
+      objCache.on('updateDiscountProducts', (data: Discount[]) => {
+
+        if (data && data.length > 0) {
+          foundItem = data.find((item: Discount) => item.id === categoryId);
+          if (foundItem) {
+            setProduct(foundItem);
+          }
+
+        }
+      });
+      setProductData(foundItem?.discountItems);
+    }
+    else if (categoryType == 'category') {
+
+      foundItem = objCache.allCategories.find((item: Category) => item.id === categoryId);
+     
+      if (foundItem) {
+        setProduct(foundItem);
+      }
+      objCache.on('updateAllCategories', (data: Category[]) => {
+
+        if (data && data.length > 0) {
+          foundItem = data.find((item: Category) => item.id === categoryId);
+          if (foundItem) {
+            setProduct(foundItem);
+
+          }
+
+        }
+      });
+      setProductData(foundItem?.category_products);
+
+    }
+
+    //console.log(productData)
     return () => {
-      objCache.off('updateDiscountProducts', ()=>{});
+      objCache.off('updateDiscountProducts', () => { });
     };
   }, []);
 
-const handleUserLogin = (userId) => {
-      console.log(`User ${userId} has logged in!`);
-      // Perform actions based on user login, e.g., fetch user-specific data
-    };
+  // const handleUserLogin = (userId) => {
+  //       console.log(`User ${userId} has logged in!`);
+  //       // Perform actions based on user login, e.g., fetch user-specific data
+  //     };
   const removeBrand = (val: any) => {
     const temp = [...selectedBrands];
     temp.splice(selectedBrands.indexOf(val), 1);
@@ -81,22 +116,22 @@ const handleUserLogin = (userId) => {
     }, 500);
   };
 
-  
+
 
   return (
     <Col className="collection-content">
       <div className="page-main-content">
         <Row>
           <Col sm="12">
-            <CollectionBanner img={discount?.img?.[0]} name={discount?.name} details={discount?.details} />
+            <CollectionBanner img={product?.img?.[0]} name={product?.name} details={product?.details} />
 
             <div className="collection-product-wrapper">
               {/* Filter tags */}
               <Row>
                 <Col xs="12">
                   <ul className="product-tags">
-                    {!!discount?.discountItems?.length &&
-                       discount.discountItems.map((brand: any, i: number) => (
+                    {!!productData?.length &&
+                      productData.map((brand: any, i: number) => (
                         <li className="me-1" key={i}>
                           <a className="filter_tag">
                             {brand.name}
@@ -119,12 +154,12 @@ const handleUserLogin = (userId) => {
               {/* Product Grid */}
               <div className={`product-wrapper-grid ${layout}`}>
                 <Row>
-                  {!discount?.discountItems?.length? (
+                  {!productData?.length ? (
                     <Col xs="12">
                       <Skeleton />
                     </Col>
                   ) : (
-                    discount.discountItems.slice(0, pageLimit).map((item: any, i: number) => (
+                    productData.slice(0, pageLimit).map((item: any, i: number) => (
                       <div className={grid} key={i}>
                         <div className="product" >
                           <ProductBox
@@ -132,6 +167,7 @@ const handleUserLogin = (userId) => {
                             data={item}
                             newLabel={item.new}
                             item={item}
+                            price={searchController.getDetails(item.productId, 'getProductPrice')}
                             addCart={() => addToCart(item)}
                             addCompare={() => addToCompare(item)}
                             addWish={() => addToWish(item)} price={0}                          />
@@ -147,9 +183,9 @@ const handleUserLogin = (userId) => {
                 <div className="theme-paggination-block">
                   <Row>
                     <Col xl="12" md="12" sm="12">
-                      {discount?.discountItems?.length > pageLimit && (
+                      {productData?.length > pageLimit && (
                         <Button onClick={handlePagination}>
-                          {isLoading? (
+                          {isLoading ? (
                             <Spinner size="sm" color="light">
                               {" "}
                             </Spinner>

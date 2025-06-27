@@ -1,73 +1,113 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { NextPage } from "next";
-import { Input, DropdownToggle, DropdownMenu, InputGroupText, DropdownItem, InputGroup, ButtonDropdown, Form, Col, FormGroup, Media } from "reactstrap";
+import {
+  Input,
+  DropdownToggle,
+  DropdownMenu,
+  InputGroupText,
+  DropdownItem,
+  InputGroup,
+  ButtonDropdown,
+} from "reactstrap";
 import { useTranslation } from "react-i18next";
-import { Category, objCache, searchController } from "@/app/globalProvider";
-import ProductBox from "@/views/layouts/widgets/Product-Box/productbox";
-import Link from "next/link";
-import { SearchResults } from './search_results';
+import { Category, Kit, objCache, Product, searchController } from "@/app/globalProvider";
+import { SearchResults } from "./search_results";
+
+// ✅ Hook to force a re-render
+function useForceUpdate() {
+  const [, setTick] = useState(0);
+  const update = useCallback(() => setTick((tick) => tick + 1), []);
+  return update;
+  
+}
 
 const Search: NextPage = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const { t } = useTranslation("common");
+
+  const [query, setQuery] = useState("");
+  const [kits, setKits] = useState<Kit[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [showResults, setShowResults] = useState(false);
 
-
-  const [query, setQuery] = useState<string>('')
-  const onHandleSearch = (e) => {
-    setQuery(e.target.value)
-
-    searchController.refreshGrid(e.target.value);
-    if (query && searchController.products.length) {
-      setShowResults(true);
-    } else
-      setShowResults(false);
-
-  }
-  const blurEvent = () => {setShowResults(false)}
-
-  const toggleDropDown = () => setDropdownOpen(!dropdownOpen);
+  const forceUpdate = useForceUpdate();
 
   useEffect(() => {
-      objCache.on('updateAllCategories',(data: Category[]) => {
+    const updateListener = () => {
       
-          setCategories(data);
-      
-        });
-    
-  }, []);
+
+      // Force React state update
+      setKits([...searchController.kits]);
+      setProducts([...searchController.products]);
+
+      const hasResults = searchController.kits.length > 0 || searchController.products.length > 0;
+      setShowResults(hasResults);
+console.log("🔁 UI re-rendering from controller");
+      forceUpdate(); // 💡 Ensure UI reflects changes
+    };
+
+    searchController.on("update", updateListener);
+    objCache.on("updateAllCategories", (data: Category[]) => setAllCategories(data));
+
+    return () => {
+      searchController.off("update", updateListener);
+    };
+  }, [forceUpdate]);
+
+  const onHandleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    searchController.refreshGrid(value);
+    setShowResults(true); // Immediately show results while typing
+  };
+
+  const blurEvent = () => {
+    setTimeout(() => {
+      setShowResults(false);
+    }, 150);
+  };
+
+  const toggleDropDown = () => setDropdownOpen((prev) => !prev);
 
   return (
+    <form className="big-deal-form" style={{ position: "relative", zIndex: 100 }}>
+      <InputGroup>
+        <InputGroupText>
+          <span className="search">
+            <i className="fa fa-search" />
+          </span>
+        </InputGroupText>
 
-    <>
-      <form className=" big-deal-form">
-        <InputGroup>
-          <InputGroupText>
-            <span className="search">
-              <i
-                className="fa 
-                       fa-search"></i>
-            </span>
-          </InputGroupText>
-          <Input name="query" value={query} onChange={(event) => onHandleSearch(event)} onBlur={blurEvent} onFocus={(event) => onHandleSearch(event)} />
-          <SearchResults show={showResults} />
-          <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropDown}>
-              <DropdownToggle caret>
-                {t("All Category")}
-              </DropdownToggle>
-              <DropdownMenu>
-                <DropdownItem key="all">{t("All Category")}</DropdownItem>
-                {categories.map((cat) => (
-                  <DropdownItem key={cat.id}>{cat.name}</DropdownItem>
-                ))}
-              </DropdownMenu>
-            </ButtonDropdown>
-        </InputGroup>
-      </form>
-    </>
+        <Input
+          name="query"
+          value={query}
+          placeholder="Search kits or products..."
+          onChange={onHandleSearch}
+          onBlur={blurEvent}
+          onFocus={() => {
+            if (query.trim()) {
+              searchController.refreshGrid(query);
+              setShowResults(true);
+            }
+          }}
+        />
 
+        <SearchResults show={showResults} kits={kits} products={products} />
+
+        <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropDown}>
+          <DropdownToggle caret>{t("All Category")}</DropdownToggle>
+          <DropdownMenu>
+            <DropdownItem key="all">{t("All Category")}</DropdownItem>
+            {allCategories.map((cat) => (
+              <DropdownItem key={cat.id}>{cat.name}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </ButtonDropdown>
+      </InputGroup>
+    </form>
   );
 };
 
 export default Search;
+

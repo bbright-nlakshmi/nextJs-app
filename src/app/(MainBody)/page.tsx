@@ -18,36 +18,44 @@ import Category_View from "@/views/layouts/widgets/roundedCategory";
 import Testimonial from "@/views/layouts/widgets/testimonial";
 import SpecialProduct from "@/views/layouts/widgets/title-section";
 import DiscountProducts from "@/views/layouts/layout1/discounts";
-import { centralDataCollector, CentralDataCollector } from '@/app/services/central_data_control';
+
 import { useEffect, useState } from "react";
-import { BannerModel, Category, Discount, ObjCache, StorePriceRanges, objCache } from "../globalProvider";
+import { BannerModel, Category, Discount, Kit, ObjCache, StorePriceRanges, objCache } from "../globalProvider";
 import { Subscription } from 'rxjs';
+import Kits from "@/views/Kits/kits_list";
 
 
 //const centralDataCollectorObj: CentralDataCollector = centralDataCollector;
 
 const Home = () => {
+  const [kits, setKits] = useState<Kit[]>([]);
   const [products, setProducts] = useState<Discount[]>([]);
-  const [categories, setCategories] = useState<Array<Category>>();
+  const [categories, setCategories] = useState<Array<Category>>([]);
   const [allCategories, setAllCategories] = useState<Array<Category>>();
   const [banners, setBanners] = useState<Array<BannerModel>>();
   const [priceRanges, setPriceRanges] = useState<StorePriceRanges>();
 useEffect(() => {
   // Subscribe to the Subject
+
+  objCache.on('updateKits',(kit_data) => {
+    console.log(kit_data)
+    setKits(kit_data);
+  });
+  
   objCache.on('updateDiscountProducts',(data) => {
     
     setProducts(data);
   });
 
   objCache.on('updateBanners', (newBanners) => {
-    console.log(newBanners)
+    
     setBanners(newBanners);
   });
 
   objCache.on('updateCategories',(data: Category[]) => {
 
     setCategories(data);
-
+   
   });
 
   objCache.on('updateAllBanners',banners => {
@@ -62,17 +70,8 @@ useEffect(() => {
     setPriceRanges(priceRanges)
   })
 
-return () => {
-    };
+
   }, []);
-
-  useEffect(() => {
-
-    centralDataCollector.getData();
-    centralDataCollector.scheduleGetData()
-  }, []);
-
-
 
   return (
     <>
@@ -87,6 +86,7 @@ return () => {
           {/* <CollectionBannerTwo /> */}
           <DiscountProducts products={products} />
 
+          <Kits kits = {kits}/>
 
           {/* <DiscountBanner /> */}
 
