@@ -65,6 +65,8 @@ console.log("🔁 UI re-rendering from controller");
 
   const blurEvent = () => {
     setTimeout(() => {
+      setKits([]);
+      setProducts([]);
       setShowResults(false);
     }, 150);
   };

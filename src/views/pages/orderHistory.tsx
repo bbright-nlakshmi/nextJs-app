@@ -2,7 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { NextPage } from "next";
-import { Row, Col, Spinner, Input, FormGroup, Label, Button } from "reactstrap";
+import {
+  Row,
+  Col,
+  Spinner,
+  Input,
+  FormGroup,
+  Label,
+  Button
+} from "reactstrap";
 import Breadcrumb from "../../views/Containers/Breadcrumb";
 import { API } from "@/app/services/api.service";
 import { OrderModel } from "@/app/models/order/order";
@@ -25,12 +33,8 @@ const OrderHistoryPage: NextPage = () => {
       try {
         setLoading(true);
         setError(null);
-
         const fetchedOrders = await API.getOrders(phoneNumber);
-
-        // Sort newest first
         fetchedOrders.sort((a, b) => new Date(b.creationTime).getTime() - new Date(a.creationTime).getTime());
-
         setOrders(fetchedOrders);
         setFilteredOrders(fetchedOrders);
       } catch (err) {
@@ -42,7 +46,7 @@ const OrderHistoryPage: NextPage = () => {
     };
 
     fetchOrders();
-  }, [phoneNumber]);
+  }, []);
 
   const toggleExpand = (orderId: string) => {
     setExpandedOrderId(prev => (prev === orderId ? null : orderId));
@@ -59,10 +63,9 @@ const OrderHistoryPage: NextPage = () => {
 
   const handleFilter = () => {
     if (!fromDate || !toDate) return;
-
     const from = new Date(fromDate);
     const to = new Date(toDate);
-    to.setHours(23, 59, 59, 999); // include entire day
+    to.setHours(23, 59, 59, 999);
 
     const filtered = orders.filter(order => {
       const orderDate = new Date(order.creationTime);
@@ -70,7 +73,7 @@ const OrderHistoryPage: NextPage = () => {
     });
 
     setFilteredOrders(filtered);
-    setExpandedOrderId(null); // collapse all on filter
+    setExpandedOrderId(null);
   };
 
   const handleClearFilter = () => {
@@ -83,39 +86,44 @@ const OrderHistoryPage: NextPage = () => {
   return (
     <div className="bg-light py-4">
       <Breadcrumb title="Order History" parent="Home" />
+
       <section className="order-history-section">
         <div className="container">
-          <Row className="mb-4">
-            <Col md="4">
-              <FormGroup>
-                <Label>From Date</Label>
-                <Input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                />
-              </FormGroup>
-            </Col>
-            <Col md="4">
-              <FormGroup>
-                <Label>To Date</Label>
-                <Input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                />
-              </FormGroup>
-            </Col>
-            <Col md="4" className="d-flex align-items-end gap-2">
-              <Button color="primary" onClick={handleFilter}>
-                Apply Filter
-              </Button>
-              <Button color="secondary" onClick={handleClearFilter}>
-                Clear
-              </Button>
-            </Col>
-          </Row>
+          {/* Filter Section */}
+          <div className="bg-white p-3 rounded shadow-sm mb-4">
+            <Row>
+              <Col md="4">
+                <FormGroup>
+                  <Label className="fw-semibold">From Date</Label>
+                  <Input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="4">
+                <FormGroup>
+                  <Label className="fw-semibold">To Date</Label>
+                  <Input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="4" className="d-flex align-items-end justify-content-start gap-2">
+                <Button color="primary" onClick={handleFilter}>
+                  Apply Filter
+                </Button>
+                <Button color="outline-secondary" onClick={handleClearFilter}>
+                  Clear
+                </Button>
+              </Col>
+            </Row>
+          </div>
 
+          {/* Orders Table Section */}
           <Row>
             <Col sm="12">
               {loading ? (
@@ -123,16 +131,18 @@ const OrderHistoryPage: NextPage = () => {
                   <Spinner color="primary" />
                 </div>
               ) : error ? (
-                <div className="text-center py-5 text-danger">{error}</div>
+                <div className="text-center text-danger py-5">
+                  <h5>{error}</h5>
+                </div>
               ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-5">
-                  <h4 className="mb-3">No orders found for selected date</h4>
-                  <Button color="primary" onClick={handleClearFilter}>Show All</Button>
+                  <h5>No orders found for selected date</h5>
+                  <Button color="primary" onClick={handleClearFilter}>Show All Orders</Button>
                 </div>
               ) : (
                 <div className="table-responsive rounded shadow-sm bg-white">
-                  <table className="table table-bordered table-hover mb-0">
-                    <thead className="thead-dark">
+                  <table className="table table-hover table-bordered mb-0">
+                    <thead className="table-dark">
                       <tr>
                         <th>Order ID</th>
                         <th>Date</th>
@@ -148,32 +158,30 @@ const OrderHistoryPage: NextPage = () => {
                             onClick={() => toggleExpand(order.id)}
                             style={{
                               cursor: "pointer",
-                              background: expandedOrderId === order.id ? "#f9f9f9" : undefined,
+                              background: expandedOrderId === order.id ? "#f1f3f5" : undefined,
                               transition: "background 0.2s ease-in-out",
                             }}
                           >
                             <td><strong>{order.id}</strong></td>
                             <td>{formatDate(order.creationTime)}</td>
                             <td>{order.getItemsCount()}</td>
-                            <td><strong>${order.finalOrderTotal.toFixed(2)}</strong></td>
-                            <td style={{ color: "#000" }}>
-                              {order.orderAcceptStatus || "Pending"}
-                            </td>
+                            <td><strong>₹{order.finalOrderTotal.toFixed(2)}</strong></td>
+                            <td className="text-capitalize">{order.orderAcceptStatus || "Pending"}</td>
                           </tr>
 
                           {expandedOrderId === order.id && (
                             <tr>
                               <td colSpan={5} className="p-0">
-                                <div className="p-3 bg-light border-top">
-                                  <h6 className="mb-3">Order Details</h6>
+                                <div className="p-3 bg-white border-top">
+                                  <h6 className="mb-3 fw-semibold">Order Details</h6>
                                   <table className="table table-sm table-striped">
-                                    <thead className="thead-light">
+                                    <thead>
                                       <tr>
                                         <th>Image</th>
                                         <th>Product</th>
                                         <th>Category</th>
                                         <th>Price</th>
-                                        <th>Quantity</th>
+                                        <th>Qty</th>
                                         <th>Status</th>
                                       </tr>
                                     </thead>
@@ -194,13 +202,13 @@ const OrderHistoryPage: NextPage = () => {
                                             </td>
                                             <td>{item.name}</td>
                                             <td>{item.categoryName || "N/A"}</td>
-                                            <td>${item.choosedPrice?.toFixed(2) ?? "0.00"}</td>
+                                            <td>₹{item.choosedPrice?.toFixed(2) ?? "0.00"}</td>
                                             <td>{item.cartItemCount}</td>
-                                            <td style={{ color: "#000" }}>
+                                            <td className="text-capitalize">
                                               {statusKey}
                                               {status.deliver && (
                                                 <div className="text-muted small">
-                                                  Delivered: {new Date(status.deliver).toLocaleDateString()}
+                                                  Delivered on {new Date(status.deliver).toLocaleDateString()}
                                                 </div>
                                               )}
                                             </td>

@@ -127,6 +127,7 @@ export class Category {
 
 // models/CategoryRender.ts
 export class CategoryRender {
+  category: any;
   constructor(
     public readonly name: string,
     public readonly viewOption: string,

@@ -1,45 +1,16 @@
-import React, { useState, useEffect } from "react";
+// wish.provider.tsx
+import React, { PropsWithChildren } from "react";
 import { WishlistContext } from "./wish.context";
-import { product } from "../interfaces/product";
-import { toast } from "react-toastify";
+import { useWishlistStore } from "../../../src/helpers/wishlist/wishlistStore";
+import { WishlistProduct } from "../../../src/helpers/wishlist/wishlistStore";
 
-const getLocalWishlistItems = () => {
-  try {
-    const list = localStorage.getItem("wishlist");
-    if (list === null) {
-      return [];
-    } else {
-      return JSON.parse(list);
-    }
-  } catch (err) {
-    return [];
-  }
-};
-
-export const WishlistProvider = (props: any) => {
-  const [wishlistItems, setWishlistItems] = useState(getLocalWishlistItems() as product[]);
-  // const [isVisible]
-
-  useEffect(() => {
-    localStorage.setItem("wishlist", JSON.stringify(wishlistItems));
-  }, [wishlistItems]);
-
-  // Add Product To Wishlist
-  const addToWish = (item: product) => {
-    const index = wishlistItems.findIndex((wish) => wish.id === item.id);
-    if (index === -1) {
-      toast.success("Product Added to Wishlist Successfully !");
-      setWishlistItems([...wishlistItems, item]);
-    } else {
-      toast.error("This Product Already Added !");
-    }
-  };
-
-  // Remove Product From Wishlist
-  const removeFromWish = (item: { id: number; }) => {
-    setWishlistItems(wishlistItems.filter((e) => e.id !== item.id));
-    toast.error("Product Removed from Wishlist Successfully !");
-  };
+export const WishlistProvider = ({ children }: PropsWithChildren<{}>) => {
+  const {
+    wishlistItems,
+    addToWish,
+    removeFromWish,
+    setWishlistItems,
+  } = useWishlistStore();
 
   return (
     <WishlistContext.Provider
@@ -47,8 +18,10 @@ export const WishlistProvider = (props: any) => {
         wishlistItems,
         addToWish,
         removeFromWish,
-      }}>
-      {props.children}
+        setWishlistItems,
+      }}
+    >
+      {children}
     </WishlistContext.Provider>
   );
 };

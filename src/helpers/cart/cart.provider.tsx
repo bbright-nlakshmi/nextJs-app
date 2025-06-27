@@ -2,70 +2,67 @@ import React, { useState, useEffect } from "react";
 import { CartContext } from "./cart.context";
 import { product } from "../interfaces/product";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from "uuid";
 
 const getLocalCartItems = () => {
   try {
     const list = localStorage.getItem("cartList");
-    if (list === null) {
-      return [];
-    } else {
-      return JSON.parse(list);
-    }
-  } catch (err) {
+    return list ? JSON.parse(list) : [];
+  } catch {
     return [];
   }
 };
 
 export const CartProvider = (props: any) => {
-  const [cartItems, setCartItems] = useState(getLocalCartItems() as product[]);
+  const [cartItems, setCartItems] = useState<product[]>(getLocalCartItems());
   const [cartTotal, setCartTotal] = useState(0);
 
   useEffect(() => {
-    const Total = cartItems.reduce((a, b) => +a + +b.total, 0);
-    setCartTotal(Total);
+    const total = cartItems.reduce((sum, item) => {
+      const price = Number(item.price);
+      const qty = Number(item.qty);
+      return sum + price * qty;
+    }, 0);
+
+    setCartTotal(total);
     localStorage.setItem("cartList", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // Add Product To Cart
   const addToCart = (item: any) => {
-    toast.success("Product Added to Cart Successfully !");
-    const index = cartItems.findIndex((itm) => itm.id === item.id);
+    toast.success("Product Added to Cart Successfully!");
 
-    if (index !== -1) {
-      const product = cartItems[index];
-      const quantity = product.qty ? product.qty + 1 : 1;
-      cartItems[index] = { ...product, ...item, qty: quantity, total: item.price * quantity };
-      setCartItems([...cartItems]);
-    } else {
-      const product = { ...item, qty: 1, total: item.price };
-      setCartItems([...cartItems, product]);
-    }
+    const newItem = {
+      ...item,
+      qty: 1,
+      cartItemId: uuidv4(),
+    };
+
+    setCartItems((prev) => [...prev, newItem]);
   };
 
-  // Update Product Quantity
   const updateQty = (item: any, quantity: number) => {
     if (quantity >= 1) {
-      const index = cartItems.findIndex((itm) => itm.id === item.id);
-      if (index !== -1) {
-        const product = cartItems[index];
-        cartItems[index] = { ...product, ...item, qty: quantity, total: item.price * quantity };
-
-        setCartItems([...cartItems]);
-        toast.info("Product Quantity Updated !");
-      } else {
-        const product = { ...item, qty: quantity, total: item.price * quantity };
-        setCartItems([...cartItems, product]);
-        toast.success("Product Added Updated !");
-      }
+      setCartItems((prev) =>
+        prev.map((cartItem) =>
+          cartItem.cartItemId === item.cartItemId
+            ? {
+                ...cartItem,
+                qty: quantity,
+              }
+            : cartItem
+        )
+      );
+      toast.info("Product Quantity Updated!");
     } else {
-      toast.error("Enter Valid Quantity !");
+      toast.error("Enter Valid Quantity!");
     }
   };
 
-  // Remove Product From Cart
-  const removeFromCart = (item: { id: number; }) => {
-    toast.error("Product Removed from Cart Successfully !");
-    setCartItems(cartItems.filter((e) => e.id !== item.id));
+  const removeFromCart = (item: { cartItemId: string }) => {
+    toast.error("Product Removed from Cart Successfully!");
+    setCartItems((prev) =>
+      prev.filter((e) => e.cartItemId !== item.cartItemId)
+    );
   };
 
   const emptyCart = () => {
