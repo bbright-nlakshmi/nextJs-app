@@ -497,12 +497,12 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     const itemRating = getRating(item);
                     const itemAny = item as any;
                     
-                    console.log(`Product ${i + 1}:`, {
-                      name: itemName,
-                      price: itemPrice,
-                      rating: itemRating,
-                      id: item.id || itemAny.productId
-                    });
+                    // console.log(`Product ${i + 1}:`, {
+                    //   name: itemName,
+                    //   price: itemPrice,
+                    //   rating: itemRating,
+                    //   id: item.id || itemAny.productId
+                    // });
                     
                     return (
                       <SwiperSlide key={item.id || itemAny.productId || i}>

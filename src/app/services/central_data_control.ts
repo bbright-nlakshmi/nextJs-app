@@ -22,7 +22,7 @@ import { UserController } from '@/views/user_auth/user_controller';
 
 
 export class CentralDataCollector {
-  
+
   // Loading states
   public isLoading = false;
   public isInitialLoading = true;
@@ -31,19 +31,19 @@ export class CentralDataCollector {
   private refreshInterval: number = 60; // Default 60 seconds
   private dataScheduler?: NodeJS.Timeout;
   announceLiveData: any;
-  
-  
+
+
   constructor() {
     this.initialize();
   }
 
   private initialize(): void {
     this.resetInitialLoad();
-     this.refreshInterval = parseInt(process.env.NEXT_PUBLIC_REFRESH_INTERVAL || '60');
-     
+    this.refreshInterval = parseInt(process.env.NEXT_PUBLIC_REFRESH_INTERVAL || '60');
+
   }
 
-   scheduleGetData(): void { 
+  scheduleGetData(): void {
     this.dataScheduler = setInterval(async () => {
       console.log('Refreshing data');
       await this.getData();
@@ -60,10 +60,10 @@ export class CentralDataCollector {
 
   // Data fetching methods
   public async getCategories(): Promise<void> {
-    
+
     try {
       const categories = await API.getCategories();
-      
+
       //this.categoryStream.setValue(categories);
       objCache.resetObjCacheCategoryList();
       objCache.insertObjCacheCategoryList(categories);
@@ -74,10 +74,10 @@ export class CentralDataCollector {
 
   // Data fetching methods
   public async getAllCategories(): Promise<void> {
-    
+
     try {
       const categories = await API.getAllCategories();
-      
+
       //this.categoryStream.setValue(categories);
       objCache.resetObjCacheAllCategoryList();
       objCache.insertObjCacheAllCategoryList(categories);
@@ -106,9 +106,11 @@ export class CentralDataCollector {
       const premiumData = await API.getPremium();
       //this.premiumStream.setValue(premiumData);
       objCache.resetObjCachePremiumList();
-      premiumData.forEach(([category, products]) => {
-        objCache.insertObjCachePremiumList(category.name, products);
+
+      premiumData.forEach((products, category,) => {
+        objCache.premiumList.set(category.name, products)
       });
+      objCache.insertObjCachePremiumList(objCache.premiumList);
     } catch (error) {
       console.error('Error fetching premium data:', error);
     }
@@ -117,8 +119,8 @@ export class CentralDataCollector {
   public async getBanners(): Promise<void> {
     try {
       const banners = await API.getBanners();
-      
-     // objCache.insertObjCacheBannerList(banners);
+
+      // objCache.insertObjCacheBannerList(banners);
     } catch (error) {
       console.error('Error fetching banners:', error);
     }
@@ -127,7 +129,7 @@ export class CentralDataCollector {
   public async getAllBanners(): Promise<void> {
     try {
       const banners = await API.getAllBanners();
-      
+
       objCache.insertObjCacheAllBannersList(banners);
     } catch (error) {
       console.error('Error fetching banners:', error);
@@ -143,16 +145,14 @@ export class CentralDataCollector {
     }
   }
 
-  public async  getAllProducts(): Promise<void> {
+  public async getAllProducts(): Promise<void> {
     try {
       const allProducts = await API.getAllProducts();
-      //console.log(allProducts)
-      //objCache.insertObjCacheAllProducts(allProducts);
-      allProducts.forEach(([category, products]) => {
-         objCache.allProducts.set(category.name,products);  
+      allProducts.forEach((products,category) => {
+        objCache.allProducts.set(category.name, products);
       });
       objCache.insertObjCacheAllProducts(objCache.allProducts);
-      
+
     } catch (error) {
       console.error('Error fetching jobs:', error);
     }
@@ -197,7 +197,7 @@ export class CentralDataCollector {
     try {
       const priceRanges = await API.getStorePriceRanges();
       //this.priceRangeStream.setValue(priceRanges);
-       objCache.insertObjCachePriceRangeStream(priceRanges);
+      objCache.insertObjCachePriceRangeStream(priceRanges);
     } catch (error) {
       console.error('Error fetching price ranges:', error);
     }
@@ -206,13 +206,15 @@ export class CentralDataCollector {
   public async getAllNonPremiumProducts(): Promise<void> {
     try {
       const nonPremiumData = await API.getNonPremium();
-      
+
       objCache.resetObjCacheNonPremiumList();
-     
-      // nonPremiumData.forEach(([category, products]) => {
-      //    objCache.nonPremiumProducts.set(category.name, products);
-      // });
-      objCache.insertObjCacheNonPremiumList(nonPremiumData);
+
+      nonPremiumData.forEach((products,category) => {
+         objCache.nonPremiumList.set(category.name, products);
+      });
+
+      objCache.insertObjCacheNonPremiumList(objCache.nonPremiumList);
+      
     } catch (error) {
       console.error('Error fetching non-premium products:', error);
     }
@@ -273,7 +275,7 @@ export class CentralDataCollector {
         (discount.discountEndDate?.getTime() || 0) < now
       );
 
-     // this.discountLiveData.setValue(notExpiredDiscounts);
+      // this.discountLiveData.setValue(notExpiredDiscounts);
       objCache.resetObjCacheDiscountList();
       objCache.insertObjCacheDiscountList(notExpiredDiscounts);
 
