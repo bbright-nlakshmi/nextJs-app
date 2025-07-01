@@ -466,7 +466,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     <span className="text-muted ms-2">({products.length} items)</span>
                   </h5>
                 </div>
-                
+                <section className=" ratio_asos product" >
+                <div className="custom-container  addtocart_count ">
                 <Swiper
                   slidesPerView={3}
                   navigation
@@ -496,12 +497,12 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     const itemRating = getRating(item);
                     const itemAny = item as any;
                     
-                    console.log(`Product ${i + 1}:`, {
-                      name: itemName,
-                      price: itemPrice,
-                      rating: itemRating,
-                      id: item.id || itemAny.productId
-                    });
+                    // console.log(`Product ${i + 1}:`, {
+                    //   name: itemName,
+                    //   price: itemPrice,
+                    //   rating: itemRating,
+                    //   id: item.id || itemAny.productId
+                    // });
                     
                     return (
                       <SwiperSlide key={item.id || itemAny.productId || i}>
@@ -534,6 +535,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     );
                   })}
                 </Swiper>
+                </div>
+                </section>
               </>
             ) : activeRange !== null ? (
               <div className="text-center text-muted py-5">

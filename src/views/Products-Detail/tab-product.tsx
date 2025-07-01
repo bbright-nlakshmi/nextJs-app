@@ -34,36 +34,7 @@ const TabProduct: React.FC<Props> = ({description}) => {
           <TabContent className="nav-material" activeTab={activeTab}>
             <TabPane tabId="1">
               <p className="ps-0" dangerouslySetInnerHTML={{ __html: description }}></p>
-              <div className="single-product-tables">
-                <table>
-                  <tbody>
-                    <tr>
-                      <td>Febric</td>
-                      <td>Chiffon</td>
-                    </tr>
-                    <tr>
-                      <td>Color</td>
-                      <td>Red</td>
-                    </tr>
-                    <tr>
-                      <td>Material</td>
-                      <td>Crepe printed</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <table>
-                  <tbody>
-                    <tr>
-                      <td>Length</td>
-                      <td>50 Inches</td>
-                    </tr>
-                    <tr>
-                      <td>Size</td>
-                      <td>S, M, L .XXL</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              
             </TabPane>
             <TabPane tabId="2">
               <div id="videoWrapper" className="mt-3 text-center">

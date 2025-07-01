@@ -82,7 +82,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
           if (!findItemSize && vari.size) uniqueSize.push(vari.size);
         })} */}
       {swatch ? <ImageSwatch item={item} changeColorVar={changeColorVar} /> : ""}
-      <div className="product-description border-product">
+      {/* <div className="product-description border-product">
         <h6 className="product-title">select color</h6>
         {changeColorVar === undefined
           ? !!uniqueColor.length && (
@@ -138,7 +138,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
             </div>
           </>
         )}
-      </div>
+      </div> */}
       <div className="product-description border-product">
         {stock !== "InStock" ? <span className="instock-cls">{stock}</span> : ""}
         <h6 className="product-title">quantity</h6>
@@ -174,13 +174,13 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
           buy now
         </a>
       </div>
-      <div className="border-product">
-        <h6 className="product-title">product details</h6>
-        <p dangerouslySetInnerHTML={{ __html: item?.description[0].description }}>
+      {/* <div className="border-product"> */}
+        {/* <h6 className="product-title">product details</h6> */}
+        {/* <p dangerouslySetInnerHTML={{ __html: item?.description[0].description }}> */}
           {/* {item.description.map((d:any) => {return (d.description)})} */}
           {/* {item.description[0]} */}
-        </p>
-      </div>
+        {/* </p> */}
+      {/* </div> */}
       <div className="border-product">
         <div className="product-icon">
           <ul className="product-social">

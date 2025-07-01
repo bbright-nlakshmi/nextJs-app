@@ -13,7 +13,7 @@ import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import CollectionBanner from "./CollectionBanner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { objCache, searchController } from "@/app/globalProvider";
-import { Category, Discount } from "@/app/models/models";
+import { Category, CategoryProducts, Discount } from "@/app/models/models";
 
 type CollectionProps = {
   cols: any;
@@ -117,7 +117,11 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
   };
 
 
-
+const getPrice = (item:any) => {
+  var price:number = 0;
+   price = (categoryType == 'discount')?searchController.getDetails(item.id, 'getPrice'):searchController.getDetails(item.productId, 'getPrice');
+  return price;
+}
   return (
     <Col className="collection-content">
       <div className="page-main-content">
@@ -167,10 +171,10 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
                             data={item}
                             newLabel={item.new}
                             item={item}
-                            price={searchController.getDetails(item.id, 'gePrice')}
+                            price={getPrice(item)}
                             addCart={() => addToCart(item)}
                             addCompare={() => addToCompare(item)}
-                            addWish={() => addToWish(item)} price={0}                          />
+                            addWish={() => addToWish(item)}                         />
                         </div>
                       </div>
                     ))

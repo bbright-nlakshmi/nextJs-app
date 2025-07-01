@@ -10,12 +10,13 @@ interface allProductsProps {
 export class ObjCache extends EventEmitter {
   public premiumList: Map<string, Product[]> = new Map();
   public nonPremiumList: Map<string, Product[]> = new Map();
+  //public nonPremiumList: Product[] = [];
   public kitList: Kit[] = [];
   public allBannersList: BannerModel[] = [];
   public discountList: Discount[] = [];
   public discountProducts = new Subject<Discount[]>();
   public allCategories: Category[] = [];
-  public allProducts: Map<string, Product> = new Map();
+  public allProducts: Map<string, Product[]> = new Map();
   public allProducstsList: Product[] = [];
   public priceRanges: StorePriceRanges | undefined;
   public announcement: StoreAnnounce | undefined;
@@ -37,7 +38,7 @@ export class ObjCache extends EventEmitter {
 
   resetAllObjCaches() {
     this.premiumList.clear();
-    this.nonPremiumList.clear();
+   // this.nonPremiumList.clear();
     this.kitList = [];
     this.discountList = [];
     this.discountProducts.next([])
@@ -53,7 +54,7 @@ export class ObjCache extends EventEmitter {
   }
 
   resetObjCacheNonPremiumList() {
-    this.nonPremiumList = new Map();
+   // this.nonPremiumList = new Map();
   }
 
   resetObjCacheKitList() {
@@ -79,13 +80,15 @@ export class ObjCache extends EventEmitter {
     this.tags = Tags.emptyTags();
   }
 
-  insertObjCachePremiumList(key: string, lst: any) {
-    this.premiumList.set(key, lst);
+  insertObjCachePremiumList( lst: any) {
+    //this.premiumList.set(key, lst);
+    this.emit('updatePremiumList', lst);
     this.emit('update');
   }
 
-  insertObjCacheNonPremiumList(key: string, lst: any) {
-    this.nonPremiumList.set(key, lst);
+  insertObjCacheNonPremiumList(lst: any) {
+    
+    this.emit('updateNonPremiumList', lst);
     this.emit('update');
   }
 
@@ -116,11 +119,11 @@ export class ObjCache extends EventEmitter {
 
 
   insertObjCacheAllProducts(lst: any) {
-    //this.allProducts.set(key, lst);
-    //this.emit('update');
+    
     this.allProducstsList = lst;
     this.emit('updateAllProducts', lst);
-    //this.allProducstsList.next(lst);
+    this.emit('update');
+    
   }
 
 
@@ -170,12 +173,12 @@ export class ObjCache extends EventEmitter {
     let count = 0;
 
     this.premiumList.forEach((products) => {
-      console.log(products)
-      // for (const product of products) {
-      //   if (product.getSearchTags().includes(name)) {
-      //     count++;
-      //   }
-      // }
+     
+       for (const product of products) {
+        if (product.getSearchTags().includes(name)) {
+          count++;
+        }
+      }
     });
 
     this.nonPremiumList.forEach((products) => {
@@ -195,19 +198,17 @@ export class ObjCache extends EventEmitter {
 
   getProductById(id: string): Product | null {
     var product;
-    //for (const products of this.premiumList.values()) {
+   
       product = this.getAllPremiumProducts().find(p => p.id === id);
+     
       if (product) return product;
-    //}
-
-    //for (const products of this.nonPremiumList.values()) {
+    
       product = this.getAllNonPremiumProducts().find(p => p.id === id);
       if (product) return product;
-    //}
-
+   
     product = this.getAllProducts().find(p => p.id === id);
       if (product) return product;
-
+     
     return null;
   }
 
@@ -230,6 +231,7 @@ export class ObjCache extends EventEmitter {
   }
 
   getAllPremiumProducts(): Product[] {
+    
     return Array.from(this.premiumList.values()).flat();
   }
 
@@ -367,30 +369,32 @@ export class ObjCache extends EventEmitter {
   }
   findProductById(pathId: string) {
     var found, foundItem;
-    this.allCategories.map((products: Category) => {
+    // this.allCategories.map((products: Category) => {
 
-      found = products.category_products.findIndex((item: any) => item.productId === pathId);
+    //   found = products.category_products.findIndex((item: any) => item.productId === pathId);
 
-      if (found != -1) {
+    //   if (found != -1) {
 
-        return foundItem = products.category_products[found];
-      }
-    });
+    //      foundItem = products.category_products[found];
+    //   }
+    // });
+    // console.log(foundItem);
+    // if (foundItem) return foundItem;
 
     foundItem = this.getProductById(pathId)
 
     if (foundItem) return foundItem;
-    console.log(foundItem);
+    
+    //console.log(this.discountList)
+    // this.discountList.map((products: Discount) => {
 
-    this.discountList.map((products: Discount) => {
+    //   found = products.discountItems.findIndex((item: DiscountItem) => item.id === pathId);
 
-      found = products.discountItems.findIndex((item: DiscountItem) => item.id === pathId);
-
-      if (found != -1) {
-
-        return foundItem = products.discountItems[found];
-      }
-    });
+    //   if (found != -1) {
+    //      foundItem = products.discountItems[found];
+    //   }
+    // });
+    // if (foundItem) return foundItem;
     return null;
 
   }
