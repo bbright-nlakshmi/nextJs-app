@@ -8,6 +8,7 @@ import CollectionBannerTwo from "@/views/layouts/layout1/collection-banner-two";
 import HotDeal from "@/views/layouts/layout1/hot-deal";
 import SliderBanner from "@/views/layouts/layout1/slider";
 import TabProduct from "@/views/layouts/widgets/Tab-Product/TabProduct";
+import CategoryProducts from "@/views/layouts/widgets/category-box/category_products";
 import ContactBanner from "@/views/layouts/widgets/contact-us";
 import DealBanner from "@/views/layouts/widgets/dealBanner";
 import DiscountBanner from "@/views/layouts/widgets/discount-banner";
@@ -55,10 +56,11 @@ const Home = () => {
     <>
       {/* <NewsLatter /> */}
       <Layouts>
-        <div className="bg-light">
+       
           <SliderBanner banners={banners} />
           <CollectionBanner categories={categories} />
           <TabProduct effect="icon-inline" categories={allCategories} />
+          {/* <CategoryProducts effect="icon-inline" categories={allCategories} /> */}
           {/* <DiscountBanner /> */}
 
           {/* <CollectionBannerTwo /> */}
@@ -89,7 +91,7 @@ const Home = () => {
               <InstagramSection />
             </section>
             <ContactBanner /> */}
-        </div>
+      
       </Layouts>
     </>
   );
