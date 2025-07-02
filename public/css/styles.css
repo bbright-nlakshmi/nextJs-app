@@ -18766,6 +18766,11 @@ li.with-megamenu:hover .rts-megamenu {
   .title-area-between .next-prev-swiper-wrapper .swiper-button-next {
     display: none;
   }
+
+  .rts-banner-area-one:hover .swiper-button-next,
+  .rts-banner-area-one:hover .swiper-button-prev {
+    opacity: 0!important;
+  }
 }
 
 .title-area-between .next-prev-swiper-wrapper .swiper-button-prev i,
@@ -18902,6 +18907,10 @@ li.with-megamenu:hover .rts-megamenu {
     flex-direction: column;
     align-items: flex-start !important;
     padding: 15px;
+  }
+   .rts-banner-area-one:hover .swiper-button-next,
+  .rts-banner-area-one:hover .swiper-button-prev {
+    opacity: 0;
   }
 }
 

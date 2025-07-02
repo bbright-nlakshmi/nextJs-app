@@ -425,7 +425,7 @@ export class APIService {
           const img = element.category_image;
           const sort = element.category_sort;
 
-          const sr = new CategoryRender(category, viewOption, sort, img);
+          const sr = new CategoryRender(category, viewOption, img,sort);
 
           if (!allProducts.has(sr)) {
             allProducts.set(sr, []);

@@ -309,7 +309,13 @@ export class SearchPageControl extends EventEmitter {
 
     getDetails(productId: string, eventName: string) {
       var foundItem;
-             foundItem = objCache.getAllProducts().find((item: Product) => item.id == productId);
+      const allProducts = objCache.getAllProducts();
+      const index = allProducts.findIndex((item: Product) => item.id == productId);
+     
+            if(index != -1){
+             foundItem = allProducts[index];
+             
+            }
 
             if (foundItem) {
  
