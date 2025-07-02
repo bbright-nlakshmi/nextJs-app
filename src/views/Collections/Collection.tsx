@@ -13,14 +13,15 @@ import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import CollectionBanner from "./CollectionBanner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { objCache, searchController } from "@/app/globalProvider";
-import { Category, CategoryProducts, Discount } from "@/app/models/models";
+import { Category, Discount, CategoryProducts } from "@/app/models/models";
 
 type CollectionProps = {
   cols: any;
   layoutList: string;
+  categoryProducts: CategoryProducts[]
 };
 
-const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
+const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProducts }) => {
   const {
     selectedCategory,
     selectedBrands,
@@ -35,7 +36,7 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
   const { addToCompare } = useContext(CompareContext);
   const [grid, setGrid] = useState(cols);
   const [sortBy, setSortBy] = useState("ASC_ORDER");
-  const [pageLimit, setPageLimit] = useState(5);
+  const [pageLimit, setPageLimit] = useState(50);
   const [layout, setLayout] = useState(layoutList);
   const [discount, setDiscount] = useState<Discount>();
   const [category, setCategory] = useState<Category>();
@@ -87,8 +88,12 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
       setProductData(foundItem?.category_products);
 
     }
-
-    //console.log(productData)
+console.log(categoryProducts);
+    if(categoryProducts?.length){
+      setProductData([...categoryProducts]);
+    }
+console.log(categoryProducts)
+    console.log(productData)
     return () => {
       objCache.off('updateDiscountProducts', () => { });
     };
@@ -119,7 +124,7 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList }) => {
 
 const getPrice = (item:any) => {
   var price:number = 0;
-   price = (categoryType == 'discount')?searchController.getDetails(item.id, 'getPrice'):searchController.getDetails(item.productId, 'getPrice');
+   price = (categoryType == 'discount')?searchController.getDetails(item.id, 'getPrice'):searchController.getDetails(item.product_id, 'getPrice');
   return price;
 }
   return (
@@ -127,34 +132,8 @@ const getPrice = (item:any) => {
       <div className="page-main-content">
         <Row>
           <Col sm="12">
-            <CollectionBanner img={product?.img?.[0]} name={product?.name} details={product?.details} />
-
             <div className="collection-product-wrapper">
-              {/* Filter tags */}
-              <Row>
-                <Col xs="12">
-                  <ul className="product-tags">
-                    {!!productData?.length &&
-                      productData.map((brand: any, i: number) => (
-                        <li className="me-1" key={i}>
-                          <a className="filter_tag">
-                            {brand.name}
-                            <i className="ti-close" onClick={() => removeBrand(brand)}></i>
-                          </a>
-                        </li>
-                      ))}
-                    {!!selectedColor.length && (
-                      <li className="me-1">
-                        <a className="filter_tag">
-                          {selectedColor}
-                          <i className="ti-close" onClick={removeColor}></i>
-                        </a>
-                      </li>
-                    )}
-                  </ul>
-                </Col>
-              </Row>
-
+            
               {/* Product Grid */}
               <div className={`product-wrapper-grid ${layout}`}>
                 <Row>
@@ -165,7 +144,7 @@ const getPrice = (item:any) => {
                   ) : (
                     productData.slice(0, pageLimit).map((item: any, i: number) => (
                       <div className={grid} key={i}>
-                        <div className="product" >
+                        <div className="product"  >
                           <ProductBox
                             layout="layout-one"
                             data={item}

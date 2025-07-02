@@ -8,16 +8,16 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/grid";
-import { Category, ObjCache } from "@/app/globalProvider";
+import { Category, ObjCache, Product } from "@/app/globalProvider";
 
 import router from "next/router";
 
-
 interface Props {
   categories: Category[];
+  categoryProducts:Product[];
 }
 
-const CollectionBanner: NextPage<Props> = ({ categories }) => {
+const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
 
   const handleClickEvent = (id: string) => {
     router.push(`/product-details/${id}`);
@@ -61,7 +61,7 @@ const CollectionBanner: NextPage<Props> = ({ categories }) => {
 
             >
               {
-                categories.map((item: any) => (
+                categories.map((item) => (
                   <SwiperSlide key={item.id}>
                     <div className="single-category-one height-180" >
                       <Link
