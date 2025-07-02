@@ -73,7 +73,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
 
   const clickProductDetail = () => {
 
-    router.push(`/product-details/${data?.productId?data?.productId:data?.id}`);
+    router.push(`/product-details/${data?.productId ? data?.productId : data?.id}`);
   };
 
 
@@ -81,13 +81,15 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
   return (
 
     <Fragment>
-      <div className="product-box" >
+      <div className="product-box single-shopping-card-one" >
 
-        <div className="product-imgbox">
-          <div className="product-front" onClick={clickProductDetail}>
-           <a><Media src={data?.img[0]} alt="" className="img-fluid  image_zoom_cls-0" /></a> 
-            {/* <Img src={`${data?.img[0]}`} className="img-fluid" alt="product" /> */}
-          </div>
+        <div className="product-imgbox image-and-action-area-wrapper" onClick={clickProductDetail}>
+
+          <a className="thumbnail-preview">
+            <Media src={data?.img[0]} alt="" className="img-fluid  image_zoom_cls-0" />
+          </a>
+
+
 
           <div className={`product-icon ${hoverEffect}`}>
             <button onClick={() => addCart()}>
@@ -112,7 +114,12 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
         </div>
         <div className="product-detail detail-inline ">
           <div className="detail-title">
+
             <div className="detail-left">
+              <Link href={`/product-details/${data?.productId ? data?.productId : data?.id}`}>
+
+                <h6 className="price-title">{data?.name}</h6>
+              </Link>
               <ul className="rating-star">
                 <i className="fa fa-star"></i>
                 <i className="fa fa-star"></i>
@@ -120,19 +127,15 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
                 <i className="fa fa-star"></i>
                 <i className="fa fa-star"></i>
               </ul>
-              {layout === "list-view" ? <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book</p> : ""}
 
-              <Link href={`/product-details/${data?.productId?data?.productId:data?.id}`}>
 
-                <h6 className="price-title">{data?.name}</h6>
-                </Link>
-      
             </div>
-            <div className="detail-right">
-              {/* <div className="check-price">
+
+            {/* <div className="check-price">
                 {selectedCurr.symbol}
                 {(getPrice(data.productId) * selectedCurr.value).toFixed(2)}{" "}
               </div> */}
+            <div className="detail-right">
               <div className="price">
                 <div className="price">
                   {selectedCurr.symbol}

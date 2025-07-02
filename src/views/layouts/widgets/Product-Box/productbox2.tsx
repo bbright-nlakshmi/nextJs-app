@@ -8,24 +8,12 @@ import { Media, Modal, ModalBody } from "reactstrap";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import Slider from "react-slick";
 
-<<<<<<< HEAD
-interface productType {
-  img?: any;
-  id?: number;
-  title?: string;
-  newLabel?: boolean;
-  sale?: Boolean;
-  stock: number;
-  price: number;
-  item: any;
-=======
 interface ProductBox2Props {
   id?: number;
   title?: string;
   newLabel?: boolean;
   sale?: boolean;
   price?: number;
->>>>>>> eb7ec620693a61b2be87979865f698de83be118f
   discount?: number;
   stock?: number;
   images?: any[];
