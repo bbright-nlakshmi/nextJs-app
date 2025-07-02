@@ -25,7 +25,6 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
         <div className="custom-container">
           <Row>
             <Col>
-                <p>No discounts available</p>
             </Col>
           </Row>
         </div>
