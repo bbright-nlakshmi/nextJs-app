@@ -113,49 +113,49 @@ export class SearchPageControl extends EventEmitter {
         this.allTags = this.getAllTags();
     }
 
-   refreshGrid(str: string) {
-    this.searchInput = str;
-    this.searchStr = str.trim().toLowerCase();
+    refreshGrid(str: string) {
+        this.searchInput = str;
+        this.searchStr = str.trim().toLowerCase();
 
-    if (!this.searchStr) {
-        this.kits = []; 
-        this.products = Array.isArray(this.allProducts)
-            ? this.allProducts
-            : Array.from(this.allProducts.values()).flat();
-        this.showEmptySearchResult = false;
+        if (!this.searchStr) {
+            this.kits = [];
+            this.products = Array.isArray(this.allProducts)
+                ? this.allProducts
+                : Array.from(this.allProducts.values()).flat();
+            this.showEmptySearchResult = false;
+            this.update();
+            return;
+        }
+
+        const matchScore = (name: string): number => {
+            const lowerName = name.toLowerCase();
+            if (lowerName.startsWith(this.searchStr)) return 2;
+            if (lowerName.includes(this.searchStr)) return 1;
+            return 0;
+        };
+
+        const filterAndSort = <T extends { name: string }>(items: T[]): T[] => {
+            return items
+                .map(item => ({
+                    item,
+                    score: matchScore(item.name)
+                }))
+                .filter(entry => entry.score > 0)
+                .sort((a, b) => b.score - a.score)
+                .map(entry => entry.item);
+        };
+
+        // Filter kits
+        this.kits = filterAndSort(this.allKits);
+
+        const allProductsArray: Product[] = this.allProducts;
+        this.products = filterAndSort(allProductsArray);
+
+        // Show/hide "no results"
+        this.showEmptySearchResult = this.kits.length === 0 && this.products.length === 0;
+
         this.update();
-        return;
     }
-
-    const matchScore = (name: string): number => {
-        const lowerName = name.toLowerCase();
-        if (lowerName.startsWith(this.searchStr)) return 2;
-        if (lowerName.includes(this.searchStr)) return 1;
-        return 0;
-    };
-
-    const filterAndSort = <T extends { name: string }>(items: T[]): T[] => {
-        return items
-            .map(item => ({
-                item,
-                score: matchScore(item.name)
-            }))
-            .filter(entry => entry.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .map(entry => entry.item);
-    };
-
-    // Filter kits
-    this.kits = filterAndSort(this.allKits);
-
-    const allProductsArray: Product[] = this.allProducts;
-    this.products = filterAndSort(allProductsArray);
-
-    // Show/hide "no results"
-    this.showEmptySearchResult = this.kits.length === 0 && this.products.length === 0;
-
-    this.update();
-}
 
     convertAllProducts() {
         return this.allProducts instanceof Map
@@ -168,28 +168,28 @@ export class SearchPageControl extends EventEmitter {
 
         objCache.on('updateAllProducts', (data) => {
             this.allProducts = data instanceof Map
-            ? Array.from(data.values()).flat()
-            : Array.isArray(data)
-                ? data
-                : [];
-            
+                ? Array.from(data.values()).flat()
+                : Array.isArray(data)
+                    ? data
+                    : [];
+
             this.update();
         });
 
     }
 
-  getKits() {
-  objCache.on("updateKits", (kits) => {
-    this.allKits = kits;
+    getKits() {
+        objCache.on("updateKits", (kits) => {
+            this.allKits = kits;
 
-    // Only update visible kits if user is searching
-    if (this.searchInput && this.searchInput.trim() !== "") {
-      this.kits = [...kits]; // Reapply current filter or refresh
-      this.refreshGrid(this.searchInput);
+            // Only update visible kits if user is searching
+            if (this.searchInput && this.searchInput.trim() !== "") {
+                this.kits = [...kits]; // Reapply current filter or refresh
+                this.refreshGrid(this.searchInput);
+            }
+            // Do NOT call this.update() unless you really want UI to refresh!
+        });
     }
-    // Do NOT call this.update() unless you really want UI to refresh!
-  });
-}
 
     resetFilters() {
         this.setPriceRangeValues();
@@ -307,29 +307,33 @@ export class SearchPageControl extends EventEmitter {
         return this.sortByPrice();
     }
 
+    getPriceDetails(productId: string) {
+
+    }
+
     getDetails(productId: string, eventName: string) {
-      var foundItem;
-      const allProducts = objCache.getAllProducts();
-      const index = allProducts.findIndex((item: Product) => item.id == productId);
-     
-            if(index != -1){
-             foundItem = allProducts[index];
-             
-            }
+        var foundItem;
+        foundItem = objCache.getProductById(productId);
+        //const allProducts = objCache.getAllProducts();
+        // const index = allProducts.findIndex((item: Product) => item.id == productId);
+        // if (index != -1) {
+        //     foundItem = allProducts[index];
 
-            if (foundItem) {
- 
-                if (eventName == 'getPrice')
-                    return foundItem.getPrice();
-                else if (eventName == 'getPriceWithDiscount')
-                    return foundItem.getPriceWithDiscount();
-                else if (eventName == 'getProductPrice')
-                    return foundItem.getProductPrice();
-                // else if (eventName == 'getProductById')
-                //     return foundItem;
+        // }
 
-            }
-        
+        if (foundItem) {
+
+            if (eventName == 'getPrice')
+                return foundItem.getPrice();
+            else if (eventName == 'getPriceWithDiscount')
+                return foundItem.getPriceWithDiscount();
+            else if (eventName == 'getProductPrice')
+                return foundItem.getProductPrice();
+            // else if (eventName == 'getProductById')
+            //     return foundItem;
+
+        }
+
         return 0;
     }
 }
