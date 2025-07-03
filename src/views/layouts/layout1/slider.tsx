@@ -3,7 +3,7 @@ import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import Slider from "react-slick";
 import { Col, Media, Row } from "reactstrap";
-import {API, BannerModel, ObjCache } from '@/app/globalProvider'
+import { API, BannerModel, ObjCache } from '@/app/globalProvider'
 
 
 
@@ -55,44 +55,59 @@ interface SliderProps {
 }
 
 const SliderBanner: NextPage<SliderProps> = ({ banners }) => {
-  if(banners)
-  return (
-    <section className="w-full section-py-space">
-      <div className="custom-container rts-banner-area-one" >
+  if (banners)
+    return (
+      <div className="background-light-gray-color ptb--30 bg_light-1 pt_sm--20">
+        {/* rts banner area start */}
+        <div className="rts-banner-area-one mb--30">
+          <div className="container">
+            <div className="row">
+              <div className="col-lg-12">
+                <div className="category-area-main-wrapper-one">
 
-        <Swiper
-          spaceBetween={1}
-          slidesPerView={1}
-          loop={true}
-          speed={2000}
-          autoplay={{
-            delay: 4000,
-          }}
-          mousewheel={true}
-          navigation={true}
+                  <Swiper
+                    modules={[Navigation, Autoplay]}
+                    spaceBetween={1}
+                    slidesPerView={1}
+                    loop={true}
+                    speed={2000}
+                    autoplay={{
+                      delay: 4000,
+                    }}
+                    navigation={{
+                      nextEl: '.swiper-button-next',
+                      prevEl: '.swiper-button-prev',
+                    }}
+                    breakpoints={{
+                      0: { slidesPerView: 1, spaceBetween: 0 },
+                      320: { slidesPerView: 1, spaceBetween: 0 },
+                      480: { slidesPerView: 1, spaceBetween: 0 },
+                      640: { slidesPerView: 1, spaceBetween: 0 },
+                      840: { slidesPerView: 1, spaceBetween: 0 },
+                      1140: { slidesPerView: 1, spaceBetween: 0 },
+                    }}
+                  >
+                    {banners.map((item) => (
+                      <SwiperSlide>
 
-          breakpoints={{
-            0: { slidesPerView: 1, spaceBetween: 0 },
-            320: { slidesPerView: 1, spaceBetween: 0 },
-            480: { slidesPerView: 1, spaceBetween: 0 },
-            640: { slidesPerView: 1, spaceBetween: 0 },
-            840: { slidesPerView: 1, spaceBetween: 0 },
-            1140: { slidesPerView: 1, spaceBetween: 0 },
-          }}
-          modules={[Autoplay, Navigation, Mousewheel, Keyboard]}
-        >
-          {banners.map((item) => (
-            <SwiperSlide>
-             
-                  <Media src={item.img[0]} className="bg-img  img-fluid" alt={item.name} />
-              
-            </SwiperSlide>
-          ))}
-        </Swiper>
+                        <Media src={item.img[0]} className="bg-img  img-fluid" alt={item.name} />
 
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
+                  <button className="swiper-button-next">
+                    <i className="fa-regular fa-arrow-right"></i>
+                  </button>
+                  <button className="swiper-button-prev">
+                    <i className="fa-regular fa-arrow-left"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
-  );
+    );
 };
 
 

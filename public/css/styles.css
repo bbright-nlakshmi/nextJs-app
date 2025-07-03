@@ -47,6 +47,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
+
 :root {
   --color-primary: #629D23;
   --color-secondary: #1F1F25;
@@ -18750,8 +18751,8 @@ li.with-megamenu:hover .rts-megamenu {
   height: 33px;
   width: 33px;
   border-radius: 6px;
-  border: 1px solid var(--color-primary);
-  color: var(--color-primary);
+  border: 1px solid var(--swiper-theme-color);
+  color: var(--swiper-navigation-color, var(--swiper-theme-color));
   background-image: none;
   display: flex;
   align-items: center;
@@ -18764,6 +18765,11 @@ li.with-megamenu:hover .rts-megamenu {
   .title-area-between .next-prev-swiper-wrapper .swiper-button-prev,
   .title-area-between .next-prev-swiper-wrapper .swiper-button-next {
     display: none;
+  }
+
+  .rts-banner-area-one:hover .swiper-button-next,
+  .rts-banner-area-one:hover .swiper-button-prev {
+    opacity: 0!important;
   }
 }
 
@@ -18901,6 +18907,10 @@ li.with-megamenu:hover .rts-megamenu {
     flex-direction: column;
     align-items: flex-start !important;
     padding: 15px;
+  }
+   .rts-banner-area-one:hover .swiper-button-next,
+  .rts-banner-area-one:hover .swiper-button-prev {
+    opacity: 0;
   }
 }
 
@@ -25914,7 +25924,7 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
 }
 
 .rts-product-details-section {
-  padding-top: 100px;
+ 
   padding-bottom: 30px;
 }
 
@@ -26160,7 +26170,7 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
 }
 
 .rts-product-details-section .details-product-area .product-catagory {
-  background: var(--color-primary);
+  background: var(--theme-color1);
   padding: 0px 10px;
   border-radius: 4px;
   font-size: 14px;
@@ -26176,12 +26186,16 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
 .rts-product-details-section .details-product-area .rating-stars-group span {
   font-size: 14px;
   font-weight: 400;
-  color: #61b163;
+  color: var(--font-three);
 }
 
 .rts-product-details-section .details-product-area .product-title {
   font-size: 26px;
   margin-bottom: 10px;
+}
+
+.swiper-grid-column > .swiper-wrapper{
+  flex-direction:row !important;
 }
 
 @media only screen and (max-width: 575px) {
