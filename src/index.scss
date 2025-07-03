@@ -26990,15 +26990,11 @@ ul.rating-star{
     max-width: 1800px
 }
 
-// .rts-category-area .swiper-button-next:after,
-// .rts-category-area .swiper-button-prev:after,
-// .swiper-button-between .swiper-button-next:after,
-// .swiper-button-between .swiper-button-prev:after {
-//     display: none;
-// }
-// .rts-category-area .swiper-button-prev, .rts-banner-area-one .swiper-button-prev{
-//     display:none;
-// }
+
+.single-filter-box .filterbox-body .category-wrapper{
+    overflow-y: scroll;
+    max-height:250px;
+}
 
 .banner-three-swiper-main-wrapper.swiper-button-between {
     z-index: 2
@@ -27262,5 +27258,18 @@ select {
     width:100px;
     height:100px;
 }
+}
+
+input[type=checkbox] ~ label:after, input[type=radio] ~ label:after{
+    width: 20px;
+    height: 10px;
+    background-color: transparent;
+    border-bottom: 2px solid var(--theme-color1);
+    border-left: 2px solid var(--theme-color1);
+    border-radius: 2px;
+}
+input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
+    width:25px;
+    height:25px;
 }
 

@@ -13,7 +13,8 @@ const NoSidebar: NextPage = () => {
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("id");
   const categoryType = searchParams.get("type");
-  const [selectedCategories, setSelectedCategories] = useState<Category[]>(selectedCategory?[selectedCategory]:[]);
+  
+
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);  // <-- new state for brands
   // New state for price filter
   const [minPrice, setMinPrice] = useState<number>(0);
@@ -21,19 +22,25 @@ const NoSidebar: NextPage = () => {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   const [selectedCatgeoryProducts, setselectedCatgeoryProducts] = useState<CategoryProducts[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
 
-  var selectedCategory = objCache.allCategories.find(cat => cat.id === categoryId);
-
+ var selectedCategory: any;
   useEffect(() => {
-    setAllCategories(objCache.allCategories);
+    //setAllCategories(objCache.allCategories);
+     selectedCategory = objCache.allCategories.find(cat => cat.id === categoryId);
     objCache.on('updateAllCategories', (data: Category[]) => {
-        setAllCategories(data);
-        selectedCategory = data.find(cat => cat.id === categoryId);;
-    })
-    }, []);
+      setAllCategories(data);
+      selectedCategory = data.find(cat => cat.id === categoryId);
+      setSelectedCategories(selectedCategory ? [selectedCategory] : []);
+      setselectedCatgeoryProducts(selectedCategory?.category_products);
+    });
+    
+    
+  }, []);
   
-
-
+  
+  
+  
   const handlePriceFilterSubmit = () => { }
   const allBrands = ["Frito Lay", "Nespresso", "Oreo", "Quaker", "Welch's"];
 
@@ -49,31 +56,33 @@ const NoSidebar: NextPage = () => {
 
 
   const handleCategoryChange = (category: Category) => {
-    
-    setSelectedCategories(getSelectedCategories(category));
-    
-    setselectedCatgeoryProducts(getFilteredByCategoryProducts())
- 
+    setselectedCatgeoryProducts([]);
+    const catselected = getSelectedCategories(category);
+    setSelectedCategories(catselected);
+    const prodSelection = getFilteredByCategoryProducts(catselected)
+    setselectedCatgeoryProducts(prodSelection);
+
   };
 
-  const getSelectedCategories = (category:Category) => {
-    
-    return [...selectedCategories,category];
+  const getSelectedCategories = (category: Category) => {
+
+    return [...selectedCategories, category];
   }
 
   // Filter products by selected categories
-  const getFilteredByCategoryProducts = (): CategoryProducts[] => {
-    var catProds:CategoryProducts[] = [];
-    if (selectedCategories.length) {
+  const getFilteredByCategoryProducts = (catselected:Category[]): CategoryProducts[] => {
+    var catProds: CategoryProducts[] = [];
+    if (catselected.length) {
       
-      selectedCategories.map(cat => {
-        if(cat.category_products.length)
-        catProds.push(...cat.category_products);
-    });
-    
-      return catProds;
+      catselected.map(cat => {
+        
+          catProds.push(...cat.category_products);
+      });
+      
+      //console.log(catProds);
     }
-    else return [];
+    
+    return catProds;
 
   };
 
@@ -85,7 +94,7 @@ const NoSidebar: NextPage = () => {
         : [...prev, brand]
     );
   };
-
+ 
   return (
     <Layout1>
       {/* <Breadcrumb parent="Category" title="No Sidebar" /> */}
@@ -158,7 +167,8 @@ const NoSidebar: NextPage = () => {
                           <input
                             id={`cat${i + 1}`}
                             type="checkbox"
-                            checked={selectedCategories.findIndex(item =>  cat.id === item.id ) != -1}
+                            checked={selectedCategories.findIndex(item => cat.id === item.id) != -1}
+                            
                             onChange={() => handleCategoryChange(cat)}
                           />
                           <label htmlFor={`cat${i + 1}`}>{cat.name}</label>

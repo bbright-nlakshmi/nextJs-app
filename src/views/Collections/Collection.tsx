@@ -3,7 +3,7 @@
 import { CompareContext } from "@/helpers/compare/compare.context";
 import { gql, useQuery } from "@apollo/client";
 import { NextPage } from "next";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Col, Row, Spinner, Button } from "reactstrap";
 import { Skeleton } from "../../common/skeleton";
 import { CartContext } from "../../helpers/cart/cart.context";
@@ -48,6 +48,15 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
   const [product, setProduct] = useState<any>();
   const [productData, setProductData] = useState<any>();
   var foundItem: any = {};
+  
+  // ✅ Hook to force a re-render
+  function useForceUpdate() {
+    const [, setTick] = useState(0);
+    const update = useCallback(() => setTick((tick) => tick + 1), []);
+    return update;
+    
+  }
+  const forceUpdate = useForceUpdate();
   useEffect(() => {
 
     if (categoryType == 'discount') {
@@ -66,38 +75,37 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
         }
       });
       setProductData(foundItem?.discountItems);
+      console.log(productData)
     }
     else if (categoryType == 'category') {
-
-      foundItem = objCache.allCategories.find((item: Category) => item.id === categoryId);
-     
-      if (foundItem) {
-        setProduct(foundItem);
+      if (categoryProducts?.length) {
+        setProductData([...categoryProducts]);
       }
-      objCache.on('updateAllCategories', (data: Category[]) => {
+      // foundItem = objCache.allCategories.find((item: Category) => item.id === categoryId);
 
-        if (data && data.length > 0) {
-          foundItem = data.find((item: Category) => item.id === categoryId);
-          if (foundItem) {
-            setProduct(foundItem);
+      // if (foundItem) {
+      //   setProduct(foundItem);
+      // }
+      // objCache.on('updateAllCategories', (data: Category[]) => {
 
-          }
+      //   if (data && data.length > 0) {
+      //     foundItem = data.find((item: Category) => item.id === categoryId);
+      //     if (foundItem) {
+      //       setProduct(foundItem);
 
-        }
-      });
-      setProductData(foundItem?.category_products);
+      //     }
 
+      //   }
+      // });
+      // setProductData(foundItem?.category_products);
+      //console.log(foundItem?.category_products)
     }
-console.log(categoryProducts);
-    if(categoryProducts?.length){
-      setProductData([...categoryProducts]);
-    }
-console.log(categoryProducts)
-    console.log(productData)
+
+
     return () => {
       objCache.off('updateDiscountProducts', () => { });
     };
-  }, []);
+  }, [forceUpdate]);
 
   // const handleUserLogin = (userId) => {
   //       console.log(`User ${userId} has logged in!`);
@@ -122,18 +130,18 @@ console.log(categoryProducts)
   };
 
 
-const getPrice = (item:any) => {
-  var price:number = 0;
-   price = (categoryType == 'discount')?searchController.getDetails(item.id, 'getPrice'):searchController.getDetails(item.product_id, 'getPrice');
-  return price;
-}
+  const getPrice = (item: any) => {
+    var price: number = 0;
+    price = (categoryType == 'discount') ? searchController.getDetails(item.id, 'getPrice') : searchController.getDetails(item.productId, 'getPrice');
+    return price;
+  }
   return (
     <Col className="collection-content">
       <div className="page-main-content">
         <Row>
           <Col sm="12">
             <div className="collection-product-wrapper">
-            
+
               {/* Product Grid */}
               <div className={`product-wrapper-grid ${layout}`}>
                 <Row>
@@ -153,7 +161,7 @@ const getPrice = (item:any) => {
                             price={getPrice(item)}
                             addCart={() => addToCart(item)}
                             addCompare={() => addToCompare(item)}
-                            addWish={() => addToWish(item)}                         />
+                            addWish={() => addToWish(item)} />
                         </div>
                       </div>
                     ))

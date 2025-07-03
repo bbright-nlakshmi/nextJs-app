@@ -90352,6 +90352,11 @@ ul.rating-star {
   max-width: 1800px;
 }
 
+.single-filter-box .filterbox-body .category-wrapper {
+  overflow-y: scroll;
+  max-height: 250px;
+}
+
 .banner-three-swiper-main-wrapper.swiper-button-between {
   z-index: 2;
 }
@@ -90614,4 +90619,18 @@ select {
   box-shadow: none;
   width: 100px;
   height: 100px;
+}
+
+input[type=checkbox] ~ label:after, input[type=radio] ~ label:after {
+  width: 20px;
+  height: 10px;
+  background-color: transparent;
+  border-bottom: 2px solid var(--theme-color1);
+  border-left: 2px solid var(--theme-color1);
+  border-radius: 2px;
+}
+
+input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
+  width: 25px;
+  height: 25px;
 }
