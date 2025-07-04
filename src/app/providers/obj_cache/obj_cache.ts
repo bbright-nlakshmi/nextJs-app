@@ -399,6 +399,32 @@ export class ObjCache extends EventEmitter {
 
   }
 
+    // In objCache.ts
+getRecentlyAddedProducts(limit: number = 10): Product[] {
+  // Get all products from all sources
+  const allProducts = [
+    // ...this.getAllPremiumProducts(),
+    // ...this.getAllNonPremiumProducts(),
+    ...this.getAllProducts()
+  ];
+
+  // Remove duplicates by creating a map with product IDs
+  const uniqueProducts = new Map<string, Product>();
+  allProducts.forEach(product => {
+    if (!uniqueProducts.has(product.id)) {
+      uniqueProducts.set(product.id, product);
+    }
+  });
+
+  // Convert to array and sort by creationTime (newest first)
+  const sortedProducts = Array.from(uniqueProducts.values()).sort((a, b) => {
+    return new Date(b.creationTime).getTime() - new Date(a.creationTime).getTime();
+  });
+
+  // Return limited number of products
+  return sortedProducts.slice(0, limit);
+}
+
 
 }
 

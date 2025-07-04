@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import { BannerModel, Category, CategoryProducts, Discount, Kit, ObjCache, Product, StorePriceRanges, objCache } from "../globalProvider";
 import { Subscription } from 'rxjs';
 import Kits from "@/views/Kits/kits_list";
+import RecentlyAddedProducts from "@/views/Products-Detail/Recently-added/recently-added-products";
 
 
 
@@ -70,6 +71,8 @@ const Home = () => {
 
           {/* <CollectionBannerTwo /> */}
           <DiscountProducts products={products} />
+
+          <RecentlyAddedProducts/>
 
           <Kits kits={kits} />
 
