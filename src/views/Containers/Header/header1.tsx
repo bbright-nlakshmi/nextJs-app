@@ -28,7 +28,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
   const { setLeftMenu, leftMenu } = useContext(MenuContext);
  
 
-  // Handle sticky header on scroll
+  useEffect(() => {
   const handleScroll = () => {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
     const header = document.getElementById("stickyHeader");
@@ -43,16 +43,17 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
   };
 
   window.addEventListener("scroll", handleScroll);
-  //return () => window.removeEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
 
 
 
   return (
     <Fragment>
-      <header id="stickyHeader">
+      <header>
         <div className="mobile-fix-option"></div>
         {/* <TopBar /> */}
-        <div className="layout-header2">
+        <div className="layout-header2" id="stickyHeader">
           <Container>
             <Row>
               <Col md="12">
