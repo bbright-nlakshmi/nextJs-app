@@ -136,7 +136,7 @@ const Wishlist: NextPage = () => {
           if (obj?.images && Array.isArray(obj.images)) return obj.images;
           if (obj?.img && typeof obj.img === 'string') return [obj.img];
           if (obj?.image && typeof obj.image === 'string') return [obj.image];
-          return ["/images/default-product.png"];
+          return [""];
         };
 
         // Extract stock with proper fallback
@@ -256,10 +256,10 @@ const Wishlist: NextPage = () => {
                         <Media 
                           alt={item.title} 
                           className="me-3" 
-                          src={item.img?.[0] || "/images/default-product.png"}
+                          src={item.img?.[0] || ""}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = "/images/default-product.png";
+                            target.src = "";
                           }}
                         />
                       </Link>

@@ -1,8 +1,10 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { Row, Col, Container, Media, Input } from "reactstrap";
 import { API } from "@/app/services/api.service";
-
+import { useRouter } from "next/navigation";
 const FooterSection: React.FC = () => {
+  const router = useRouter();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -104,7 +106,8 @@ const FooterSection: React.FC = () => {
                                   <ul>
                                     <li><a href="#">about us</a></li>
                                     <li><a href="#">contact us</a></li>
-                                    <li><a href="#">terms & conditions</a></li>
+                                    <li><a onClick={() => router.push("/pages/terms")} style={{ cursor: "pointer" }}>terms & conditions</a></li>
+                                    <li><a onClick={() => router.push("/pages/privacy")} style={{ cursor: "pointer" }}>privacy Policy</a></li>
                                     <li><a href="#">returns & exchanges</a></li>
                                     <li><a href="#">shipping & delivery</a></li>
                                   </ul>

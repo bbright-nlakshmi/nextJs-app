@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { Col, Form, Input, Label, Nav, NavItem, NavLink, Row, TabContent, TabPane } from "reactstrap";
 
-const TabProduct: React.FC = () => {
+type Props  = {
+  description:string;
+}
+const TabProduct: React.FC<Props> = ({description}) => {
   const [activeTab, setActiveTab] = useState("1");
 
   return (
@@ -30,37 +33,8 @@ const TabProduct: React.FC = () => {
           </Nav>
           <TabContent className="nav-material" activeTab={activeTab}>
             <TabPane tabId="1">
-              <p className="ps-0">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry&#39;s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
-              <div className="single-product-tables">
-                <table>
-                  <tbody>
-                    <tr>
-                      <td>Febric</td>
-                      <td>Chiffon</td>
-                    </tr>
-                    <tr>
-                      <td>Color</td>
-                      <td>Red</td>
-                    </tr>
-                    <tr>
-                      <td>Material</td>
-                      <td>Crepe printed</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <table>
-                  <tbody>
-                    <tr>
-                      <td>Length</td>
-                      <td>50 Inches</td>
-                    </tr>
-                    <tr>
-                      <td>Size</td>
-                      <td>S, M, L .XXL</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <p className="ps-0" dangerouslySetInnerHTML={{ __html: description }}></p>
+              
             </TabPane>
             <TabPane tabId="2">
               <div id="videoWrapper" className="mt-3 text-center">

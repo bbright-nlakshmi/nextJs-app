@@ -8,6 +8,7 @@ import CollectionBannerTwo from "@/views/layouts/layout1/collection-banner-two";
 import HotDeal from "@/views/layouts/layout1/hot-deal";
 import SliderBanner from "@/views/layouts/layout1/slider";
 import TabProduct from "@/views/layouts/widgets/Tab-Product/TabProduct";
+//import CategoryProducts from "@/views/layouts/widgets/category-box/category_products";
 import ContactBanner from "@/views/layouts/widgets/contact-us";
 import DealBanner from "@/views/layouts/widgets/dealBanner";
 import DiscountBanner from "@/views/layouts/widgets/discount-banner";
@@ -20,9 +21,12 @@ import SpecialProduct from "@/views/layouts/widgets/title-section";
 import DiscountProducts from "@/views/layouts/layout1/discounts";
 
 import { useEffect, useState } from "react";
-import { BannerModel, Category, Discount, Kit, ObjCache, StorePriceRanges, objCache } from "../globalProvider";
+import { BannerModel, Category, CategoryProducts, Discount, Kit, ObjCache, Product, StorePriceRanges, objCache } from "../globalProvider";
 import { Subscription } from 'rxjs';
 import Kits from "@/views/Kits/kits_list";
+import RecentlyAddedProducts from "@/views/Products-Detail/Recently-added/recently-added-products";
+
+
 
 
 //const centralDataCollectorObj: CentralDataCollector = centralDataCollector;
@@ -32,61 +36,45 @@ const Home = () => {
   const [products, setProducts] = useState<Discount[]>([]);
   const [categories, setCategories] = useState<Array<Category>>([]);
   const [allCategories, setAllCategories] = useState<Array<Category>>();
+  const [categoryProducts, setcategoryProducts] = useState<Array<Product>>([]);
   const [banners, setBanners] = useState<Array<BannerModel>>();
   const [priceRanges, setPriceRanges] = useState<StorePriceRanges>();
-useEffect(() => {
-  // Subscribe to the Subject
+  useEffect(() => {
+    // Subscribe to the Subject
+    objCache.on('update', () => {
+      setKits(objCache.kitList);
+      setProducts(objCache.discountList);
+      setBanners(objCache.allBannersList);
+      setCategories(objCache.categories);
+      setAllCategories(objCache.allCategories);
+      setcategoryProducts(objCache.allProducstsList);
+      
+       //setPriceRanges(objCache.priceRanges);
 
-  objCache.on('updateKits',(kit_data) => {
-    console.log(kit_data)
-    setKits(kit_data);
-  });
-  
-  objCache.on('updateDiscountProducts',(data) => {
+    })
     
-    setProducts(data);
-  });
-
-  objCache.on('updateBanners', (newBanners) => {
-    
-    setBanners(newBanners);
-  });
-
-  objCache.on('updateCategories',(data: Category[]) => {
-
-    setCategories(data);
-   
-  });
-
-  objCache.on('updateAllBanners',banners => {
-    setBanners(banners);
-  })
-  objCache.on('updateAllCategories', (data: Category[]) => {
-
-    setAllCategories(data);
-
-  });
-  objCache.on('UpdatePriceRanges',(priceRanges: StorePriceRanges) => {
-    setPriceRanges(priceRanges)
-  })
-
-
+    objCache.on('UpdatePriceRanges',(priceRanges: StorePriceRanges) => {
+      setPriceRanges(priceRanges)
+    })
   }, []);
 
   return (
     <>
       {/* <NewsLatter /> */}
       <Layouts>
-        <div className="bg-light">
+       
           <SliderBanner banners={banners} />
-          <CollectionBanner categories={categories} />
+          <CollectionBanner categories={categories} categoryProducts={categoryProducts}/>
           <TabProduct effect="icon-inline" categories={allCategories} />
+          {/* <CategoryProducts effect="icon-inline" categories={allCategories} /> */}
           {/* <DiscountBanner /> */}
 
           {/* <CollectionBannerTwo /> */}
           <DiscountProducts products={products} />
 
-          <Kits kits = {kits}/>
+          <RecentlyAddedProducts/>
+
+          <Kits kits={kits} />
 
           {/* <DiscountBanner /> */}
 
@@ -111,7 +99,7 @@ useEffect(() => {
               <InstagramSection />
             </section>
             <ContactBanner /> */}
-        </div>
+      
       </Layouts>
     </>
   );

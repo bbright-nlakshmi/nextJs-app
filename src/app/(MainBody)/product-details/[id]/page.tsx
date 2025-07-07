@@ -5,23 +5,33 @@ import RelatedProducts from "@/views/Products-Detail/related products";
 import Layout1 from "@/views/layouts/layout1";
 import { NextPage } from "next";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { objCache, CategoryProducts, Product } from "@/app/globalProvider";
 
 const LeftSidebar: NextPage = () => {
   const pathname = usePathname();
   const symbolRegex = /[!@#\$%\^&\*\(\)_\+\{\}\[\]:;"'<>,.?/\\|`~\-=]/g;
+  const [productData, setProductData] = useState<Product | null>(null);
 
-  const [secondPart] = pathname
-    .split("/")
-    .slice(2);
+  const [secondPart] = pathname.split("/").slice(2);
 
-  console.log("📦 Final cleaned productId:", secondPart);
+  useEffect(() => {
+    const fetchedData = objCache.getProductById(secondPart);
+    setProductData(fetchedData);
+  }, [secondPart]);
+
   return (
     <Layout1>
       {/* <Breadcrumb title="left sidebar" parent="product" /> */}
-      <section className="section-big-pt-space bg-light">
+      <section className="section-big-pt-space shopdetails-style-1-wrapper">
         <LeftSidebarPage pathId={secondPart} />
       </section>
-      {/* <RelatedProducts productId={secondPart} /> */}
+      {productData?.categoryID && (
+        <RelatedProducts 
+        productId={secondPart}
+        categoryId={productData.categoryID}
+      />
+      )}
     </Layout1>
   );
 };

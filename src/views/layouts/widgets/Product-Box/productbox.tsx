@@ -28,7 +28,7 @@ interface productType {
 
 }
 // { layout, id, item, title, newLabel, sale, price, discount, stock, images, addCart, addCompare, addWish, hoverEffect }
-const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, newLabel, addCart, addCompare, addWish }) => {
+const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, item, addCart, addCompare, addWish }) => {
 
   const currencyContext = useContext(CurrencyContext);
   const { selectedCurr } = currencyContext;
@@ -73,7 +73,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
 
   const clickProductDetail = () => {
 
-    router.push(`/product-details/${data?.productId?data?.productId:data?.id}`);
+    router.push(`/product-details/${data?.productId ? data?.productId : data?.id}`);
   };
 
 
@@ -81,13 +81,15 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
   return (
 
     <Fragment>
-      <div className="product-box" >
+      <div className="product-box single-shopping-card-one" >
 
-        <div className="product-imgbox">
-          <div className="product-front" onClick={clickProductDetail}>
-           <a><Media src={data?.img[0]} alt="" className="img-fluid  image_zoom_cls-0" /></a> 
-            {/* <Img src={`${data?.img[0]}`} className="img-fluid" alt="product" /> */}
-          </div>
+        <div className="product-imgbox image-and-action-area-wrapper" onClick={clickProductDetail}>
+
+          <a className="thumbnail-preview">
+            <Media src={data?.img[0]} alt="" className="img-fluid  image_zoom_cls-0" />
+          </a>
+
+
 
           <div className={`product-icon ${hoverEffect}`}>
             <button onClick={() => addCart()}>
@@ -112,7 +114,12 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
         </div>
         <div className="product-detail detail-inline ">
           <div className="detail-title">
+
             <div className="detail-left">
+              <Link href={`/product-details/${data?.productId ? data?.productId : data?.id}`}>
+
+                <h6 className="price-title">{data?.name}</h6>
+              </Link>
               <ul className="rating-star">
                 <i className="fa fa-star"></i>
                 <i className="fa fa-star"></i>
@@ -120,19 +127,15 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
                 <i className="fa fa-star"></i>
                 <i className="fa fa-star"></i>
               </ul>
-              {layout === "list-view" ? <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book</p> : ""}
 
-              <Link href={`/product-details/${data?.productId?data?.productId:data?.id}`}>
 
-                <h6 className="price-title">{data?.name}</h6>
-                </Link>
-      
             </div>
-            <div className="detail-right">
-              {/* <div className="check-price">
+
+            {/* <div className="check-price">
                 {selectedCurr.symbol}
                 {(getPrice(data.productId) * selectedCurr.value).toFixed(2)}{" "}
               </div> */}
+            <div className="detail-right">
               <div className="price">
                 <div className="price">
                   {selectedCurr.symbol}
@@ -144,7 +147,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
         </div>
 
       </div>
-      {/* <Modal className="fade bd-example-modal-lg theme-modal show quick-view-modal" isOpen={modal} toggle={() => setModal(!modal)} centered size="lg">
+      <Modal className="fade bd-example-modal-lg theme-modal show quick-view-modal" isOpen={modal} toggle={() => setModal(!modal)} centered size="lg">
         <ModalBody>
           <button type="button" className="close" onClick={() => setModal(!modal)}>
             <span>&times;</span>
@@ -153,10 +156,10 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
             <div className="col-lg-6 col-xs-12">
               <Slider asNavFor={nav1!} ref={(slider1) => setNav1(slider1)}>
                 {item &&
-                  item.images.map((img: any, i: any) => {
+                  item.img.map((img: any, i: any) => {
                     return (
                       <div key={i}>
-                        <Media src={`/images/${img.src}`} alt="" className="img-fluid  image_zoom_cls-0" />
+                        <Media src={img} alt="" className="img-fluid  image_zoom_cls-0" />
                       </div>
                     );
                   })}
@@ -164,7 +167,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
             </div>
             <div className="col-lg-6 rtl-text">
               <div className="product-right">
-                <h2>{item?.title}</h2>
+                <h2>{item?.name}</h2>
                 <h3>${item?.price}</h3>
                 <ul className="color-variant">
                   {uniqueColor.map((vari, i) => {
@@ -173,7 +176,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
                 </ul>
                 <div className="border-product">
                   <h6 className="product-title">product details</h6>
-                  <p>{item?.description}</p>
+                  {/* <p>{item?.description}</p> */}
                 </div>
                 <div className="product-description border-product">
                   <div className="size-box">
@@ -217,7 +220,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, n
             </div>
           </div>
         </ModalBody>
-      </Modal> */}
+      </Modal>
     </Fragment>
 
   );

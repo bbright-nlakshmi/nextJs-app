@@ -45,10 +45,10 @@ const API_BASE_URL = 'https://devqarupeecomservice.rupeecom.in/v1';
 const DEV_API_BASE_URL = 'https://devqarupeecomservice.rupeecom.in/v1';
 const TENANT_SERVICE_URL = 'https://tenantservice.1rpapp.in/v1';
 
-// Get tenantId from environment variables or config
+// Get tenantId from environment variables or config {dxrhudtb,5b547df0-967d-4aa4-8996-e02511c66e26} {owuhhrlb, b0aec458-86f7-4c29-8587-ec4271b9168c}
 const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'owuhhrlb';
 const appName = process.env.NEXT_PUBLIC_APP_NAME || 'RupeEcom';
-const storeId = 'b0aec458-86f7-4c29-8587-ec4271b9168c'
+const storeId = 'b0aec458-86f7-4c29-8587-ec4271b9168c';
 
 export class APIService { 
   private static instance: APIService;
@@ -425,7 +425,7 @@ export class APIService {
           const img = element.category_image;
           const sort = element.category_sort;
 
-          const sr = new CategoryRender(category, viewOption, sort, img);
+          const sr = new CategoryRender(category, viewOption, img,sort);
 
           if (!allProducts.has(sr)) {
             allProducts.set(sr, []);
@@ -885,7 +885,7 @@ export class APIService {
     try {
       const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-privacy`, {
         tenant_id: tenantId,
-        business_id: AppBootStrap.businessDetails.id,
+        business_id:"wnysgv7k67z",
       });
 
       if (Array.isArray(response.data)) {
@@ -903,7 +903,7 @@ export class APIService {
     try {
       const response = await this.get<{ data: any[] }>(`${DEV_API_BASE_URL}/get-termsAndConditions`, {
         tenant_id: tenantId,
-        business_id: AppBootStrap.businessDetails.id,
+        business_id:"wnysgv7k67z",
       });
 
       if (Array.isArray(response.data)) {

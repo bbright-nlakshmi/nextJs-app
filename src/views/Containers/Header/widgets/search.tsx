@@ -39,15 +39,17 @@ const Search: NextPage = () => {
 
       // Force React state update
       setKits([...searchController.kits]);
+      
       setProducts([...searchController.products]);
 
       const hasResults = searchController.kits.length > 0 || searchController.products.length > 0;
       setShowResults(hasResults);
-console.log("🔁 UI re-rendering from controller");
+   console.log("🔁 UI re-rendering from controller");
       forceUpdate(); // 💡 Ensure UI reflects changes
     };
 
     searchController.on("update", updateListener);
+    setAllCategories(objCache.allCategories);
     objCache.on("updateAllCategories", (data: Category[]) => setAllCategories(data));
 
     return () => {
@@ -64,6 +66,8 @@ console.log("🔁 UI re-rendering from controller");
 
   const blurEvent = () => {
     setTimeout(() => {
+      setKits([]);
+      setProducts([]);
       setShowResults(false);
     }, 150);
   };

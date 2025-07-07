@@ -118,7 +118,7 @@ const WishListPage: NextPage = () => {
       return {
         ...item,
         title: enriched.title || enriched.name || item.title || item.name || "Unnamed Product",
-        img: enriched.img || enriched.images || item.img || ["/images/default-product.png"],
+        img: enriched.img || enriched.images || item.img || [""],
         price: productPrice,
         stock: enriched.stock ?? enriched.quantity ?? item.stock ?? 0,
       } as EnrichedWishlistItem;
@@ -157,7 +157,7 @@ const WishListPage: NextPage = () => {
                         <tr key={`${item.productId}-${item.variantId ?? index}`}>
                           <td>
                             <img
-                              src={item.img?.[0] || "/images/default-product.png"}
+                              src={item.img?.[0] || ""}
                               alt={item.title || "Product"}
                               className="img-fluid"
                               style={{ width: 60 }}

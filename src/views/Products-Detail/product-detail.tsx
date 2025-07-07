@@ -28,7 +28,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
 
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
-  
+
   //const price = searchController.getDetails(item.productId,'getPrice');
   //const discountedPrice = searchController.getDetails(item.productId,'getPriceWithDiscount');
   const onOpenModal = () => {
@@ -57,20 +57,29 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
     setQty(parseInt(e.target.value));
   };
   // const { id } = router.query; 
-  // console.log("id", id);
+  
   const uniqueColor: any[] = [];
   const uniqueSize: any[] = [];
   return (
-    <div className="product-right">
+    <div className="product-right contents">
+      <div className="product-status">
+        <span className="product-catagory">{item.categoryName}</span>
+        <div className="rating-stars-group">
+          <div className="rating-star"><i className="fas fa-star"></i></div>
+          <div className="rating-star"><i className="fas fa-star"></i></div>
+          <div className="rating-star"><i className="fas fa-star-half-alt"></i></div>
+          <span>10 Reviews</span>
+        </div>
+      </div>
       <h2>{item.name}</h2>
-      {item.discount? <h4>
+      {item.discount ? <h4>
         <del>
           {symbol}
           {item.getProductPrice() * value}
         </del>
         <span>{symbol}{item.getDiscountAmount()} off</span>
-      </h4>:''}
-      <h3>
+      </h4> : ''}
+      <h3 className="product-price mb--15 d-block">
         {symbol}
         {(item.getPriceWithDiscount() * value).toFixed(2)}
       </h3>{" "}
@@ -82,7 +91,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
           if (!findItemSize && vari.size) uniqueSize.push(vari.size);
         })} */}
       {swatch ? <ImageSwatch item={item} changeColorVar={changeColorVar} /> : ""}
-      <div className="product-description border-product">
+      {/* <div className="product-description border-product">
         <h6 className="product-title">select color</h6>
         {changeColorVar === undefined
           ? !!uniqueColor.length && (
@@ -138,7 +147,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
             </div>
           </>
         )}
-      </div>
+      </div> */}
       <div className="product-description border-product">
         {stock !== "InStock" ? <span className="instock-cls">{stock}</span> : ""}
         <h6 className="product-title">quantity</h6>
@@ -174,12 +183,20 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
           buy now
         </a>
       </div>
-      <div className="border-product">
-        <h6 className="product-title">product details</h6>
-        <p>
-          Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis et quasi architecto beatae
-          vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem,
-        </p>
+      {/* <div className="border-product"> */}
+      {/* <h6 className="product-title">product details</h6> */}
+      {/* <p dangerouslySetInnerHTML={{ __html: item?.description[0].description }}> */}
+      {/* {item.description.map((d:any) => {return (d.description)})} */}
+      {/* {item.description[0]} */}
+      {/* </p> */}
+      {/* </div> */}
+      <div className="product-uniques">
+        <span className="sku product-unipue mb--10"><strong>SKU:</strong> BO1D0MX8SJ</span>
+        <span className="catagorys product-unipue mb--10"><strong>Categories:</strong> T-Shirts, Tops, Mens</span>
+        <span className="tags product-unipue mb--10"><strong>Tags:</strong> fashion, t-shirts, Men</span>
+        <span className="tags product-unipue mb--10"><strong>LIFE:</strong> 6 Months</span>
+        <span className="tags product-unipue mb--10"><strong>Type:</strong> original</span>
+        <span className="tags product-unipue mb--10"><strong>Category:</strong> Beverages, Dairy & Bakery</span>
       </div>
       <div className="border-product">
         <div className="product-icon">
