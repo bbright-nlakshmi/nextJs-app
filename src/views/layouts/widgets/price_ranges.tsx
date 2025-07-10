@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { NextPage } from "next";
-import Slider from "react-slick";
 import { Col, Container, Row, Spinner } from "reactstrap";
+import { TabContent, TabPane } from "reactstrap";
 import {
   Kit,
   Product,
@@ -16,28 +16,13 @@ import ProductBox from "./Product-Box/productbox";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import { CartContext } from "@/helpers/cart/cart.context";
 import { CompareContext } from "@/helpers/compare/compare.context";
-import { Autoplay, Navigation, Pagination, Mousewheel, Keyboard } from "swiper/modules";
+import { Navigation, Autoplay, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+// Import Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-
-const sliderSettings = {
-  dots: false,
-  infinite: false,
-  speed: 300,
-  slidesToShow: 10,
-  slidesToScroll: 10,
-  responsive: [
-    { breakpoint: 1700, settings: { slidesToShow: 8, slidesToScroll: 8 } },
-    { breakpoint: 1367, settings: { slidesToShow: 6, slidesToScroll: 6 } },
-    { breakpoint: 1024, settings: { slidesToShow: 5, slidesToScroll: 5 } },
-    { breakpoint: 800, settings: { slidesToShow: 4, slidesToScroll: 4 } },
-    { breakpoint: 600, settings: { slidesToShow: 3, slidesToScroll: 3 } },
-    { breakpoint: 480, settings: { slidesToShow: 2, slidesToScroll: 2 } },
-  ],
-};
 
 interface Props {
   priceRanges: StorePriceRanges | undefined;
@@ -49,6 +34,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const [activeRange, setActiveRange] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
@@ -56,118 +42,138 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
 
   const dynamicRanges = priceRanges?.price_ranges || [];
 
-  // Fetch all products from API on component mount
+  // Enhanced product fetching with better error handling
   useEffect(() => {
     const fetchAllProducts = async () => {
       try {
         setInitialLoading(true);
+        setError(null);
         console.log("Fetching all products from API...");
-
-        // Fetch products from API service
-        const res = await API.getAllProducts();
-        console.log("API Response:", res);
 
         let fetchedProducts: Array<Product | Kit> = [];
 
-        // Handle different response structures
-        if (Array.isArray(res)) {
-          fetchedProducts = res;
-        } else if (res && typeof res === 'object') {
-          // Handle Map response type
-          if (res instanceof Map) {
-            // If it's a Map, extract all products from all categories
-            for (const [category, products] of res.entries()) {
-              if (Array.isArray(products)) {
-                fetchedProducts = [...fetchedProducts, ...products];
-              }
-            }
-          } else {
-            // Handle regular object response
-            const resAny = res as any;
-
-            // If response is an object, try to extract products
-            if (resAny.products && Array.isArray(resAny.products)) {
-              fetchedProducts = resAny.products;
-            } else if (resAny.data && Array.isArray(resAny.data)) {
-              fetchedProducts = resAny.data;
-            } else {
-              // Try to extract from object values
-              const values = Object.values(resAny);
-              for (const value of values) {
-                if (Array.isArray(value)) {
-                  fetchedProducts = [...fetchedProducts, ...value];
-                }
-              }
-            }
-          }
-        }
-
-        // Remove duplicates based on ID
-        const uniqueProducts = fetchedProducts.filter((product, index, self) => {
-          const productId = (product as any).productId || product.id;
-          return productId && self.findIndex(p => ((p as any).productId || p.id) === productId) === index;
-        });
-
-        console.log("Fetched unique products:", uniqueProducts.length);
-        setAllProducts(uniqueProducts);
-
-        // Also try to get kits from cache if available
+        // Primary API call
         try {
-          const allKits = objCache?.getAllKits?.() || [];
-          if (Array.isArray(allKits) && allKits.length > 0) {
-            const combinedProducts = [...uniqueProducts, ...allKits];
-            const finalUnique = combinedProducts.filter((item, index, self) => {
-              const itemId = (item as any).productId || item.id;
-              return itemId && self.findIndex(i => ((i as any).productId || i.id) === itemId) === index;
-            });
-            setAllProducts(finalUnique);
-            console.log("Combined with kits, total unique items:", finalUnique.length);
-          }
-        } catch (cacheError) {
-          console.warn("Could not fetch kits from cache:", cacheError);
-        }
+          const res = await API.getAllProducts();
+          console.log("API Response:", res);
 
-      } catch (err) {
-        console.error("Error fetching all products:", err);
-
-        // Fallback to cache/search controller methods
-        try {
-          console.log("Attempting fallback methods...");
-          let fallbackProducts: Array<Product | Kit> = [];
-
-          // Try searchController
-          if (searchController && typeof searchController.getAllProducts === 'function') {
-            const searchResults = searchController.getAllProducts();
-            if (searchResults instanceof Map) {
-              for (const [category, products] of searchResults.entries()) {
+          if (Array.isArray(res)) {
+            fetchedProducts = res;
+          } else if (res && typeof res === 'object') {
+            // Handle Map response type
+            if (res instanceof Map) {
+              for (const [category, products] of res.entries()) {
                 if (Array.isArray(products)) {
-                  fallbackProducts = [...fallbackProducts, ...products];
+                  fetchedProducts = [...fetchedProducts, ...products];
                 }
               }
-            } else if (Array.isArray(searchResults)) {
-              fallbackProducts = [...fallbackProducts, ...searchResults];
+            } else {
+              // Handle object responses
+              const resAny = res as any;
+              
+              // Try different possible data structures
+              const possibleDataPaths = [
+                resAny.products,
+                resAny.data,
+                resAny.items,
+                resAny.result,
+                resAny.content
+              ];
+
+              for (const dataPath of possibleDataPaths) {
+                if (Array.isArray(dataPath)) {
+                  fetchedProducts = [...fetchedProducts, ...dataPath];
+                  break;
+                }
+              }
+
+              // If no direct array found, try extracting from object values
+              if (fetchedProducts.length === 0) {
+                const values = Object.values(resAny);
+                for (const value of values) {
+                  if (Array.isArray(value)) {
+                    fetchedProducts = [...fetchedProducts, ...value];
+                    break;
+                  }
+                }
+              }
             }
+          }
+        } catch (apiError) {
+          console.warn("Primary API call failed:", apiError);
+          setError("Failed to fetch products from API");
+        }
+
+        // Fallback methods if primary API fails
+        if (fetchedProducts.length === 0) {
+          console.log("Attempting fallback methods...");
+          
+          // Try searchController
+          try {
+            if (searchController && typeof searchController.getAllProducts === 'function') {
+              const searchResults = searchController.getAllProducts();
+              if (searchResults instanceof Map) {
+                for (const [category, products] of searchResults.entries()) {
+                  if (Array.isArray(products)) {
+                    fetchedProducts = [...fetchedProducts, ...products];
+                  }
+                }
+              } else if (Array.isArray(searchResults)) {
+                fetchedProducts = [...fetchedProducts, ...searchResults];
+              }
+            }
+          } catch (searchError) {
+            console.warn("Search controller fallback failed:", searchError);
           }
 
           // Try objCache
-          if (objCache && typeof objCache.getAllProducts === 'function') {
-            const cachedProducts = objCache.getAllProducts();
-            if (Array.isArray(cachedProducts)) {
-              fallbackProducts = [...fallbackProducts, ...cachedProducts];
+          try {
+            if (objCache && typeof objCache.getAllProducts === 'function') {
+              const cachedProducts = objCache.getAllProducts();
+              if (Array.isArray(cachedProducts)) {
+                fetchedProducts = [...fetchedProducts, ...cachedProducts];
+              }
             }
+          } catch (cacheError) {
+            console.warn("Cache fallback failed:", cacheError);
           }
 
-          if (fallbackProducts.length > 0) {
-            const uniqueFallback = fallbackProducts.filter((product, index, self) => {
-              const productId = (product as any).productId || product.id;
-              return productId && self.findIndex(p => ((p as any).productId || p.id) === productId) === index;
-            });
-            setAllProducts(uniqueFallback);
-            console.log("Fallback products loaded:", uniqueFallback.length);
+          // Try to get kits separately
+          try {
+            if (objCache && typeof objCache.getAllKits === 'function') {
+              const allKits = objCache.getAllKits();
+              if (Array.isArray(allKits)) {
+                fetchedProducts = [...fetchedProducts, ...allKits];
+              }
+            }
+          } catch (kitError) {
+            console.warn("Kit fallback failed:", kitError);
           }
-        } catch (fallbackError) {
-          console.error("Fallback methods also failed:", fallbackError);
         }
+
+        // Remove duplicates and validate products
+        const uniqueProducts = fetchedProducts.filter((product, index, self) => {
+          if (!product || typeof product !== 'object') return false;
+          
+          const productId = (product as any).productId || product.id;
+          if (!productId) return false;
+          
+          return self.findIndex(p => ((p as any).productId || p.id) === productId) === index;
+        });
+
+        console.log("Fetched unique products:", uniqueProducts.length);
+        
+        if (uniqueProducts.length === 0) {
+          setError("No products found");
+        } else {
+          setError(null);
+        }
+
+        setAllProducts(uniqueProducts);
+
+      } catch (err) {
+        console.error("Error fetching all products:", err);
+        setError("Failed to load products. Please try again.");
       } finally {
         setInitialLoading(false);
       }
@@ -176,175 +182,93 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     fetchAllProducts();
   }, []);
 
-  // Enhanced price extraction function for both products and kits
+  // Enhanced price extraction with better validation
   const getPrice = (item: Product | Kit): number => {
+    if (!item || typeof item !== 'object') return 0;
+    
     try {
-      // Cast to any for flexible property access
-      const itemAny = item as any;
-
-      // For Product type - check standard price fields
-      if ('price' in item && typeof item.price === 'number' && item.price > 0) {
-        return item.price;
+      const product = item as Product;
+      
+      // For Product type, use the same logic as RecentlyAddedProducts
+      if (product.getPriceWithDiscount) {
+        return product.getPriceWithDiscount();
       }
-
-      // For Kit type - check kit-specific price fields
-      if ('kitPrice' in item && typeof (item as any).kitPrice === 'number' && (item as any).kitPrice > 0) {
-        return (item as any).kitPrice;
+      
+      if (product.saleMode === 'custom' && product.sellingPrices?.length > 0) {
+        return product.sellingPrices[0];
       }
-
-      // Check for discount price (prioritize over original price)
-      if (itemAny.discountPrice && typeof itemAny.discountPrice === 'number' && itemAny.discountPrice > 0) {
-        return itemAny.discountPrice;
-      }
-
-      // Check for sale price
-      if (itemAny.salePrice && typeof itemAny.salePrice === 'number' && itemAny.salePrice > 0) {
-        return itemAny.salePrice;
-      }
-
-      // Check for finalPrice
-      if (itemAny.finalPrice && typeof itemAny.finalPrice === 'number' && itemAny.finalPrice > 0) {
-        return itemAny.finalPrice;
-      }
-
-      // Check for currentPrice
-      if (itemAny.currentPrice && typeof itemAny.currentPrice === 'number' && itemAny.currentPrice > 0) {
-        return itemAny.currentPrice;
-      }
-
-      // Check for sellingPrice
-      if (itemAny.sellingPrice && typeof itemAny.sellingPrice === 'number' && itemAny.sellingPrice > 0) {
-        return itemAny.sellingPrice;
-      }
-
-      // Try extracting from nested price objects
-      const nestedPrice = itemAny.pricing || itemAny.priceInfo || itemAny.cost || itemAny.priceData;
-      if (typeof nestedPrice === 'number' && nestedPrice > 0) {
-        return nestedPrice;
-      }
-      if (typeof nestedPrice === 'object' && nestedPrice !== null) {
-        const extractedPrice = nestedPrice.amount || nestedPrice.value || nestedPrice.price || nestedPrice.final || nestedPrice.current;
-        if (typeof extractedPrice === 'number' && extractedPrice > 0) {
-          return extractedPrice;
-        }
-      }
-
-      console.warn("Could not extract valid price for item:", item);
-      return 0;
+      
+      return product.sellingPrice || 0;
     } catch (error) {
-      console.error("Error getting price for item:", item, error);
+      console.error("Error extracting price for item:", item, error);
       return 0;
     }
   };
 
-  // Enhanced name extraction function
+  // Enhanced name extraction
   const getName = (item: Product | Kit): string => {
+    if (!item || typeof item !== 'object') return "Unknown Product";
+    
     try {
-      const itemAny = item as any;
-
-      // Try different name properties
-      const possibleNames = [
-        itemAny.name,
-        itemAny.title,
-        itemAny.productName,
-        itemAny.displayName,
-        itemAny.itemName
-      ];
-
-      for (const name of possibleNames) {
-        if (typeof name === 'string' && name.trim().length > 0) {
-          return name.trim();
-        }
-      }
-
-      return `Product ${itemAny.productId || itemAny.id || 'Unknown'}`;
+      const product = item as Product;
+      return product.name || `Product ${product.id || 'Unknown'}`;
     } catch (error) {
-      console.error("Error getting name for item:", item, error);
+      console.error("Error extracting name for item:", item, error);
       return "Unknown Product";
     }
   };
 
-  // Enhanced rating extraction function
-  const getRating = (item: Product | Kit): number => {
+  // Enhanced image extraction
+  const getImages = (item: Product | Kit): string[] => {
+    if (!item || typeof item !== 'object') return ["/images/default.jpg"];
+    
     try {
-      const itemAny = item as any;
-
-      // Try different rating properties
-      const possibleRatings = [
-        itemAny.rating,
-        itemAny.averageRating,
-        itemAny.starRating,
-        itemAny.customerRating,
-        itemAny.productRating
-      ];
-
-      for (const rating of possibleRatings) {
-        if (typeof rating === 'number' && rating >= 0 && rating <= 5) {
-          return Math.round(rating * 10) / 10; // Round to 1 decimal place
-        }
-      }
-
-      // Try extracting from nested rating objects
-      const nestedRating = itemAny.ratingInfo || itemAny.reviewData;
-      if (typeof nestedRating === 'object' && nestedRating !== null) {
-        const extractedRating = nestedRating.average || nestedRating.rating || nestedRating.stars;
-        if (typeof extractedRating === 'number' && extractedRating >= 0 && extractedRating <= 5) {
-          return Math.round(extractedRating * 10) / 10;
-        }
-      }
-
-      // Generate a realistic random rating if none found (between 3.5 and 4.8)
-      return Math.round((Math.random() * 1.3 + 3.5) * 10) / 10;
+      const product = item as Product;
+      return product.img && product.img.length > 0 ? product.img : ["/images/default.jpg"];
     } catch (error) {
-      console.error("Error getting rating for item:", item, error);
-      return 4.0; // Default rating
+      console.error("Error extracting images for item:", item, error);
+      return ["/images/default.jpg"];
     }
   };
 
+  // Filter products by price range
   const switchPriceRange = async (range: number) => {
+    if (!range || range <= 0) return;
+    
     setLoading(true);
     setActiveRange(range);
 
     try {
       console.log(`Filtering products for price range: ₹${range}`);
-      console.log("Total products available:", allProducts.length);
-
-      // Enhanced filtering with better price extraction using already fetched products
+      
+      // Get products with valid prices
       const itemsWithPrices = allProducts.map(item => ({
         item,
         price: getPrice(item),
-        name: getName(item),
-        rating: getRating(item)
-      })).filter(({ price }) => price > 0); // Only include items with valid prices
+        name: getName(item)
+      })).filter(({ price }) => price > 0);
 
       console.log("Items with valid prices:", itemsWithPrices.length);
 
-      // Find the previous price range for proper filtering
+      // Find the previous price range
       const currentIndex = dynamicRanges.findIndex(r => r === range);
-      const previousPrice = currentIndex > 0 ? dynamicRanges[currentIndex - 1] : undefined;
+      const previousPrice = currentIndex > 0 ? dynamicRanges[currentIndex - 1] : 0;
 
       // Filter products based on price range
       const filteredItems = itemsWithPrices.filter(({ price }) => {
-        // If no previous price, show items less than or equal to target price
-        if (previousPrice === undefined || previousPrice === null) {
+        if (currentIndex === 0) {
           return price <= range;
+        } else {
+          return price > previousPrice && price <= range;
         }
-
-        // If previous price exists, show items between previous price and target price
-        return price > previousPrice && price <= range;
       });
 
       console.log(`Filtered products for range ₹${range}:`, filteredItems.length);
-      console.log("Previous price:", previousPrice);
-      console.log("Sample filtered items:", filteredItems.slice(0, 3).map(({ name, price, rating }) => ({ name, price, rating })));
 
       // Sort by price (ascending)
       const sortedItems = filteredItems.sort((a, b) => a.price - b.price);
 
-      // Extract just the items for setting state
-      const finalProducts = sortedItems.map(({ item }) => item);
-
-      setProducts(finalProducts);
+      setProducts(sortedItems.map(({ item }) => item));
     } catch (error) {
       console.error("Error filtering products:", error);
       setProducts([]);
@@ -353,26 +277,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     }
   };
 
-  // Show initial loading while fetching all products
-  if (initialLoading) {
-    return (
-      <div className="text-center my-5">
-        <Spinner color="primary" />
-        <p className="mt-3">Loading products...</p>
-      </div>
-    );
-  }
-
-  if (!priceRanges) {
-    return (
-      <div className="text-center my-5">
-        <Spinner color="primary" />
-        <p className="mt-3">Loading price ranges...</p>
-      </div>
-    );
-  }
-
-  // Calculate price range display text
+  // Get price range display text
   const getPriceRangeText = (range: number): { main: string; subtitle: string } => {
     const currentIndex = dynamicRanges.findIndex(r => r === range);
     const previousPrice = currentIndex > 0 ? dynamicRanges[currentIndex - 1] : 0;
@@ -390,68 +295,124 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     }
   };
 
+  // Show initial loading
+  if (initialLoading) {
+    return (
+      <section className="section-py-space">
+        <div className="custom-container">
+          <div className="text-center py-4">Loading products...</div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show error state
+  if (error && allProducts.length === 0) {
+    return (
+      <section className="section-py-space">
+        <div className="custom-container">
+          <div className="text-center py-4">
+            <h5>Unable to load products</h5>
+            <p>{error}</p>
+            <button 
+              className="btn btn-primary" 
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show no price ranges
+  if (!priceRanges || !dynamicRanges.length) {
+    return (
+      <section className="section-py-space">
+        <div className="custom-container">
+          <div className="text-center py-4">No price ranges available.</div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <>
-      <Container fluid>
-        <Row className="mb-4">
-          <Col className="ps-0">
-            <h2 className="mb-3">Shop by Price</h2>
-            {dynamicRanges.length > 0 ? (
-              <div className="slide-10 no-arrow discount-coupons">
-                <Slider {...sliderSettings}>
+      {/* Price Range Selection */}
+      <section className="section-py-space rts-category-area">
+        <div className="custom-container">
+          <Row>
+            <Col className="pe-0">
+              <div className="title-area-between">
+                <h2 className="title-left">Shop by Price</h2>
+                <div className="next-prev-swiper-wrapper price-range-nav">
+                  <div className="swiper-button-prev">
+                    <i className="fas fa-chevron-left"></i>
+                  </div>
+                  <div className="swiper-button-next">
+                    <i className="fas fa-chevron-right"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="cover-card-main-over">
+                <Swiper
+                  navigation={{
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                  }}
+                  spaceBetween={15}
+                  slidesPerView={6}
+                  loop={false}
+                  autoplay={true}
+                  className="mySwiper-category-1 swiper-data"
+                  breakpoints={{
+                    0: { slidesPerView: 1.5, spaceBetween: 10 },
+                    350: { slidesPerView: 2, spaceBetween: 10 },
+                    480: { slidesPerView: 2.5, spaceBetween: 12 },
+                    640: { slidesPerView: 3, spaceBetween: 15 },
+                    768: { slidesPerView: 4, spaceBetween: 15 },
+                    1024: { slidesPerView: 5, spaceBetween: 15 },
+                    1200: { slidesPerView: 6, spaceBetween: 15 },
+                  }}
+                  modules={[Navigation, Autoplay, Keyboard]}
+                >
                   {dynamicRanges.map((range, i) => {
                     const { main, subtitle } = getPriceRangeText(range);
                     return (
-                      <div
-                        key={i}
-                        className="p-2"
-                        onClick={() => switchPriceRange(range)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <div
-                          className={`text-center p-3 rounded-pill shadow-sm ${activeRange === range
-                              ? "bg-primary text-white shadow"
-                              : "bg-light text-dark hover-bg-light"
+                      <SwiperSlide key={i}>
+                        <div className="single-category-one">
+                          <div
+                            onClick={() => switchPriceRange(range)}
+                            className={`price-range-card ${
+                              activeRange === range ? 'active' : ''
                             }`}
-                          style={{
-                            border: activeRange === range ? "2px solid #0d6efd" : "1px solid #dee2e6",
-                            minWidth: "120px",
-                            fontWeight: activeRange === range ? 600 : 500,
-                            transition: "all 0.3s ease",
-                            transform: activeRange === range ? "scale(1.05)" : "scale(1)",
-                          }}
-                        >
-                          <div className="fw-semibold" style={{ fontSize: "0.9rem" }}>{main}</div>
-                          <small className={activeRange === range ? "text-white-50" : "text-muted"}>
-                            {subtitle}
-                          </small>
+                          >
+                            <div className="price-range-content">
+                              <div className="price-main">{main}</div>
+                              <p className="price-subtitle">{subtitle}</p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      </SwiperSlide>
                     );
                   })}
-                </Slider>
+                </Swiper>
               </div>
-            ) : (
-              <div className="text-center text-muted p-4 bg-light rounded">
-                <p className="mb-0">No price ranges available at the moment.</p>
-              </div>
-            )}
-          </Col>
-        </Row>
-      </Container>
+            </Col>
+          </Row>
+        </div>
+      </section>
 
-      <Container fluid>
-        <Row>
-          <Col sm="12">
-            {loading ? (
-              <div className="text-center py-5">
-                <Spinner color="primary" className="mb-3" />
-                <p className="text-muted">Loading products...</p>
-              </div>
-            ) : products.length > 0 ? (
-              <>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5 className="mb-0">
+      {/* Product Display */}
+      {products.length > 0 && (
+        <section className="section-py-space ratio_asos product">
+          <div className="custom-container">
+            <Row>
+              <Col className="pe-0">
+                <div className="title-area-between">
+                  <h2 className="title-left">
                     {(() => {
                       const currentIndex = dynamicRanges.findIndex(r => r === activeRange);
                       const previousPrice = currentIndex > 0 ? dynamicRanges[currentIndex - 1] : 0;
@@ -459,171 +420,135 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                       if (currentIndex === 0) {
                         return `Products under ₹${activeRange?.toLocaleString('en-IN')}`;
                       } else {
-                        return `Products between ₹${previousPrice.toLocaleString('en-IN')} - ₹${activeRange?.toLocaleString('en-IN')}`;
+                        return `Products ₹${previousPrice.toLocaleString('en-IN')} - ₹${activeRange?.toLocaleString('en-IN')}`;
                       }
                     })()}
-                    <span className="text-muted ms-2">({products.length} items)</span>
-                  </h5>
+                    <span className="product-count ml-2">({products.length})</span>
+                  </h2>
                 </div>
-                <section className=" ratio_asos" >
-                  <div className="custom-container  addtocart_count ">
+                
+                <TabContent activeTab="1">
+                  <TabPane tabId="1">
                     <div className="product product-slide-6 product-m no-arrow">
-                      <Swiper
-                        slidesPerView={3}
-                        navigation
-                        spaceBetween={30}
-                        autoplay={true}
-                        loop={false}
-                        mousewheel={true}
-                        breakpoints={{
-                          0: { slidesPerView: 1, spaceBetween: 10 },
-                          320: { slidesPerView: 1.5, spaceBetween: 15 },
-                          480: { slidesPerView: 2, spaceBetween: 20 },
-                          640: { slidesPerView: 3, spaceBetween: 20 },
-                          840: { slidesPerView: 4, spaceBetween: 25 },
-                          1140: { slidesPerView: 5, spaceBetween: 30 },
-                          1400: { slidesPerView: 6, spaceBetween: 30 },
-                        }}
-                        modules={[Autoplay, Navigation, Keyboard]}
-                        className="product-swiper"
-                      >
-                        {products.map((item: Product | Kit, i: number) => {
-                          const itemPrice = getPrice(item);
-                          const itemName = getName(item);
-                          const itemRating = getRating(item);
-                          const itemAny = item as any;
+                      <div>
+                        {loading ? (
+                          <div className="text-center py-4">Loading products...</div>
+                        ) : (
+                          <Swiper
+                            slidesPerView={6}
+                            spaceBetween={30}
+                            loop={false}
+                            autoplay={true}
+                            breakpoints={{
+                              0: { slidesPerView: 1, spaceBetween: 0 },
+                              320: { slidesPerView: 2, spaceBetween: 20 },
+                              480: { slidesPerView: 3, spaceBetween: 20 },
+                              640: { slidesPerView: 4, spaceBetween: 20 },
+                              840: { slidesPerView: 6, spaceBetween: 20 },
+                              1140: { slidesPerView: 6, spaceBetween: 20 },
+                            }}
+                            modules={[Autoplay, Navigation, Keyboard]}
+                          >
+                            {products.map((item: Product | Kit, i: number) => {
+                              const product = item as Product;
+                              const displayPrice = product.getPriceWithDiscount
+                                ? product.getPriceWithDiscount()
+                                : (product.saleMode === 'custom' && product.sellingPrices?.length > 0)
+                                  ? product.sellingPrices[0]
+                                  : product.sellingPrice;
 
-                          // console.log(`Product ${i + 1}:`, {
-                          //   name: itemName,
-                          //   price: itemPrice,
-                          //   rating: itemRating,
-                          //   id: item.id || itemAny.productId
-                          // });
+                              const originalPrice = product.saleMode === 'custom' && product.sellingPrices?.length > 0
+                                ? product.sellingPrices[0]
+                                : product.sellingPrice;
 
-                          return (
-                            <SwiperSlide key={item.id || itemAny.productId || i}>
-                              {/* <div className="h-100"> */}
-                              <ProductBox
-                                data={{
-                                  ...item,
-                                  name: itemName,
-                                  productId: itemAny.productId || item.id,
-                                  img: itemAny.img || itemAny.images || itemAny.image || (itemAny.picture ? [itemAny.picture] : ["/images/default.jpg"]),
-                                  rating: itemRating,
-                                  reviewCount: itemAny.reviewCount || itemAny.totalReviews || Math.floor(Math.random() * 50 + 10),
-                                  sale: itemAny.sale || itemAny.onSale || false,
-                                  active: itemAny.active !== false,
-                                  description: itemAny.description || itemAny.shortDescription || "High quality product with excellent features.",
-                                  // Additional product details
-                                  brand: itemAny.brand || itemAny.manufacturer || "",
-                                  category: itemAny.category || itemAny.categoryName || "",
-                                  stock: itemAny.stock || itemAny.quantity || itemAny.available || true,
-                                  originalPrice: itemAny.originalPrice || itemAny.mrp,
-                                  discount: itemAny.discount || itemAny.discountPercentage,
-                                }}
-                                price={itemPrice}
-                                addCart={() => addToCart(item)}
-                                addCompare={() => addToCompare(item)}
-                                addWish={() => addToWish(item)}
-                              />
-                              {/* </div> */}
-                            </SwiperSlide>
-                          );
-                        })}
-                      </Swiper>
+                              return (
+                                <SwiperSlide key={product.id || i}>
+                                  <div className="product-item-wrapper">
+                                    {/* Discount Ribbon for individual products */}
+                                    {product.discount && (
+                                      <div className="product-discount-ribbon">
+                                        -₹{product.discount.discount} Off
+                                      </div>
+                                    )}
+                                    <ProductBox
+                                      layout="layout-one"
+                                      id={Number(product.id)}
+                                      name={product.name}
+                                      img={product.img[0]}
+                                      price={displayPrice}
+                                      originalPrice={originalPrice}
+                                      discount={product.discount?.discount || 0}
+                                      rating={product.rating?.rating || 0}
+                                      addCart={() => addToCart(product)}
+                                      addWish={() => addToWish(product)}
+                                      addCompare={() => addToCompare(product)}
+                                      data={product}
+                                      hasMultiplePrices={product.saleMode === 'custom' && product.sellingPrices?.length > 0}
+                                    />
+                                  </div>
+                                </SwiperSlide>
+                              );
+                            })}
+                          </Swiper>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </section>
-              </>
-            ) : activeRange !== null ? (
-              <div className="text-center text-muted py-5">
-                <div className="bg-light rounded p-4">
-                  <h5 className="text-muted mb-3">No products found</h5>
-                  <p className="mb-0">
-                    {(() => {
-                      const currentIndex = dynamicRanges.findIndex(r => r === activeRange);
-                      const previousPrice = currentIndex > 0 ? dynamicRanges[currentIndex - 1] : 0;
+                  </TabPane>
+                </TabContent>
+              </Col>
+            </Row>
+          </div>
+        </section>
+      )}
 
-                      if (currentIndex === 0) {
-                        return `No products available under ₹${activeRange.toLocaleString('en-IN')}.`;
-                      } else {
-                        return `No products available between ₹${previousPrice.toLocaleString('en-IN')} - ₹${activeRange.toLocaleString('en-IN')}.`;
-                      }
-                    })()}
-                  </p>
-                  <small className="text-muted">Try selecting a different price range.</small>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center text-muted py-5">
-                <div className="bg-light rounded p-4">
-                  <h5 className="text-primary mb-3">Select a Price Range</h5>
-                  <p className="mb-0">Choose a price range above to view available products.</p>
-                  {allProducts.length > 0 && (
-                    <small className="text-success d-block mt-2">
-                      {allProducts.length} products loaded and ready to filter
-                    </small>
-                  )}
-                </div>
-              </div>
-            )}
-          </Col>
-        </Row>
-      </Container>
+      {/* No Products Found */}
+      {!loading && activeRange !== null && products.length === 0 && (
+        <section className="section-py-space">
+          <div className="custom-container">
+            <div className="text-center py-4">
+              <h5>No products found</h5>
+              <p>
+                {(() => {
+                  const currentIndex = dynamicRanges.findIndex(r => r === activeRange);
+                  const previousPrice = currentIndex > 0 ? dynamicRanges[currentIndex - 1] : 0;
 
-      {/* Custom Styles */}
-      <style jsx global>{`
-        .hover-bg-light:hover {
-          background-color: #f8f9fa !important;
-          transform: scale(1.02) !important;
-        }
-        
-        .product-swiper .swiper-button-next,
-        .product-swiper .swiper-button-prev {
-          color: #0d6efd;
-          background: white;
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          border: 1px solid #dee2e6;
-        }
-        
-        .product-swiper .swiper-button-next:after,
-        .product-swiper .swiper-button-prev:after {
-          font-size: 16px;
-          font-weight: bold;
-        }
-        
-        .product-swiper .swiper-pagination-bullet {
-          background: #0d6efd;
-          opacity: 0.3;
-        }
-        
-        .product-swiper .swiper-pagination-bullet-active {
-          opacity: 1;
-        }
-        
-        .discount-coupons .slick-track {
-          display: flex;
-          align-items: center;
-        }
-        
-        .discount-coupons .slick-slide {
-          height: auto;
-        }
-        
-        @media (max-width: 768px) {
-          .product-swiper .swiper-button-next,
-          .product-swiper .swiper-button-prev {
-            display: none;
-          }
-          
-          .discount-coupons .slick-arrow {
-            display: none !important;
-          }
-        }
-      `}</style>
+                  if (currentIndex === 0) {
+                    return `No products available under ₹${activeRange.toLocaleString('en-IN')}.`;
+                  } else {
+                    return `No products available between ₹${previousPrice.toLocaleString('en-IN')} - ₹${activeRange.toLocaleString('en-IN')}.`;
+                  }
+                })()}
+              </p>
+              <button 
+                className="btn btn-outline-primary" 
+                onClick={() => {
+                  setActiveRange(null);
+                  setProducts([]);
+                }}
+              >
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Default State */}
+      {!loading && activeRange === null && (
+        <section className="section-py-space">
+          <div className="custom-container">
+            <div className="text-center py-4">
+              <h5>Select a Price Range</h5>
+              <p>Choose a price range above to view products in that category.</p>
+              <div className="mt-3">
+                <span className="badge bg-light text-dark">
+                  {allProducts.length} total products available
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 };

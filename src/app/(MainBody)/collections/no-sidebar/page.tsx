@@ -4,7 +4,7 @@ import { Row } from "reactstrap";
 import Layout1 from "@/views/layouts/layout1";
 import Collection from "@/views/Collections/Collection";
 import { useEffect, useState } from "react";
-import { Category, CategoryProducts, objCache } from "@/app/globalProvider";
+import { Category, CategoryProducts, objCache, searchController } from "@/app/globalProvider";
 import { useSearchParams } from "next/navigation";
 import { FaSlidersH } from "react-icons/fa";
 import NewProduct from "@/views/Collections/NewProduct";
@@ -19,6 +19,7 @@ const NoSidebar: NextPage = () => {
   const [maxPrice, setMaxPrice] = useState<number>(150);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [selectedCatgeoryProducts, setselectedCatgeoryProducts] = useState<CategoryProducts[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<CategoryProducts[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -31,7 +32,10 @@ const NoSidebar: NextPage = () => {
       setHasInitialized(true);
       if (initialCategory) {
         setSelectedCategories([initialCategory]);
-        setselectedCatgeoryProducts(initialCategory.category_products || []);
+        const products = initialCategory.category_products || [];
+        setselectedCatgeoryProducts(products);
+        setFilteredProducts(products);
+        updatePriceRangeFromFilteredProducts(products);
       }
     }
 
@@ -43,6 +47,8 @@ const NoSidebar: NextPage = () => {
           .filter((cat): cat is Category => !!cat);
         const combinedProducts = getFilteredByCategoryProducts(updatedSelected);
         setselectedCatgeoryProducts(combinedProducts);
+        setFilteredProducts(combinedProducts);
+        updatePriceRangeFromFilteredProducts(combinedProducts);
         return updatedSelected;
       });
     });
@@ -50,7 +56,12 @@ const NoSidebar: NextPage = () => {
 
   const handlePriceFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Optional: Filter logic for price
+    const filtered = selectedCatgeoryProducts.filter(prod => {
+      const id = categoryType === "discount" ? prod.id : prod.productId;
+      const price = searchController.getDetails(id, "getPrice");
+      return typeof price === "number" && price >= minPrice && price <= maxPrice;
+    });
+    setFilteredProducts(filtered);
   };
 
   const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,15 +75,15 @@ const NoSidebar: NextPage = () => {
   };
 
   const handleCategoryChange = (category: Category) => {
-    let updatedCategories: Category[];
-    if (selectedCategories.find(cat => cat.id === category.id)) {
-      updatedCategories = selectedCategories.filter(cat => cat.id !== category.id);
-    } else {
-      updatedCategories = [...selectedCategories, category];
-    }
+    const updatedCategories = selectedCategories.find(cat => cat.id === category.id)
+      ? selectedCategories.filter(cat => cat.id !== category.id)
+      : [...selectedCategories, category];
+
     setSelectedCategories(updatedCategories);
     const updatedProducts = getFilteredByCategoryProducts(updatedCategories);
     setselectedCatgeoryProducts(updatedProducts);
+    setFilteredProducts(updatedProducts);
+    updatePriceRangeFromFilteredProducts(updatedProducts);
   };
 
   const getFilteredByCategoryProducts = (catselected: Category[]): CategoryProducts[] => {
@@ -81,6 +92,23 @@ const NoSidebar: NextPage = () => {
       catProds.push(...(cat.category_products || []));
     });
     return catProds;
+  };
+
+  const updatePriceRangeFromFilteredProducts = (products: CategoryProducts[]) => {
+    const prices: number[] = products
+      .map(prod => {
+        const id = categoryType === "discount" ? prod.id : prod.productId;
+        return searchController.getDetails(id, "getPrice");
+      })
+      .filter((p): p is number => typeof p === "number" && !isNaN(p));
+
+    if (prices.length > 0) {
+      setMinPrice(Math.min(...prices));
+      setMaxPrice(Math.max(...prices));
+    } else {
+      setMinPrice(0);
+      setMaxPrice(150);
+    }
   };
 
   const allBrands = ["Frito Lay", "Nespresso", "Oreo", "Quaker", "Welch's"];
@@ -113,8 +141,8 @@ const NoSidebar: NextPage = () => {
             <input
               type="range"
               className="range"
-              min={0}
-              max={150}
+              min={minPrice}
+              max={maxPrice}
               value={maxPrice}
               onChange={(e) => setMaxPrice(parseInt(e.target.value, 10))}
             />
@@ -136,7 +164,7 @@ const NoSidebar: NextPage = () => {
                 <input
                   id={`cat${i + 1}`}
                   type="checkbox"
-                  checked={selectedCategories.findIndex(item => cat.id === item.id) !== -1}
+                  checked={selectedCategories.some(item => cat.id === item.id)}
                   onChange={() => handleCategoryChange(cat)}
                 />
                 <label htmlFor={`cat${i + 1}`}>{cat.name}</label>
@@ -165,40 +193,40 @@ const NoSidebar: NextPage = () => {
           </div>
         </div>
       </div>
-       <div className="sidebar-new-product mt-4">
-      <NewProduct />
-    </div>
+
+      {/* New Products */}
+      <div className="sidebar-new-product mt-4">
+        <NewProduct />
+      </div>
     </>
   );
 
   return (
     <Layout1>
-  {/* Mobile Filter Button */}
-  {/* Compact Filter Button with Icon */}
-  <div className="mobile-filter-toggle d-block d-lg-none">
-    <button className="btn btn-filter-icon" onClick={toggleMobileFilter}>
-       <FaSlidersH className="me-2" /> Filter
-    </button>
-   </div>
+      {/* Mobile Filter Toggle */}
+      <div className="mobile-filter-toggle d-block d-lg-none">
+        <button className="btn btn-filter-icon" onClick={toggleMobileFilter}>
+          <FaSlidersH className="me-2" /> Filter
+        </button>
+      </div>
 
-
-      {/* Main Grid */}
       <div className="shop-grid-sidebar-area rts-section-gap">
         <div className="container">
           <div className="row g-0">
-            {/* Desktop Sidebar */}
             <div className="col-xl-3 col-lg-12 d-none d-xl-block pr--70 pr_lg--10 pr_sm--10 pr_md--5 rts-sticky-column-item">
               <div className="sidebar-filter-main theiaStickySidebar">
                 {renderFilterSidebar()}
               </div>
             </div>
-
-            {/* Products */}
             <div className="col-xl-9 col-lg-12">
               <div className="collection-wrapper">
                 <div className="custom-container section-big-pb-space">
                   <Row>
-                    <Collection categoryProducts={selectedCatgeoryProducts} cols="col-xl-2 col-lg-3 col-md-4 col-4 col-grid-box" layoutList="" />
+                    <Collection
+                      categoryProducts={filteredProducts}
+                      cols="col-xl-2 col-lg-3 col-md-4 col-4 col-grid-box"
+                      layoutList=""
+                    />
                   </Row>
                 </div>
               </div>
@@ -208,22 +236,18 @@ const NoSidebar: NextPage = () => {
       </div>
 
       {/* Mobile Sidebar */}
-      {/* Mobile Overlay */}
-<div
-  className={`mobile-sidebar-overlay ${isMobileFilterOpen ? "open" : ""}`}
-  onClick={toggleMobileFilter}
-/>
-
-{/* Mobile Sidebar */}
-<div className={`mobile-sidebar ${isMobileFilterOpen ? "open" : ""}`}>
-  <div className="mobile-sidebar-header">
-    <button className="btn-close" onClick={toggleMobileFilter}>✖</button>
-  </div>
-  <div className="mobile-sidebar-content">
-    {renderFilterSidebar()}
-  </div>
-</div>
-
+      <div
+        className={`mobile-sidebar-overlay ${isMobileFilterOpen ? "open" : ""}`}
+        onClick={toggleMobileFilter}
+      />
+      <div className={`mobile-sidebar ${isMobileFilterOpen ? "open" : ""}`}>
+        <div className="mobile-sidebar-header">
+          <button className="btn-close" onClick={toggleMobileFilter}>✖</button>
+        </div>
+        <div className="mobile-sidebar-content">
+          {renderFilterSidebar()}
+        </div>
+      </div>
     </Layout1>
   );
 };

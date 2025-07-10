@@ -29,16 +29,34 @@ export const CartProvider = (props: any) => {
   }, [cartItems]);
 
   const addToCart = (item: any) => {
-    toast.success("Product Added to Cart Successfully!");
+  toast.success("Product Added to Cart Successfully!");
 
-    const newItem = {
-      ...item,
-      qty: 1,
-      cartItemId: uuidv4(),
-    };
-
-    setCartItems((prev) => [...prev, newItem]);
+  const newItem = {
+    ...item,
+    qty: item.qty && item.qty > 0 ? item.qty : 1, // use passed qty if valid
+    cartItemId: uuidv4(),
   };
+
+  setCartItems((prevItems) => {
+    const existingItemIndex = prevItems.findIndex(
+      (i) => i.productId === newItem.productId
+    );
+
+    if (existingItemIndex !== -1) {
+      // If item already exists, update quantity
+      const updatedItems = [...prevItems];
+      updatedItems[existingItemIndex] = {
+        ...updatedItems[existingItemIndex],
+        qty: newItem.qty, // use new quantity passed from product page
+      };
+      return updatedItems;
+    }
+
+    // If it's a new item, add it to the cart
+    return [...prevItems, newItem];
+  });
+};
+
 
   const updateQty = (item: any, quantity: number) => {
     if (quantity >= 1) {
