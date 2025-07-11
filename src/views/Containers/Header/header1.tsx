@@ -39,6 +39,8 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
     }
   };
   
+
+  
   
 
   window.addEventListener("scroll", handleScroll);
@@ -46,7 +48,8 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
 }, []);
 
 const onopenmobileSearch = () => {document.getElementById("searchbar-input")?.classList.add("open"); }  
-
+const closeMobileSearch = () => {document.getElementById("searchbar-input")?.classList.remove("open");};
+const toggleLeftMenu = () => {setLeftMenu(!leftMenu);document.body.style.overflow = "hidden";};
 
   return (
     <Fragment>
@@ -59,8 +62,7 @@ const onopenmobileSearch = () => {document.getElementById("searchbar-input")?.cl
               <Col md="12">
                 <div className="main-menu-block">
                   <div className="header-left">
-                    <div onClick={() => { setLeftMenu(!leftMenu); document.body.style.overflow = "hidden"; }}
-                      className="sm-nav-block" >
+                    <div className="sm-nav-block" onClick={toggleLeftMenu}>
                       <span className="sm-nav-btn">
                         <i className="fa fa-bars"></i>
                       </span>
@@ -74,7 +76,7 @@ const onopenmobileSearch = () => {document.getElementById("searchbar-input")?.cl
                   </div>
                   <div className="input-block searchbar-input" id = "searchbar-input">
                     <div className="input-box ">
-                      <span className="close-mobilesearch" onClick={() => document.getElementById("searchbar-input")?.classList.remove("open")}>
+                      <span className="close-mobilesearch" onClick={closeMobileSearch}>
                         <i className="fa fa-times"></i>
                       </span>
                       <Search />
@@ -101,7 +103,7 @@ const onopenmobileSearch = () => {document.getElementById("searchbar-input")?.cl
                       <ul>
                         <User />
                         <WishList />
-                        <MobileSearch onOpen={() =>onopenmobileSearch() } />
+                        <MobileSearch onOpen={onopenmobileSearch} />
                         <MobileSetting />
                       </ul>
                     </div>
