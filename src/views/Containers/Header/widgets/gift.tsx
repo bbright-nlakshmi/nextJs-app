@@ -1,63 +1,35 @@
 import React, { useState } from "react";
 import { NextPage } from "next";
-import { Media } from "reactstrap";
-
-interface gifts {
-  img1: string;
-  img2: string;
-  title: string;
-  desc: string;
-}
+import { API } from "../../../../app/services/api.service"; // ✅ Adjust if needed
+import { CouponModel } from "../../../../app/models/coupon/coupon"; // ✅ Adjust if needed
+import dayjs from "dayjs"; // For formatting expiry date
 
 interface giftProps {
-  gift: gifts;
+  coupon: CouponModel;
 }
 
-const giftData = [
-  {
-    img1: "/images/icon/1.png",
-    img2: "/images/icon/currency.png",
-    title: "Billion Days",
-    desc: "Flat Rs. 270 Rewards",
-  },
-  {
-    img1: "/images/icon/2.png",
-    img2: "/images/icon/fire.png",
-    title: "Fashion Discount",
-    desc: "Extra 10% off (upto Rs. 10,000*)",
-  },
-  {
-    img1: "/images/icon/3.png",
-    img2: "",
-    title: "75% off Store",
-    desc: "No coupon code is required.",
-  },
-  {
-    img1: "/images/icon/6.png",
-    img2: "",
-    title: "Upto 50% off",
-    desc: "Buy popular phones under Rs.20.",
-  },
-  {
-    img1: "/images/icon/5.png",
-    img2: "/images/icon/currency.png",
-    title: "Beauty store",
-    desc: "Flat Rs. 270 Rewards",
-  },
-];
+const GiftList: React.FC<giftProps> = ({ coupon }) => {
+  const discountLabel = coupon.isCouponPercentage
+    ? `${coupon.couponAmount}% off`
+    : `$${coupon.couponAmount} off`;
 
-const GiftList: React.FC<giftProps> = ({ gift }) => {
   return (
-    <div className="media">
-      <div className="me-3">
-        <Media src={gift.img1} alt="Generic placeholder image" />
-      </div>
+    <div className="media border-bottom py-2 px-3">
       <div className="media-body">
-        <h5 className="mt-0">{gift.title}</h5>
-        <div>
-          <Media src={gift.img2} className="cash" alt="curancy" />
-          {gift.desc}
-        </div>
+        <h6 className="mt-0 mb-1">
+          <strong>Code:</strong> {coupon.couponCode}
+        </h6>
+        <p className="mb-1">
+          <strong>Offer:</strong> {discountLabel}{" "}
+          {coupon.maxCouponAmount > 0 ? `(Max $${coupon.maxCouponAmount})` : ""}
+        </p>
+        <p className="mb-1">
+          <strong>Min Cart Value:</strong> ${coupon.minimumCartValue}
+        </p>
+        <p className="mb-0">
+          <strong>Expires:</strong>{" "}
+          {dayjs(coupon.expireDate).format("DD MMM YYYY")}
+        </p>
       </div>
     </div>
   );
@@ -65,21 +37,56 @@ const GiftList: React.FC<giftProps> = ({ gift }) => {
 
 const Gift: NextPage = () => {
   const [showState, setShowState] = useState(false);
+  const [coupons, setCoupons] = useState<CouponModel[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const phoneNumber = "8185015406"; // TODO: Replace with real logged-in phone number
+
+  const fetchCoupons = async () => {
+    try {
+      setIsLoading(true);
+      const result = await API.getCoupons(phoneNumber);
+
+      // Filter only active (non-expired) coupons
+      const activeCoupons = result.filter((coupon: CouponModel) =>
+        dayjs(coupon.expireDate).isAfter(dayjs())
+      );
+
+      setCoupons(activeCoupons);
+    } catch (error) {
+      console.error("Failed to fetch coupons:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleDropdown = () => {
+    const newState = !showState;
+    setShowState(newState);
+    if (newState && coupons.length === 0) {
+      fetchCoupons();
+    }
+  };
+
   return (
     <div className={`d-lg-inline-block d-none btn-group ${showState ? "show" : ""}`}>
-      <div className="gift-block" data-toggle="dropdown" onClick={() => setShowState(!showState)}>
+      <div className="gift-block" data-toggle="dropdown" onClick={toggleDropdown}>
         <div className="grif-icon">
           <i className="icon-gift"></i>
         </div>
         <div className="gift-offer">
-          <p>gift box</p>
-          <span className="d-xl-inline-block d-none">Festivel Offer</span>
+          <p>Gift Box</p>
+          <span className="d-xl-inline-block d-none">Festival Offer</span>
         </div>
       </div>
       <div className={`dropdown-menu gift-dropdown ${showState ? "show" : ""}`}>
-        {giftData.map((data, i) => (
-          <GiftList gift={data} key={i} />
-        ))}
+        {isLoading ? (
+          <div className="p-3">Loading coupons...</div>
+        ) : coupons.length > 0 ? (
+          coupons.map((coupon, i) => <GiftList coupon={coupon} key={i} />)
+        ) : (
+          <div className="p-3">No coupons available.</div>
+        )}
       </div>
     </div>
   );
