@@ -91299,6 +91299,18 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
   border-radius: 0.25rem;
 }
 
+.category-header-2 .navbar-menu .category-left .nav-block .nav-left .navbar {
+  display: flex;
+  justify-content: center;
+  background-color: var(--theme-color1);
+  padding: 32px 0px;
+}
+
+.category-header-2 .navbar-menu .category-left .icon-block ul .mobile-user {
+  padding-right: 20px;
+  padding-left: 20px;
+}
+
 .category-header-2 .navbar-menu .category-right .gift-block .gift-offer p {
   text-transform: uppercase;
   line-height: 1;
@@ -91320,7 +91332,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
 
 .category-header-2 .navbar-menu .category-right .gift-block {
   background-color: var(--theme-color1);
-  padding: 16px 28px;
+  padding: 20px 28px;
   display: flex;
   align-items: center;
   color: #ffffff;
@@ -91339,14 +91351,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
 
 ul {
   padding-left: 0;
-  margin: 0 0;
-}
-
-.nav-left .navbar {
-  display: -ms-flexbox;
-  background-color: #00baf2;
-  padding: 28px 0;
-  cursor: pointer;
+  margin: 0 0 0 150px;
 }
 
 .cart-icon-wrapper {
