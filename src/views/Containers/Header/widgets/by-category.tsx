@@ -31,7 +31,7 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
 
   return (
     <div className="nav-block" onClick={() => setShowState(!showState)}>
-      <div className="nav-left">
+      <div className={`nav-left ${leftMenu ? "openmenu" : ""}`}>
         <nav
           className="navbar"
           data-toggle="collapse"
@@ -62,7 +62,10 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
             className={`overlay-cat ${leftMenu ? "showoverlay" : ""}`}
           ></a>
 
-          <ul className={`nav-cat title-font ${leftMenu ? "openmenu" : ""}`}>
+          <ul className={`nav-cat title-font  category-scroll ${leftMenu ? "openmenu" : ""}`}>
+            <li className="nav-heading">
+              <h4>All Categories</h4>
+            </li>
             <li
               className="back-btn"
               onClick={() => {
@@ -77,14 +80,11 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
 
             {categories.map((cat) => (
               <li key={cat.id}>
-                <a href={`/collections/leftsidebar?category=${encodeURIComponent(cat.name)}`}>
-                  {/* You can add a default icon or remove <Media> if no image is required */}
-                  <Media
-                    src="/images/layout-1/nav-img/01.png"
-                    alt="category-product"
-                    className="img-fluid"
-                  />
-                  {cat.name}
+                <a href={`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`}>
+                  {/* <Media src={cat.img[0]} className="img-fluid" alt={cat.name} />? */}
+                  <span className="arrow-before">&gt;</span>
+                  <span className="category-name">{cat.name}</span>
+                  {/* <span className="arrow-before">{">"}{cat.name}</span> */}
                 </a>
               </li>
             ))}
