@@ -26,7 +26,6 @@ interface HeaderProps {
 
 const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, layoutLogo, appLogo }) => {
   const { setLeftMenu, leftMenu } = useContext(MenuContext);
- 
 
   useEffect(() => {
   const handleScroll = () => {
@@ -34,26 +33,27 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
     const header = document.getElementById("stickyHeader");
 
     if (scrollTop >= 300) {
-      window.innerWidth < 581
-        ? header?.classList.remove("sticky")
-        : header?.classList.add("sticky");
+       header?.classList.add("sticky");
     } else {
       header?.classList.remove("sticky");
     }
   };
+  
+  
 
   window.addEventListener("scroll", handleScroll);
   return () => window.removeEventListener("scroll", handleScroll);
 }, []);
 
+const onopenmobileSearch = () => {document.getElementById("searchbar-input")?.classList.add("open"); }  
 
 
   return (
     <Fragment>
       <header>
         <div className="mobile-fix-option"></div>
-        {/* <TopBar /> */}
-        <div className="layout-header2" id="stickyHeader">
+        <div className="layout-header2">
+          <div id="stickyHeader">
           <Container>
             <Row>
               <Col md="12">
@@ -72,8 +72,11 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                       </a>
                     </div>
                   </div>
-                  <div className="input-block">
-                    <div className="input-box">
+                  <div className="input-block searchbar-input" id = "searchbar-input">
+                    <div className="input-box ">
+                      <span className="close-mobilesearch" onClick={() => document.getElementById("searchbar-input")?.classList.remove("open")}>
+                        <i className="fa fa-times"></i>
+                      </span>
                       <Search />
                     </div>
                   </div>
@@ -83,12 +86,13 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
             </Row>
           </Container>
         </div>
+        </div>
 
         {/* Category and Navigation */}
         <div className="category-header-2">
           <div className="custom-container">
             <Row>
-              <Col>
+              <Col >
                 <div className="navbar-menu">
                   <div className="category-left">
                     <Category category={category} />
@@ -97,13 +101,13 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                       <ul>
                         <User />
                         <WishList />
-                        <MobileSearch />
+                        <MobileSearch onOpen={() =>onopenmobileSearch() } />
                         <MobileSetting />
                       </ul>
                     </div>
                   </div>
-                  <div className="category-right">
-                    <ContactUs spanClass="" />
+                  <div className="category-right ">
+                    {/* <ContactUs spanClass="" /> */}
                     <Gift />
                   </div>
                 </div>

@@ -29,6 +29,7 @@
     "react-icons": "^5.5.0",
     "react-masonry-css": "^1.0.16",
     "react-photoswipe-gallery": "^3.0.2",
+    "react-responsive": "^10.0.1",
     "react-slick": "^0.30.3",
     "react-sticky-el": "^2.1.1",
     "react-toastify": "^11.0.5",
