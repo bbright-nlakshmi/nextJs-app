@@ -23,7 +23,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
   const router = useRouter();
 
   const { addToCart } = useContext(CartContext);
-  const isMobile = useMediaQuery({ maxWidth: 767 });
+  const isMobile = useMediaQuery({ maxWidth: 991 });
 
   if (!products.length) return null;
 
@@ -38,7 +38,6 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
             </div>
           </Col>
         </Row >
-        {/* Swiper controlling entire banner + products block */}
         <div  className="discount-banners-container">
         <Swiper
           direction="vertical"
@@ -74,7 +73,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                         alt={banner.name}
                         className="discount-product-image"
                       />
-                      <div className="discount-product-overlay">
+                      {/* <div className="discount-product-overlay">
                         <h4 className="discount-product-name">{banner.name}</h4>
                         <div className="discount-product-amount">
                           Only{" "}
@@ -85,7 +84,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                           </strong>{" "}
                           off
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </Link>
                 </Col>

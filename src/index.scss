@@ -27405,10 +27405,10 @@ select {
 .discount-product-card {
   position: relative;
   aspect-ratio: 4/3;
-  height: auto;
   width: 100%;
   border-radius: 0.75rem;
   overflow: hidden;
+  height: 200px;
 }
 @media only screen and (max-width: 575px) {
   .discount-product-card {
@@ -27416,11 +27416,15 @@ select {
   }
 }
 
-// @media (max-width: 767px) {
-//   .discount-products-col {
-//     display: none !important;
-//   }
-// }
+@media only screen and (max-width: 991px) {
+  .swiper-slide {
+    padding-bottom: 40px; 
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
 @media only screen and (max-width: 575px) {
   .discount-products-col .row > div {
     width: 50% !important;
@@ -27442,7 +27446,6 @@ select {
   left: 0;
   width: 100%;
   height: 100%;
-//   background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.2));
   color: #fff;
   padding: 1rem;
   display: flex;
@@ -27500,9 +27503,11 @@ select {
   overflow:hidden;
 }
 @media only screen and (max-width: 575px) {
-  .discount-products-swiper {
-    height: auto;
-  }
+ .discount-products-swiper {
+  height: auto; 
+  overflow: visible;
+}
+
 }
 
 /* Discount Products Styles */
@@ -27511,23 +27516,13 @@ select {
   padding: 2px;
 }
 
-.discount-product-card {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  height: 200px;
-}
+
 @media only screen and (max-width: 575px) {
   .discount-product-card {
     height: 150px;
   }
 }
 
-
-/* When there's only one banner, reduce Swiper height */
-.discount-products-swiper.single-banner {
-  max-height: 240px; /* or any suitable value for a single banner */
-}
 
 .discount-product-image {
   width: 100%;
@@ -27540,7 +27535,6 @@ select {
   bottom: 0;
   left: 0;
   right: 0;
-//   background: rgba(0, 0, 0, 0.6);
   color: white;
   padding: 15px;
 }
@@ -27594,7 +27588,7 @@ select {
   margin-right: 1rem;
 }
 .product-thumbnail img {
-  border: 2px solid silver;  /* matching green border */
+  border: 2px solid silver;  
   border-radius: 0.5rem;
   width: 100px;
   height: 100px;
@@ -27634,6 +27628,13 @@ select {
   outline: 1px solid green;
   box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
 }
+@media only screen and (max-width: 991px) {
+  .swiper-slide {
+    padding-bottom: 30px; 
+    display: flex;
+    flex-direction: column; 
+  }
+}
 
 /* Responsive for quantity input */
 @media (max-width: 767px) {
@@ -27642,6 +27643,10 @@ select {
     height: 28px;
     font-size: 12px;
   }
+  .discount-products-swiper {
+  height: auto; 
+  overflow: visible; 
+}
 }
 @media (max-width: 480px) {
   .quantity-input {
@@ -27817,7 +27822,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
 }
 
 .category-label {
-  font-size: 16px; /* or any size you want */
+  font-size: 16px; 
   font-weight: 100;
 }
 /* Dropdown menu centering and padding */
@@ -27842,7 +27847,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
 .custom-dropdown-item:hover,
 .custom-dropdown-item:focus {
   background-color: #f0f0f0;
-  color: var(--theme-color1); /* or replace with your color like #007bff */
+  color: var(--theme-color1); 
   font-weight: 600;
   cursor: pointer;
 }
@@ -27889,10 +27894,8 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
   }
   .category-header-2 .navbar-menu .category-left .menu-block .toggle-nav {
         position: absolute;
-        // top: -55px;
+        
         right: 0;
-        // padding-top: 13px;
-        // padding-bottom: 13px;
   }
 
   .main-menu-block .header-left {
@@ -28030,18 +28033,7 @@ ul {
     padding-left: 0;
     margin: 0;
 }
-// .nav-left .navbar {
-//     display: -webkit-box;
-//     display: -ms-flexbox;
-//     // display: flex;
-//     // -webkit-box-pack: center;
-//     // -ms-flex-pack: center;
-//     // justify-content: center;
-//     // align-items: center;
-//     background-color: #00baf2;
-//     padding: 28px 0;
-//     cursor: pointer;
-// }
+
 .cart-icon-wrapper {
   position: relative;
 }
@@ -28235,3 +28227,4 @@ li a:hover .category-name {
     display: block;
   }
 }
+
