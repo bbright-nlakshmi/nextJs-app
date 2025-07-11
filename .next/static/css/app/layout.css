@@ -91307,8 +91307,8 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
 }
 
 .category-header-2 .navbar-menu .category-left .icon-block ul .mobile-user {
-  padding-right: 20px;
-  padding-left: 20px;
+  padding-right: 0px;
+  padding-left: 0px;
 }
 
 .category-header-2 .navbar-menu .category-right .gift-block .gift-offer p {
