@@ -47,7 +47,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
   return () => window.removeEventListener("scroll", handleScroll);
 }, []);
 
-const onopenmobileSearch = () => {document.getElementById("searchbar-input")?.classList.add("open"); }  
+const onOpenMobileSearch = () => {document.getElementById("searchbar-input")?.classList.add("open"); }  
 const closeMobileSearch = () => {document.getElementById("searchbar-input")?.classList.remove("open");};
 const toggleLeftMenu = () => {setLeftMenu(!leftMenu);document.body.style.overflow = "hidden";};
 
@@ -103,7 +103,7 @@ const toggleLeftMenu = () => {setLeftMenu(!leftMenu);document.body.style.overflo
                       <ul>
                         <User />
                         <WishList />
-                        <MobileSearch onOpen={onopenmobileSearch} />
+                        <MobileSearch onOpen={onOpenMobileSearch} />
                         <MobileSetting />
                       </ul>
                     </div>
