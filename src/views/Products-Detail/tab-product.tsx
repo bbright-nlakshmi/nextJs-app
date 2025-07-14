@@ -18,14 +18,14 @@ const TabProduct: React.FC<Props> = ({description}) => {
                 <div className="material-border"></div>
               </NavLink>
             </NavItem>
-            <NavItem>
+            {/* <NavItem>
               <NavLink className={activeTab === "2" ? "active" : ""} onClick={() => setActiveTab("2")}>
                 Video
                 <div className="material-border"></div>
               </NavLink>
-            </NavItem>
+            </NavItem> */}
             <NavItem>
-              <NavLink className={activeTab === "3" ? "active" : ""} onClick={() => setActiveTab("3")}>
+              <NavLink className={activeTab === "2" ? "active" : ""} onClick={() => setActiveTab("3")}>
                 Write Review
                 <div className="material-border"></div>
               </NavLink>
@@ -36,12 +36,12 @@ const TabProduct: React.FC<Props> = ({description}) => {
               <p className="ps-0" dangerouslySetInnerHTML={{ __html: description }}></p>
               
             </TabPane>
-            <TabPane tabId="2">
+            {/* <TabPane tabId="2">
               <div id="videoWrapper" className="mt-3 text-center">
                 <iframe id="videoFrame" width="560" height="315" src="https://www.youtube.com/embed/BUWzX78Ye_8" allow="autoplay; encrypted-media" allowFullScreen />
               </div>
-            </TabPane>
-            <TabPane tabId="3">
+            </TabPane> */}
+            <TabPane tabId="2">
               <Form>
                 <div className="form-row row">
                   <Col md="12">

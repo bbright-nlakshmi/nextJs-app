@@ -40,7 +40,7 @@ const sliderSettings = {
 };
 
 interface Props {
-  priceRanges: StorePriceRanges | undefined;
+  priceRanges: StorePriceRanges;
 }
 
 const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
@@ -54,7 +54,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
 
-  const dynamicRanges = priceRanges?.price_ranges || [];
+  const dynamicRanges = priceRanges?.priceRanges || [];
 
   // Fetch all products from API on component mount
   useEffect(() => {
