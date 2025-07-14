@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NextPage } from "next";
 import { Col, Row, Button } from "reactstrap";
-import { Discount } from "@/app/models/models";
+import { Discount } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
@@ -12,7 +12,6 @@ import "swiper/css/navigation";
 import "swiper/css/pagination"
 import { CartContext } from "../../../helpers/cart/cart.context";
 import ProductBox from "@/views/layouts/widgets/Product-Box/productbox";
-import { useMediaQuery } from "react-responsive";
 
 interface Props {
   products?: Discount[];
@@ -23,7 +22,6 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
   const router = useRouter();
 
   const { addToCart } = useContext(CartContext);
-  const isMobile = useMediaQuery({ maxWidth: 991 });
 
   if (!products.length) return null;
 
@@ -60,19 +58,16 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
               <Row>
                 {/* left banner */}
                 <Col xl="4" lg="12" className=" mb-xl-0">
-                  <Link
-                    href={{
-                      pathname: "/collections/no-sidebar",
-                      query: { id: banner.id, type: "discount" },
-                    }}
-                    className="discount-product-link"
+                  <div
+                    className="discount-product-card"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>router.push(`/collections/no-sidebar?id=${banner.id}&type=discount`)}
                   >
-                    <div className="discount-product-card">
-                      <img
-                        src={banner.img?.[0] ?? "/placeholder.jpg"}
-                        alt={banner.name}
-                        className="discount-product-image"
-                      />
+                    <img
+                      src={banner.img?.[0] ?? "/placeholder.jpg"}
+                      alt={banner.name}
+                      className="discount-product-image"
+                    />
                       {/* <div className="discount-product-overlay">
                         <h4 className="discount-product-name">{banner.name}</h4>
                         <div className="discount-product-amount">
@@ -85,15 +80,14 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                           off
                         </div>
                       </div> */}
-                    </div>
-                  </Link>
+                  </div>
                 </Col>
                 {/* right products */}
                 <Col xl="8" lg="12" className="discount-products-col">
                   <Row>
                     {(banner.discountItems ?? []).slice(0, 2).map((item, i) => (
-                      <Col md="6" xs="6" key={i}>
-                        {isMobile ? (
+                      <Col md="6" xs="6" key={i}>                        
+                        <div className="d-block d-lg-none">
                           <ProductBox
                             layout="mobile"
                             data={item}
@@ -103,8 +97,9 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                             addWish={() => console.log("addWish", item)}
                             addCompare={() => console.log("addCompare", item)}
                             hoverEffect=""
-                          />
-                        ) : (
+                          />                        
+                        </div>
+                        <div className="d-none d-lg-block">                        
                           <div className="custom-product-card d-flex align-items-center p-3 mb-4 shadow-sm rounded bg-white border position-relative">
                             {/* discount badge */}
                               <div className="discount-badge">{item.discount}% Off</div>
@@ -147,7 +142,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                               </div>
                             </div>
                           </div>
-                        )}
+                        </div>                        
                       </Col>
                     ))}
                   </Row>

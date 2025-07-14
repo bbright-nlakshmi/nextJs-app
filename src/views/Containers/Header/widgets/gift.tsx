@@ -73,7 +73,7 @@ const Gift: NextPage = () => {
         </div>
         <div className="gift-offer">
           <p>gift box</p>
-          <span>Festivel Offer</span>
+          <span>Festival Offer</span>
         </div>
       </div>
       <div className={`dropdown-menu gift-dropdown ${showState ? "show" : ""}`}>
