@@ -9,7 +9,10 @@ import {
   Input,
   FormGroup,
   Label,
-  Button
+  Button,
+  Card,
+  CardBody,
+  Badge
 } from "reactstrap";
 import Breadcrumb from "../../views/Containers/Breadcrumb";
 import { API } from "@/app/services/api.service";
@@ -83,155 +86,496 @@ const OrderHistoryPage: NextPage = () => {
     setExpandedOrderId(null);
   };
 
-  return (
-    <div className="bg-light py-4">
-      <Breadcrumb title="Order History" parent="Home" />
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'delivered':
+        return 'success';
+      case 'pending':
+        return 'warning';
+      case 'processing':
+        return 'info';
+      case 'cancelled':
+        return 'danger';
+      default:
+        return 'secondary';
+    }
+  };
 
-      <section className="order-history-section">
+  return (
+    <>
+      <style jsx>{`
+        .order-history-section {
+          background: #f8f9fa;
+          min-height: 100vh;
+          padding: 2rem 0;
+        }
+        
+        .filter-card {
+          border: none;
+          box-shadow: 0 6px 30px rgba(0, 0, 0, 0.1);
+          border-radius: 20px;
+          background: white;
+          margin-bottom: 3rem;
+          overflow: hidden;
+        }
+        
+        .filter-section {
+          padding: 4rem 3rem;
+          background: white;
+          color: #333;
+          position: relative;
+        }
+        
+        .filter-content {
+          position: relative;
+          z-index: 1;
+        }
+        
+        .filter-title {
+          font-size: 2.2rem;
+          font-weight: 700;
+          margin-bottom: 3rem;
+          color: #333;
+          text-align: center;
+        }
+        
+        .filter-row {
+          gap: 2rem;
+          align-items: flex-end;
+        }
+        
+        .filter-group {
+          margin-bottom: 0;
+        }
+        
+        .filter-label {
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 1rem;
+          font-size: 1.3rem;
+          display: block;
+        }
+        
+        .form-control {
+          border-radius: 12px;
+          border: 2px solid #e9ecef;
+          padding: 1.2rem 1.5rem;
+          font-size: 1.1rem;
+          background: white;
+          color: #333;
+          transition: all 0.3s ease;
+          height: 60px;
+        }
+        
+        .form-control:focus {
+          border-color: #00BAF2;
+          box-shadow: 0 0 0 0.2rem rgba(0, 186, 242, 0.25);
+          background: white;
+        }
+        
+        .primary-btn {
+          background: #00BAF2;
+          border: none;
+          border-radius: 12px;
+          padding: 1.2rem 3rem;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          color: white;
+          font-size: 1.1rem;
+          height: 60px;
+          min-width: 160px;
+        }
+        
+        .primary-btn:hover {
+          background: #0099CC;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 186, 242, 0.4);
+        }
+        
+        .secondary-btn {
+          background: white;
+          border: 2px solid #e9ecef;
+          color: #333;
+          border-radius: 12px;
+          padding: 1.2rem 3rem;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          font-size: 1.1rem;
+          height: 60px;
+          min-width: 160px;
+        }
+        
+        .secondary-btn:hover {
+          background: #f8f9fa;
+          color: #333;
+          transform: translateY(-2px);
+          border-color: #00BAF2;
+        }
+        
+        .button-group {
+          display: flex;
+          gap: 1rem;
+          align-items: stretch;
+          justify-content: flex-start;
+          margin-top: 2.7rem;
+        }
+        
+        .order-card {
+          border: none;
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+          margin-bottom: 1.5rem;
+          transition: all 0.3s ease;
+          overflow: hidden;
+          border-left: 4px solid #e9ecef;
+        }
+        
+        .order-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 35px rgba(0, 0, 0, 0.12);
+          border-left-color: #00BAF2;
+        }
+        
+        .order-header {
+          background: #fff;
+          border-bottom: 1px solid #e9ecef;
+          padding: 1.5rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .order-header:hover {
+          background: #f8f9fa;
+        }
+        
+        .order-details {
+          padding: 2rem;
+          background: #f8f9fa;
+        }
+        
+        .product-item {
+          background: white;
+          border-radius: 12px;
+          padding: 1.5rem;
+          margin-bottom: 1rem;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+          transition: all 0.3s ease;
+          border: 1px solid #e9ecef;
+        }
+        
+        .product-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+          border-color: #00BAF2;
+        }
+        
+        .product-image {
+          width: 80px;
+          height: 80px;
+          object-fit: cover;
+          border-radius: 8px;
+          border: 2px solid #e9ecef;
+        }
+        
+        .expand-icon {
+          transition: transform 0.3s ease;
+          color: #6c757d;
+        }
+        
+        .expand-icon.expanded {
+          transform: rotate(180deg);
+          color: #00BAF2;
+        }
+        
+        .page-title {
+          color: #2c3e50;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+        }
+        
+        .section-title {
+          color: #00BAF2;
+          font-weight: 600;
+        }
+        
+        .loading-spinner {
+          color: #00BAF2;
+        }
+        
+        .empty-state {
+          text-align: center;
+          padding: 3rem;
+          color: #6c757d;
+        }
+        
+        .empty-state-icon {
+          font-size: 4rem;
+          color: #6c757d;
+          margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 992px) {
+          .filter-section {
+            padding: 2rem 1.5rem;
+          }
+          
+          .filter-row {
+            gap: 1rem;
+          }
+          
+          .button-group {
+            flex-direction: column;
+            align-items: stretch;
+            margin-top: 1rem;
+          }
+          
+          .primary-btn, .secondary-btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .order-history-section {
+            padding: 1rem 0;
+          }
+          
+          .filter-section {
+            padding: 2rem 1rem;
+          }
+          
+          .filter-title {
+            font-size: 1.5rem;
+          }
+          
+          .order-header {
+            padding: 1rem;
+          }
+          
+          .order-details {
+            padding: 1rem;
+          }
+          
+          .product-item {
+            padding: 1rem;
+          }
+          
+          .product-image {
+            width: 60px;
+            height: 60px;
+          }
+          
+          .primary-btn, .secondary-btn {
+            padding: 0.875rem 1.5rem;
+            font-size: 0.875rem;
+          }
+          
+          .form-control {
+            font-size: 16px;
+          }
+        }
+        
+        @media (max-width: 576px) {
+          .product-item {
+            flex-direction: column;
+            text-align: center;
+          }
+          
+          .product-image {
+            margin: 0 auto 1rem;
+          }
+          
+          .filter-section {
+            padding: 1.5rem 1rem;
+          }
+          
+          .filter-row {
+            flex-direction: column;
+          }
+          
+          .filter-group {
+            margin-bottom: 1.5rem;
+          }
+        }
+      `}</style>
+
+      <div className="order-history-section">
+        <Breadcrumb title="Order History" parent="Home" />
+
         <div className="container">
-          {/* Filter Section */}
-          <div className="bg-white p-3 rounded shadow-sm mb-4">
-            <Row>
-              <Col md="4">
-                <FormGroup>
-                  <Label className="fw-semibold">From Date</Label>
-                  <Input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
-                  />
-                </FormGroup>
-              </Col>
-              <Col md="4">
-                <FormGroup>
-                  <Label className="fw-semibold">To Date</Label>
-                  <Input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
-                  />
-                </FormGroup>
-              </Col>
-              <Col md="4" className="d-flex align-items-end justify-content-start gap-2">
-                <Button color="primary" onClick={handleFilter}>
-                  Apply Filter
-                </Button>
-                <Button color="outline-secondary" onClick={handleClearFilter}>
-                  Clear
-                </Button>
-              </Col>
-            </Row>
+          <div className="text-center mb-4">
+            <h2 className="page-title">My Orders</h2>
+            <p className="text-muted">Track and manage your order history</p>
           </div>
 
-          {/* Orders Table Section */}
+          {/* Enhanced Filter Section */}
+          <Card className="filter-card">
+            <div className="filter-section">
+              <div className="filter-content">
+                <h3 className="filter-title">Filter Your Orders</h3>
+                <Row className="filter-row">
+                  <Col lg="4" md="6">
+                    <FormGroup className="filter-group">
+                      <Label className="filter-label">From Date</Label>
+                      <Input
+                        type="date"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                        className="form-control"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col lg="4" md="6">
+                    <FormGroup className="filter-group">
+                      <Label className="filter-label">To Date</Label>
+                      <Input
+                        type="date"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                        className="form-control"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col lg="4" md="12">
+                    <div className="button-group">
+                      <Button className="primary-btn" onClick={handleFilter}>
+                        Apply Filter
+                      </Button>
+                      <Button className="secondary-btn" onClick={handleClearFilter}>
+                        Clear Filter
+                      </Button>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+            </div>
+          </Card>
+
+          {/* Orders Section */}
           <Row>
             <Col sm="12">
               {loading ? (
-                <div className="text-center py-5">
-                  <Spinner color="primary" />
+                <div className="empty-state">
+                  <Spinner className="loading-spinner" size="lg" />
+                  <p className="mt-3">Loading your orders...</p>
                 </div>
               ) : error ? (
-                <div className="text-center text-danger py-5">
-                  <h5>{error}</h5>
+                <div className="empty-state">
+                  <div className="empty-state-icon">⚠️</div>
+                  <h5 className="text-danger">{error}</h5>
+                  <Button className="primary-btn mt-3" onClick={() => window.location.reload()}>
+                    Try Again
+                  </Button>
                 </div>
               ) : filteredOrders.length === 0 ? (
-                <div className="text-center py-5">
-                  <h5>No orders found for selected date</h5>
-                  <Button color="primary" onClick={handleClearFilter}>Show All Orders</Button>
+                <div className="empty-state">
+                  <div className="empty-state-icon">📦</div>
+                  <h5>No orders found</h5>
+                  <p>No orders match your selected date range</p>
+                  <Button className="primary-btn mt-3" onClick={handleClearFilter}>
+                    Show All Orders
+                  </Button>
                 </div>
               ) : (
-                <div className="table-responsive rounded shadow-sm bg-white">
-                  <table className="table table-hover table-bordered mb-0">
-                    <thead className="table-dark">
-                      <tr>
-                        <th>Order ID</th>
-                        <th>Date</th>
-                        <th>Total Items</th>
-                        <th>Total Amount</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredOrders.map((order) => (
-                        <React.Fragment key={order.id}>
-                          <tr
-                            onClick={() => toggleExpand(order.id)}
-                            style={{
-                              cursor: "pointer",
-                              background: expandedOrderId === order.id ? "#f1f3f5" : undefined,
-                              transition: "background 0.2s ease-in-out",
-                            }}
-                          >
-                            <td><strong>{order.id}</strong></td>
-                            <td>{formatDate(order.creationTime)}</td>
-                            <td>{order.getItemsCount()}</td>
-                            <td><strong>₹{order.finalOrderTotal.toFixed(2)}</strong></td>
-                            <td className="text-capitalize">{order.orderAcceptStatus || "Pending"}</td>
-                          </tr>
+                <div>
+                  {/* Orders List */}
+                  {filteredOrders.map((order) => (
+                    <Card key={order.id} className="order-card">
+                      <div className="order-header"
+                        onClick={() => toggleExpand(order.id)}
+                      >
+                        <Row className="align-items-center">
+                          <Col xs="12" md="3">
+                            <div className="d-flex align-items-center">
+                              <div>
+                                <h6 className="mb-0 fw-bold">Order #{order.id}</h6>
+                                <small className="text-muted">{formatDate(order.creationTime)}</small>
+                              </div>
+                            </div>
+                          </Col>
+                          <Col xs="6" md="2" className="text-center">
+                            <div>
+                              <strong className="text-dark">{Object.keys(order.orderItems).length}</strong>
+                              <div><small className="text-muted">Items</small></div>
+                            </div>
+                          </Col>
+                          <Col xs="6" md="2" className="text-center">
+                            <div>
+                              <strong className="text-dark">₹{order.finalOrderTotal.toFixed(2)}</strong>
+                              <div><small className="text-muted">Total</small></div>
+                            </div>
+                          </Col>
+                          <Col xs="8" md="3" className="text-center">
+                            <Badge color={getStatusColor(order.orderAcceptStatus || "Pending")}>
+                              {order.orderAcceptStatus || "Pending"}
+                            </Badge>
+                          </Col>
+                          <Col xs="4" md="2" className="text-end">
+                            <span className={`expand-icon ${expandedOrderId === order.id ? 'expanded' : ''}`}>
+                              ▼
+                            </span>
+                          </Col>
+                        </Row>
+                      </div>
 
-                          {expandedOrderId === order.id && (
-                            <tr>
-                              <td colSpan={5} className="p-0">
-                                <div className="p-3 bg-white border-top">
-                                  <h6 className="mb-3 fw-semibold">Order Details</h6>
-                                  <table className="table table-sm table-striped">
-                                    <thead>
-                                      <tr>
-                                        <th>Image</th>
-                                        <th>Product</th>
-                                        <th>Category</th>
-                                        <th>Price</th>
-                                        <th>Qty</th>
-                                        <th>Status</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {Object.values(order.orderItems).map((item: OrderItemsModel, idx) => {
-                                        const status = item?.status ?? {};
-                                        const statusKey = Object.keys(status).find((key) => status[key]) ?? "Pending";
+                      {expandedOrderId === order.id && (
+                        <div className="order-details">
+                          <h6 className="section-title mb-3">Order Details</h6>
+                          <div className="row">
+                            {Object.values(order.orderItems).map((item: OrderItemsModel, idx) => {
+                              const status = item?.status ?? {};
+                              const statusKey = Object.keys(status).find((key) => status[key]) ?? "Pending";
 
-                                        return (
-                                          <tr key={idx}>
-                                            <td style={{ width: "80px" }}>
-                                              <img
-                                                src={item.url || item.orderKitItems?.[0]?.img?.[0] || "/images/product-sidebar/001.jpg"}
-                                                alt={item.name}
-                                                className="img-fluid rounded"
-                                                style={{ maxWidth: "70px", objectFit: "contain" }}
-                                              />
-                                            </td>
-                                            <td>{item.name}</td>
-                                            <td>{item.categoryName || "N/A"}</td>
-                                            <td>₹{item.choosedPrice?.toFixed(2) ?? "0.00"}</td>
-                                            <td>{item.cartItemCount}</td>
-                                            <td className="text-capitalize">
-                                              {statusKey}
-                                              {status.deliver && (
-                                                <div className="text-muted small">
-                                                  Delivered on {new Date(status.deliver).toLocaleDateString()}
-                                                </div>
-                                              )}
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
+                              return (
+                                <div key={idx} className="col-12 mb-3">
+                                  <div className="product-item d-flex align-items-center">
+                                    <div className="me-3">
+                                      <img
+                                        src={item.url || item.orderKitItems?.[0]?.img?.[0] || "/images/product-sidebar/001.jpg"}
+                                        alt={item.name}
+                                        className="product-image"
+                                      />
+                                    </div>
+                                    <div className="flex-grow-1">
+                                      <div className="row">
+                                        <div className="col-md-4">
+                                          <h6 className="mb-1">{item.name}</h6>
+                                          <p className="text-muted mb-1">{item.categoryName || "N/A"}</p>
+                                        </div>
+                                        <div className="col-md-2 text-center">
+                                          <strong>₹{item.choosedPrice?.toFixed(2) ?? "0.00"}</strong>
+                                        </div>
+                                        <div className="col-md-2 text-center">
+                                          <span className="badge bg-light text-dark">Qty: {item.cartItemCount}</span>
+                                        </div>
+                                        <div className="col-md-4 text-end">
+                                          <Badge color={getStatusColor(statusKey)}>
+                                            {statusKey}
+                                          </Badge>
+                                          {status.deliver && (
+                                            <div className="text-muted small mt-1">
+                                              Delivered: {new Date(status.deliver).toLocaleDateString()}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  ))}
                 </div>
               )}
             </Col>
           </Row>
         </div>
-      </section>
-    </div>
+      </div>
+    </>
   );
 };
 
