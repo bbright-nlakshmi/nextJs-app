@@ -100,11 +100,17 @@ const Search: NextPage = () => {
         <SearchResults show={showResults} kits={kits} products={products} />
 
         <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropDown}>
-          <DropdownToggle caret>{t("All Category")}</DropdownToggle>
+          <DropdownToggle caret>
+            <span className="category-label">{t("All Category")}</span>
+          </DropdownToggle>
           <DropdownMenu>
-            <DropdownItem key="all">{t("All Category")}</DropdownItem>
+            {/* <DropdownItem key="all">{t("All Category")}</DropdownItem> */}
             {allCategories.map((cat) => (
-              <DropdownItem key={cat.id}>{cat.name}</DropdownItem>
+              <DropdownItem key={cat.id}  className="custom-dropdown-item">
+                <a href={`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`}>
+                {cat.name}
+                </a>
+              </DropdownItem>
             ))}
           </DropdownMenu>
         </ButtonDropdown>

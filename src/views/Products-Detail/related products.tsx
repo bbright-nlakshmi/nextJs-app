@@ -8,6 +8,8 @@ import { CartContext } from "../../helpers/cart/cart.context";
 import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import { CompareContext } from "../../helpers/compare/compare.context";
 import { objCache, Product } from "@/app/globalProvider";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
 
 interface RelatedProductsProps {
   productId: string;
@@ -38,13 +40,6 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({ productId, categoryId
     };
   }, [categoryId, productId]);
 
-  const handlePagination = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setPageLimit((prev) => prev + 5);
-      setIsLoading(false);
-    }, 500);
-  };
 
   return (
     <section className="section-big-py-space ratio_asos bg-light">
@@ -52,48 +47,45 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({ productId, categoryId
         <Row>
           <Col sm="12">
             <h2>Related Products</h2>
-            <div className="collection-product-wrapper">
-              <div className={`product-wrapper-grid`}>
-                <Row>
-                  {!relatedProducts?.length ? (
-                    <Col xs="12">
-                      <Skeleton />
-                    </Col>
-                  ) : (
-                    relatedProducts.slice(0, pageLimit).map((item, i) => (
-                      <div className="col-2" key={i}>
-                        <div className="product">
-                          <ProductBox
-                            layout="layout-one"
-                            data={item}
-                            newLabel={item.new}
-                            item={item}
-                            price={item.getPrice()}
-                            addCart={() => addToCart(item)}
-                            addCompare={() => addToCompare(item)}
-                            addWish={() => addToWish(item)}
-                          />
-                        </div>
+            <div className="related-products-slider">
+              {!relatedProducts?.length ? (
+                <Skeleton />
+              ) : (
+                <Swiper
+                  spaceBetween={20}
+                  grabCursor={true}
+                  simulateTouch={true}
+                  allowTouchMove={true}
+                  navigation
+                  breakpoints={{
+                    0: {
+                      slidesPerView: 2,
+                    },
+                    768: {
+                      slidesPerView: 3,
+                    },
+                    1200: {
+                      slidesPerView: 6,
+                    },
+                  }}
+                >
+                  {relatedProducts.slice().map((item, i) => (
+                    <SwiperSlide key={i}>
+                      <div className="product">
+                        <ProductBox
+                          layout="layout-one"
+                          data={item}
+                          newLabel={item.new}
+                          item={item}
+                          price={item.getPrice()}
+                          addCart={() => addToCart(item)}
+                          addCompare={() => addToCompare(item)}
+                          addWish={() => addToWish(item)}
+                        />
                       </div>
-                    ))
-                  )}
-                </Row>
-              </div>
-              {/* Pagination */}
-              {relatedProducts?.length > pageLimit && (
-                <div className="product-pagination loadmore-pagination">
-                  <div className="theme-paggination-block text-center mt-4">
-                    <Button onClick={handlePagination}>
-                      {isLoading ? (
-                        <Spinner size="sm" color="light">
-                          {" "}
-                        </Spinner>
-                      ) : (
-                        "Load More"
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
               )}
             </div>
           </Col>
