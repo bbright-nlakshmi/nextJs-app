@@ -28055,3 +28055,167 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
   display: flex;
   align-items: stretch;
 }
+// Order Success Page Styles
+.product-order {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 25px;
+
+  h3 {
+    margin-bottom: 20px;
+    color: #495057;
+    font-size: 22px;
+    font-weight: 600;
+  }
+}
+
+.product-order-detail {
+  .col-xs-4 {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.order_detail_header {
+  h4 {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.order_detail {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f8f9fa;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  h5 {
+    font-size: 16px;
+    color: #495057;
+    font-weight: 500;
+    margin: 0;
+  }
+}
+
+.total-sec {
+  margin-top: 20px;
+  border-top: 1px solid #dee2e6;
+  padding-top: 15px;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 16px;
+    color: #495057;
+
+    span {
+      font-weight: 500;
+    }
+  }
+}
+
+.final-total {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 5px;
+
+  h3 {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    color: #495057;
+    margin: 0;
+  }
+}
+
+.order-success-sec {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+
+  h4 {
+    font-size: 18px;
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+}
+
+.order-detail {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    font-size: 16px;
+    color: #495057;
+    margin-bottom: 10px;
+  }
+}
+
+.payment-mode {
+  margin-top: 20px;
+
+  h4 {
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 14px;
+    color: #6c757d;
+  }
+}
+
+.empty-cart-cls {
+  padding: 30px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+
+  img {
+    max-width: 150px;
+  }
+}
+
+.cart-buttons {
+  .btn {
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: 500;
+
+    &:hover {
+      background: #007bff;
+      color: white;
+    }
+  }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+  .product-order-detail .col-xs-4 {
+    margin-bottom: 15px;
+  }
+
+  .order-success-sec .col-sm-6 {
+    margin-bottom: 20px;
+  }
+}

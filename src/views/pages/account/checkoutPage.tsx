@@ -419,7 +419,7 @@ const CheckoutPageContent: React.FC = () => {
       <section className="section-big-py-space bg-light">
         <div className="custom-container">
           {cartItems.length === 0 ? (
-            <div className="text-center">
+            <div className="checkout-empty-cart">
               <h3>Your cart is empty</h3>
               <button 
                 className="btn-normal btn mt-3" 
@@ -690,7 +690,7 @@ const CheckoutPageContent: React.FC = () => {
                             {showCoupons && (
                               <div className="coupons-list">
                                 {isLoadingCoupons ? (
-                                  <div className="p-3">Loading coupons...</div>
+                                  <div className="coupon-loading">Loading coupons...</div>
                                 ) : availableCoupons.length > 0 ? (
                                   availableCoupons.map((coupon, index) => (
                                     <div key={index} className="coupon-item">
@@ -725,7 +725,7 @@ const CheckoutPageContent: React.FC = () => {
                                     </div>
                                   ))
                                 ) : (
-                                  <div className="p-3">No coupons available.</div>
+                                  <div className="no-coupons">No coupons available.</div>
                                 )}
                               </div>
                             )}
@@ -762,17 +762,17 @@ const CheckoutPageContent: React.FC = () => {
                           
                           return (
                             <li key={item.key || index} className="cart-item">
-                              <div className="row align-items-center">
+                              <div className="row align-items-left">
                                 <div className="col-6">
                                   <span className="product-name">{item.name}</span>
                                   <div className="product-price">
                                     {symbol}{(price * value).toFixed(2)} each
                                   </div>
                                 </div>
-                                <div className="col-3 text-center">
+                                <div className="col-3 text-left">
                                   <span className="qty-badge">×{item.qty}</span>
                                 </div>
-                                <div className="col-3 text-right">
+                                <div className="col-3 text-left">
                                   <span className="item-total">
                                     {symbol}{itemTotal.toFixed(2)}
                                   </span>
@@ -836,187 +836,108 @@ const CheckoutPageContent: React.FC = () => {
                           </div>
                         </li>
                       </ul>
-                    </div>
-
-                    {/* Payment Options */}
-                    <div className="payment-box">
-                      <div className="upper-box">
-                        <div className="payment-options">
-                          <ul>
-                            <li>
-                              <div className="radio-option">
-                                <input
-                                  id="payment-1"
-                                  type="radio"
-                                  name="payment-radio"
-                                  value="cod"
-                                  checked={payment === "cod"}
-                                  onChange={(e) => setPayment(e.target.value)}
-                                />
-                                <label htmlFor="payment-1">
-                                  <span></span>
-                                  Cash On Delivery
-                                </label>
-                              </div>
-                            </li>
-                            <li>
-                              <div className="radio-option">
-                                <input
-                                  id="payment-2"
-                                  type="radio"
-                                  name="payment-radio"
-                                  value="card"
-                                  checked={payment === "card"}
-                                  onChange={(e) => setPayment(e.target.value)}
-                                />
-                                <label htmlFor="payment-2">
-                                  <span></span>
-                                  Credit/Debit Card
-                                </label>
-                              </div>
-                            </li>
-                            <li>
-                              <div className="radio-option">
-                                <input
-                                  id="payment-3"
-                                  type="radio"
-                                  name="payment-radio"
-                                  value="paypal"
-                                  checked={payment === "paypal"}
-                                  onChange={(e) => setPayment(e.target.value)}
-                                />
-                                <label htmlFor="payment-3">
-                                  <span></span>
-                                  PayPal
-                                </label>
-                              </div>
-                            </li>
-                          </ul>
+                      {/* Payment Methods */}
+                      <div className="payment-box">
+                        <div className="upper-box">
+                          <h4>Payment Methods</h4>
+                          <div className="payment-options">
+                            <div className="payment-option">
+                              <input
+                                type="radio"
+                                id="cod"
+                                name="payment"
+                                value="cod"
+                                checked={payment === "cod"}
+                                onChange={(e) => setPayment(e.target.value)}
+                              />
+                              <label htmlFor="cod" className="payment-label">
+                                <i className="fa fa-money"></i>
+                                Cash on Delivery
+                              </label>
+                            </div>
+                            
+                            <div className="payment-option">
+                              <input
+                                type="radio"
+                                id="paypal"
+                                name="payment"
+                                value="paypal"
+                                checked={payment === "paypal"}
+                                onChange={(e) => setPayment(e.target.value)}
+                              />
+                              <label htmlFor="paypal" className="payment-label">
+                                <i className="fa fa-paypal"></i>
+                                PayPal
+                              </label>
+                            </div>
+                            
+                            <div className="payment-option">
+                              <input
+                                type="radio"
+                                id="stripe"
+                                name="payment"
+                                value="stripe"
+                                checked={payment === "stripe"}
+                                onChange={(e) => setPayment(e.target.value)}
+                              />
+                              <label htmlFor="stripe" className="payment-label">
+                                <i className="fa fa-credit-card"></i>
+                                Credit/Debit Card
+                              </label>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Payment Method Specific Content */}
-                      <div className="payment-method-content">
-                        {payment === "cod" && (
-                          <div className="cod-info">
-                            <div className="alert alert-info">
-                              <i className="fa fa-info-circle"></i>
-                              Pay with cash upon delivery. Please keep exact change ready.
-                            </div>
-                          </div>
-                        )}
-
-                        {payment === "card" && (
-                          <div className="card-payment-form">
-                            <div className="row">
-                              <div className="col-12">
-                                <div className="form-group">
-                                  <label className="field-label">Card Number *</label>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="1234 5678 9012 3456"
-                                    maxLength={19}
-                                    onChange={(e) => {
-                                      // Format card number with spaces
-                                      let value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
-                                      value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
-                                      e.target.value = value;
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-8">
-                                <div className="form-group">
-                                  <label className="field-label">Expiry Date *</label>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="MM/YY"
-                                    maxLength={5}
-                                    onChange={(e) => {
-                                      let value = e.target.value.replace(/\D/g, '');
-                                      if (value.length >= 2) {
-                                        value = value.substring(0, 2) + '/' + value.substring(2, 4);
-                                      }
-                                      e.target.value = value;
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-4">
-                                <div className="form-group">
-                                  <label className="field-label">CVV *</label>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="123"
-                                    maxLength={4}
-                                    onChange={(e) => {
-                                      e.target.value = e.target.value.replace(/\D/g, '');
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-12">
-                                <div className="form-group">
-                                  <label className="field-label">Cardholder Name *</label>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="Enter cardholder name"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {payment === "paypal" && (
-                          <div className="paypal-payment">
-                            <div className="alert alert-info mb-3">
-                              <i className="fa fa-paypal"></i>
-                              You will be redirected to PayPal to complete your payment securely.
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      
+                      
 
                       {/* Place Order Button */}
                       <div className="order-place">
-                        {payment === "paypal" ? (
-                          <PayPalButtons
-                            style={{
-                              layout: "vertical",
-                              color: "blue",
-                              shape: "rect",
-                              label: "paypal"
-                            }}
-                            createOrder={(data, actions) => {
-                              return actions.order.create({
-                                purchase_units: [
-                                  {
-                                    amount: {
-                                      value: finalTotal.toFixed(2),
-                                      currency_code: "USD"
-                                    },
-                                    description: `Order for ${cartItems.length} items`
-                                  }
-                                ],
-                                intent: "CAPTURE"
-                              });
-                            }}
-                            onApprove={onSuccess}
-                            onCancel={onCancel}
-                            onError={onError}
-                          />
-                        ) : (
+                        {payment === "cod" && (
                           <button 
                             type="submit" 
                             className="btn-normal btn"
                             disabled={cartItems.length === 0}
                           >
-                            {payment === "card" ? "Pay Now" : "Place Order"}
+                            Place Order
+                          </button>
+                        )}
+                        
+                        {payment === "paypal" && (
+                          <div className="paypal-button-container">
+                            <PayPalButtons
+                              createOrder={(data, actions) => {
+                                return actions.order.create({
+                                  purchase_units: [
+                                    {
+                                      amount: {
+                                        value: finalTotal.toFixed(2),
+                                      },
+                                    },
+                                  ],
+                                });
+                              }}
+                              onApprove={onSuccess}
+                              onError={onError}
+                              onCancel={onCancel}
+                              style={{
+                                layout: "horizontal",
+                                color: "blue",
+                                shape: "rect",
+                                label: "paypal",
+                              }}
+                            />
+                          </div>
+                        )}
+                        
+                        {payment === "stripe" && (
+                          <button 
+                            type="button" 
+                            className="btn-normal btn"
+                            onClick={() => toast.info("Stripe payment integration coming soon!")}
+                          >
+                            Pay with Card
                           </button>
                         )}
                       </div>
@@ -1029,336 +950,23 @@ const CheckoutPageContent: React.FC = () => {
         </div>
       </section>
 
-      <style jsx>{`
-        .coupon-box {
-          background: #f8f9fa;
-          padding: 20px;
-          border-radius: 8px;
-          margin-bottom: 25px;
-        }
+      {/* Order Summary Mobile View */}
+      <div className="mobile-order-summary d-lg-none">
+        <button 
+          className="btn btn-outline-primary w-100"
+          onClick={() => setShowCoupons(!showCoupons)}
+        >
+          Order Summary ({cartItems.length} items) - {symbol}{finalTotal.toFixed(2)}
+        </button>
+      </div>
 
-        .coupon-box h4 {
-          margin-bottom: 15px;
-          color: #333;
-          font-size: 18px;
-          font-weight: 600;
-        }
-
-        .coupon-input-section .input-group {
-          margin-bottom: 10px;
-        }
-
-        .coupon-input-section .form-control {
-          border-radius: 4px 0 0 4px;
-        }
-
-        .coupon-input-section .btn {
-          border-radius: 0 4px 4px 0;
-          font-size: 14px;
-          padding: 8px 16px;
-        }
-
-        .coupons-list {
-          max-height: 300px;
-          overflow-y: auto;
-          border: 1px solid #dee2e6;
-          border-radius: 4px;
-          margin-top: 10px;
-        }
-
-        .coupon-item {
-          padding: 15px;
-          border-bottom: 1px solid #eee;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .coupon-item:last-child {
-          border-bottom: none;
-        }
-
-        .coupon-info {
-          flex: 1;
-        }
-
-        .coupon-code {
-          font-size: 16px;
-          color: #007bff;
-          margin-bottom: 5px;
-        }
-
-        .coupon-details {
-          display: flex;
-          gap: 15px;
-          font-size: 12px;
-          color: #666;
-        }
-
-        .discount {
-          color: #28a745;
-          font-weight: 600;
-        }
-
-        .applied-coupon-info .alert {
-          padding: 10px 15px;
-          margin-bottom: 0;
-          font-size: 14px;
-        }
-
-        .order-box {
-          background: white;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          overflow: hidden;
-        }
-
-        .title-box {
-          background: #f8f9fa;
-          padding: 15px 20px;
-          border-bottom: 1px solid #ddd;
-          font-weight: 600;
-        }
-
-        .qty {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .cart-item {
-          padding: 15px 20px;
-          border-bottom: 1px solid #f0f0f0;
-        }
-
-        .cart-item:last-child {
-          border-bottom: none;
-        }
-
-        .product-name {
-          font-weight: 500;
-          color: #333;
-          display: block;
-          margin-bottom: 4px;
-        }
-
-        .product-price {
-          font-size: 12px;
-          color: #666;
-        }
-
-        .qty-badge {
-          background: #f8f9fa;
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-
-        .item-total {
-          font-weight: 600;
-          color: #333;
-        }
-
-        .sub-total, .total {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          background: #f8f9fa;
-        }
-
-        .sub-total li, .total li {
-          padding: 12px 20px;
-          border-bottom: 1px solid #e9ecef;
-        }
-
-        .sub-total li:last-child, .total li:last-child {
-          border-bottom: none;
-        }
-
-        .total {
-          background: #e9ecef;
-          font-weight: 600;
-        }
-
-        .count {
-          font-weight: 600;
-        }
-
-        .payment-box {
-          background: white;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          margin-top: 25px;
-          overflow: hidden;
-        }
-
-        .upper-box {
-          background: #f8f9fa;
-          padding: 20px;
-          border-bottom: 1px solid #ddd;
-        }
-
-        .payment-options ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .payment-options li {
-          margin-bottom: 12px;
-        }
-
-        .payment-options li:last-child {
-          margin-bottom: 0;
-        }
-
-        .radio-option {
-          display: flex;
-          align-items: center;
-        }
-
-        .radio-option input[type="radio"] {
-          margin-right: 10px;
-          transform: scale(1.2);
-        }
-
-        .radio-option label {
-          margin-bottom: 0;
-          font-weight: 500;
-          cursor: pointer;
-        }
-
-        .payment-method-content {
-          padding: 20px;
-        }
-
-        .card-payment-form .form-group {
-          margin-bottom: 15px;
-        }
-
-        .card-payment-form .field-label {
-          font-weight: 500;
-          margin-bottom: 5px;
-          display: block;
-        }
-
-        .card-payment-form .form-control {
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          padding: 8px 12px;
-        }
-
-        .order-place {
-          padding: 20px;
-          background: #f8f9fa;
-          text-align: center;
-        }
-
-        .btn-normal {
-          background: #007bff;
-          color: white;
-          border: none;
-          padding: 12px 30px;
-          border-radius: 4px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background-color 0.3s ease;
-          width: 100%;
-        }
-
-        .btn-normal:hover {
-          background: #0056b3;
-        }
-
-        .btn-normal:disabled {
-          background: #ccc;
-          cursor: not-allowed;
-        }
-
-        .error_border {
-          border-color: #dc3545 !important;
-        }
-
-        .error-message {
-          color: #dc3545;
-          font-size: 12px;
-          margin-top: 4px;
-          display: block;
-        }
-
-        .field-label {
-          font-weight: 500;
-          margin-bottom: 5px;
-          display: block;
-        }
-
-        .form-group {
-          margin-bottom: 20px;
-        }
-
-        .form-control {
-          width: 100%;
-          padding: 8px 12px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 14px;
-        }
-
-        .form-control:focus {
-          outline: none;
-          border-color: #007bff;
-          box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        .alert {
-          padding: 12px 15px;
-          border-radius: 4px;
-          margin-bottom: 15px;
-        }
-
-        .alert-info {
-          background-color: #d1ecf1;
-          border-color: #bee5eb;
-          color: #0c5460;
-        }
-
-        .alert-success {
-          background-color: #d4edda;
-          border-color: #c3e6cb;
-          color: #155724;
-        }
-
-        .text-success {
-          color: #28a745 !important;
-        }
-
-        @media (max-width: 768px) {
-          .coupon-details {
-            flex-direction: column;
-            gap: 5px;
-          }
-          
-          .coupon-item {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-          }
-          
-          .title-box .row > div {
-            font-size: 12px;
-          }
-          
-          .cart-item .row > div {
-            margin-bottom: 5px;
-          }
-        }
-      `}</style>
+      {/* Terms and Conditions Modal */}
+      
     </>
   );
 };
 
-// Main component with PayPal provider wrapper
+// Main component with PayPal provider
 const CheckoutPage: NextPage = () => {
   return (
     <PayPalScriptProvider options={paypalOptions}>

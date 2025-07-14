@@ -213,7 +213,8 @@ const CartPage: NextPage = () => {
         <div className="custom-container">
           {cartItems && cartItems.length > 0 ? (
             <>
-              <div className="row">
+              {/* Desktop Table View */}
+              <div className="row d-none d-md-block">
                 <div className="col-sm-12">
                   <table className="table cart-table table-responsive-xs">
                     <thead>
@@ -301,14 +302,103 @@ const CartPage: NextPage = () => {
                 </div>
               </div>
 
+              {/* Mobile Card View */}
+              <div className="row d-block d-md-none">
+                <div className="col-12">
+                  <div className="mobile-cart-items">
+                    {cartItems.map((item: any, index: number) => {
+                      const price = getPrice(item);
+                      const itemTotal = price * (item.qty || 1) * value;
+
+                      return (
+                        <div key={item.key || index} className="mobile-cart-item">
+                          <div className="cart-item-card">
+                            <div className="cart-item-header">
+                              <div className="cart-item-image">
+                                <img 
+                                  src={item.img?.[0] || "/static/images/placeholder.png"} 
+                                  alt="cart" 
+                                  className="img-fluid"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = "/static/images/placeholder.png";
+                                  }}
+                                />
+                              </div>
+                              <div className="cart-item-info">
+                                <h6 className="cart-item-name">{item.name || "Unknown Product"}</h6>
+                                <div className="cart-item-price">
+                                  <span className="price-label">Unit Price: </span>
+                                  <span className="price-value">{symbol}{price.toFixed(2)}</span>
+                                </div>
+                              </div>
+                              <div className="cart-item-remove">
+                                <a
+                                  href="#"
+                                  className="remove-btn"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    removeFromCart(item);
+                                  }}
+                                >
+                                  <i className="ti-close"></i>
+                                </a>
+                              </div>
+                            </div>
+                            
+                            <div className="cart-item-controls">
+                              <div className="quantity-section">
+                                <label className="quantity-label">Quantity:</label>
+                                <div className="quantity-input-wrapper">
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={item.qty || 1}
+                                    onChange={(e) => handleQtyUpdate(item, e.target.value)}
+                                    className="form-control quantity-input"
+                                    style={{
+                                      borderColor: quantityErrorKey === item.key ? "red" : undefined,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div className="total-section">
+                                <span className="total-label">Total: </span>
+                                <span className="total-value">{symbol}{itemTotal.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Mobile Total Section */}
+                  <div className="mobile-cart-total">
+                    <div className="total-card">
+                      <div className="total-row">
+                        <span className="total-label">Total Price:</span>
+                        <h3 className="total-amount">
+                          {symbol}{getSubtotal().toFixed(2)}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
               <div className="row cart-buttons">
                 <div className="col-12">
-                  <Link href="/" className="btn btn-normal">
-                    Continue Shopping
-                  </Link>
-                  <Link href="/pages/account/checkout" className="btn btn-normal ms-3">
-                    Check Out
-                  </Link>
+                  <div className="button-group">
+                    <Link href="/" className="btn btn-outline-primary continue-shopping-btn">
+                      Continue Shopping
+                    </Link>
+                    <Link href="/pages/account/checkout" className="btn btn-primary checkout-btn">
+                      Check Out
+                    </Link>
+                  </div>
                 </div>
               </div>
             </>
@@ -316,24 +406,26 @@ const CartPage: NextPage = () => {
             <div className="col-sm-12 empty-cart-cls text-center">
               <img
                 src="/static/images/icon-empty-cart.png"
-                className="img-fluid mb-4"
+                className="img-fluid mb-4 empty-cart-image"
                 alt="empty cart"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = "none";
                 }}
               />
-              <h3>
+              <h3 className="empty-cart-title">
                 <strong>Your Cart is Empty</strong>
               </h3>
-              <h4>Explore more and shortlist some items.</h4>
-              <Link href="/" className="btn btn-solid mt-4">
+              <h4 className="empty-cart-subtitle">Explore more and shortlist some items.</h4>
+              <Link href="/" className="btn btn-primary mt-4 continue-shopping-empty">
                 Continue Shopping
               </Link>
             </div>
           )}
         </div>
       </section>
+
+
     </>
   );
 };

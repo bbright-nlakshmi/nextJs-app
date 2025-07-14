@@ -111,8 +111,6 @@ const OrderSuccessPage: NextPage = () => {
     return 0;
   };
 
-
-
   // Format billing address
   const formatAddress = () => {
     const { firstName, lastName, address, city, state, country, pincode, phone } = billingAddress;
@@ -148,6 +146,18 @@ const OrderSuccessPage: NextPage = () => {
                 <div className="product-order">
                   <h3>Your Order Details</h3>
                   <Row className="product-order-detail g-3">
+                    {/* Headers */}
+                    <Col xs="4" className="order_detail_header">
+                      <h4>Product Name</h4>
+                    </Col>
+                    <Col xs="4" className="order_detail_header">
+                      <h4>Quantity</h4>
+                    </Col>
+                    <Col xs="4" className="order_detail_header">
+                      <h4>Price</h4>
+                    </Col>
+                    
+                    {/* Product Items */}
                     {items.map((item: any, i: number) => {
                       const price = getPrice(item);
                       const itemName = item.name || item.title || item.productName || item.product?.name || item.product?.title || "Unknown Product";
@@ -155,25 +165,16 @@ const OrderSuccessPage: NextPage = () => {
                       return (
                         <Fragment key={i}>
                           <Col xs="4" className="order_detail">
-                            <div>
-                              <h4>Product Name</h4>
-                              <h5>{itemName}</h5>
-                            </div>
+                            <h5>{itemName}</h5>
                           </Col>
                           <Col xs="4" className="order_detail">
-                            <div>
-                              <h4>Quantity</h4>
-                              <h5>{item.qty || 1}</h5>
-                            </div>
+                            <h5>{item.qty || 1}</h5>
                           </Col>
                           <Col xs="4" className="order_detail">
-                            <div>
-                              <h4>Price</h4>
-                              <h5>
-                                {symbol}
-                                {(price * value).toFixed(2)}
-                              </h5>
-                            </div>
+                            <h5>
+                              {symbol}
+                              {(price * value).toFixed(2)}
+                            </h5>
                           </Col>
                         </Fragment>
                       );
@@ -285,154 +286,6 @@ const OrderSuccessPage: NextPage = () => {
           )}
         </div>
       </section>
-
-      <style jsx>{`
-        .product-order {
-          background: white;
-          border: 1px solid #dee2e6;
-          border-radius: 8px;
-          padding: 20px;
-          margin-bottom: 25px;
-        }
-
-        .product-order h3 {
-          margin-bottom: 20px;
-          color: #495057;
-          font-size: 22px;
-          font-weight: 600;
-        }
-
-        .product-order-detail .col-xs-4 {
-          display: flex;
-          align-items: center;
-        }
-
-        .order_detail h4 {
-          font-size: 14px;
-          color: #6c757d;
-          margin-bottom: 5px;
-        }
-
-        .order_detail h5 {
-          font-size: 16px;
-          color: #495057;
-          font-weight: 500;
-        }
-
-        .total-sec {
-          margin-top: 20px;
-          border-top: 1px solid #dee2e6;
-          padding-top: 15px;
-        }
-
-        .total-sec ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .total-sec li {
-          display: flex;
-          justify-content: space-between;
-          padding: 10px 0;
-          font-size: 16px;
-          color: #495057;
-        }
-
-        .total-sec li span {
-          font-weight: 500;
-        }
-
-        .final-total {
-          margin-top: 15px;
-          padding: 15px;
-          background: #f8f9fa;
-          border-radius: 5px;
-        }
-
-        .final-total h3 {
-          display: flex;
-          justify-content: space-between;
-          font-size: 18px;
-          color: #495057;
-          margin: 0;
-        }
-
-        .order-success-sec {
-          background: white;
-          border: 1px solid #dee2e6;
-          border-radius: 8px;
-          padding: 20px;
-        }
-
-        .order-success-sec h4 {
-          font-size: 18px;
-          color: #495057;
-          font-weight: 600;
-          margin-bottom: 15px;
-        }
-
-        .order-detail {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .order-detail li {
-          font-size: 16px;
-          color: #495057;
-          margin-bottom: 10px;
-        }
-
-        .payment-mode {
-          margin-top: 20px;
-        }
-
-        .payment-mode h4 {
-          margin-bottom: 10px;
-        }
-
-        .payment-mode p {
-          font-size: 14px;
-          color: #6c757d;
-        }
-
-
-
-
-
-        .empty-cart-cls {
-          padding: 30px;
-          background: white;
-          border-radius: 8px;
-          border: 1px solid #dee2e6;
-        }
-
-        .empty-cart-cls img {
-          max-width: 150px;
-        }
-
-        .cart-buttons .btn {
-          padding: 12px 25px;
-          font-size: 16px;
-          font-weight: 500;
-        }
-
-        .cart-buttons .btn:hover {
-          background: #007bff;
-          color: white;
-        }
-
-        @media (max-width: 768px) {
-          .product-order-detail .col-xs-4 {
-            margin-bottom: 15px;
-          }
-
-          .order-success-sec .col-sm-6 {
-            margin-bottom: 20px;
-          }
-        }
-      `}</style>
     </Fragment>
   );
 };
