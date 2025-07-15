@@ -12,6 +12,7 @@ import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import { useRouter, useSearchParams } from "next/navigation";
 import { objCache, searchController } from "@/app/globalProvider";
 import { Category, Discount, CategoryProducts } from "@/app/models/models";
+import CollectionBanner from "./CollectionBanner";
 
 type CollectionProps = {
   cols: any;
@@ -65,10 +66,10 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
   useEffect(() => {
     if (categoryType === "category") {
       setProductData([...categoryProducts]);
-      console.log("\uD83D\uDFE2 Updated productData from categoryProducts:", categoryProducts);
     } else if (categoryType === "discount") {
       const found = objCache.discountList.find((item: Discount) => item.id === categoryId);
       if (found) {
+        setDiscount(found);
         setProductData(
           (found.discountItems || []).map((item: any) => ({
             ...item,
@@ -80,12 +81,13 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
       }
     }
   }, [categoryProducts, categoryType, categoryId]);
-
+  
   return (
     <Col className="collection-content">
       <div className="page-main-content">
         <Row>
           <Col sm="12">
+            <CollectionBanner img={discount?.img?.[0]} name={discount?.name} details={discount?.details} />
             <div className="collection-product-wrapper">
               {/* Product Grid */}
               <div className={`product-wrapper-grid ${layout}`}>

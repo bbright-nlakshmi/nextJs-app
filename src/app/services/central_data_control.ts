@@ -189,7 +189,7 @@ export class CentralDataCollector {
   public async getStorePriceRanges(): Promise<void> {
     try {
       const priceRanges = await API.getStorePriceRanges();
-      console.log(priceRanges);
+      
       objCache.insertObjCachePriceRangeStream(priceRanges);
     } catch (error) {
       console.error('Error fetching price ranges:', error);
@@ -228,11 +228,11 @@ export class CentralDataCollector {
       const result = await API.getDiscounts();
       const hideDiscounts: string[] = [];
       
-      const phoneNumber = userService.loggedInPhoneNumber;
+       const phoneNumber = userService.loggedInPhoneNumber;
 
-      if (!phoneNumber) {
-        throw new Error('Logged in phone number is null');
-      }
+      // if (!phoneNumber) {
+      //   throw new Error('Logged in phone number is null');
+      // }
 
       // Filter out removed discounts
       const discountsToRemove = Array.from(TrackDiscount.discountsTracker.keys())
