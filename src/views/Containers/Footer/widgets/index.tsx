@@ -104,7 +104,7 @@ const FooterSection: React.FC = () => {
                                 </div>
                                 <div className="footer-contant">
                                   <ul>
-                                    <li><a href="#">about us</a></li>
+                                    <li><a onClick={() => router.push("/pages/about-us")} style={{ cursor: "pointer" }}>About Us</a></li>
                                     <li><a href="#">contact us</a></li>
                                     <li><a onClick={() => router.push("/pages/terms")} style={{ cursor: "pointer" }}>terms & conditions</a></li>
                                     <li><a onClick={() => router.push("/pages/privacy")} style={{ cursor: "pointer" }}>privacy Policy</a></li>
@@ -122,7 +122,7 @@ const FooterSection: React.FC = () => {
                                 </div>
                                 <div className="footer-contant">
                                   <ul>
-                                    <li><a href="#">store location</a></li>
+                                    <li><a onClick={() => router.push("/pages/store")} style={{ cursor: "pointer" }}>Store Location</a></li>
                                     <li><a href="#">my account</a></li>
                                     <li><a href="#">orders tracking</a></li>
                                     <li><a href="#">size guide</a></li>
