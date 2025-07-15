@@ -28,28 +28,35 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
   const { setLeftMenu, leftMenu } = useContext(MenuContext);
 
   useEffect(() => {
-  const handleScroll = () => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    const header = document.getElementById("stickyHeader");
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      const header = document.getElementById("stickyHeader");
+      const search_bar = document.getElementById('searchbar-input');
+      const menu_bar = document.getElementById('nav-menu');
 
-    if (scrollTop >= 300) {
-       header?.classList.add("sticky");
-    } else {
-      header?.classList.remove("sticky");
-    }
-  };
-  
+      if (scrollTop >= 300) {
+        header?.classList.add("sticky");
+        search_bar?.classList.add("d-lg-none");
+        menu_bar?.classList.remove('d-lg-none');
 
-  
-  
+      } else {
+        header?.classList.remove("sticky");
+        search_bar?.classList.remove("d-lg-none");
+        menu_bar?.classList.add('d-lg-none');
+      }
+    };
 
-  window.addEventListener("scroll", handleScroll);
-  return () => window.removeEventListener("scroll", handleScroll);
-}, []);
 
-const onOpenMobileSearch = () => {document.getElementById("searchbar-input")?.classList.add("open"); }  
-const closeMobileSearch = () => {document.getElementById("searchbar-input")?.classList.remove("open");};
-const toggleLeftMenu = () => {setLeftMenu(!leftMenu);document.body.style.overflow = "hidden";};
+
+
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const onOpenMobileSearch = () => { document.getElementById("searchbar-input")?.classList.add("open"); }
+  const closeMobileSearch = () => { document.getElementById("searchbar-input")?.classList.remove("open"); };
+  const toggleLeftMenu = () => { setLeftMenu(!leftMenu); document.body.style.overflow = "hidden"; };
 
   return (
     <Fragment>
@@ -57,48 +64,51 @@ const toggleLeftMenu = () => {setLeftMenu(!leftMenu);document.body.style.overflo
         <div className="mobile-fix-option"></div>
         <div className="layout-header2">
           <div id="stickyHeader">
-          <Container>
-            <Row>
-              <Col md="12">
-                <div className="main-menu-block">
-                  <div className="header-left">
-                    <div className="sm-nav-block" onClick={toggleLeftMenu}>
-                      <span className="sm-nav-btn">
-                        <i className="fa fa-bars"></i>
-                      </span>
-                    </div>
+            <Container>
+              <Row>
+                <Col md="12">
+                  <div className="main-menu-block">
+                    <div className="header-left">
+                      <div className="sm-nav-block" onClick={toggleLeftMenu}>
+                        <span className="sm-nav-btn">
+                          <i className="fa fa-bars"></i>
+                        </span>
+                      </div>
 
-                    <div className="logo-block">
-                      <a href="/#">
-                        <Media src={`${appLogo}`} className=" app-logo" alt="logo" />
-                      </a>
+                      <div className="logo-block brand-logo logo-sm-center">
+                        <a href="/#">
+                          <Media src={`${appLogo}`} className=" app-logo" alt="logo" />
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                  <div className="input-block searchbar-input" id = "searchbar-input">
-                    <div className="input-box ">
-                      <span className="close-mobilesearch" onClick={closeMobileSearch}>
-                        <i className="fa fa-times"></i>
-                      </span>
-                      <Search />
+                    <div className="input-block searchbar-input" id="searchbar-input">
+                      <div className="input-box ">
+                        <span className="close-mobilesearch" onClick={closeMobileSearch}>
+                          <i className="fa fa-times"></i>
+                        </span>
+                        <Search />
+                      </div>
                     </div>
+                    <div className="header-right d-lg-none" id="nav-menu">
+                      <HorizaontalMenu />
+                    </div>
+                    <ShoppingCart layout="layout2" />
                   </div>
-                  <ShoppingCart layout="layout2" />
-                </div>
-              </Col>
-            </Row>
-          </Container>
-        </div>
+                </Col>
+              </Row>
+            </Container>
+          </div>
         </div>
 
         {/* Category and Navigation */}
         <div className="category-header-2">
-          <div className="custom-container">
+          <div className="container">
             <Row>
               <Col >
                 <div className="navbar-menu">
                   <div className="category-left">
                     <Category category={category} />
-                    <HorizaontalMenu />
+                     <HorizaontalMenu />
                     <div className="icon-block">
                       <ul>
                         <User />

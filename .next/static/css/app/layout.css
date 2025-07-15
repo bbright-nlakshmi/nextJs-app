@@ -25800,7 +25800,7 @@ li.with-megamenu:hover .rts-megamenu {
   margin-right: 20px;
 }
 
-.rts-product-details-section2 .contents table {
+.rts-product-details-section2 .contents table, .w-full {
   width: 100%;
 }
 
@@ -27095,7 +27095,7 @@ li.with-megamenu:hover .rts-megamenu {
   animation: 0.5s mymove;
 }
 
-.single-shopping-card-one .thumbnail-preview {
+.single-shopping-card-one .thumbnail-preview, .single-category-one .thumbnail-preview {
   border-radius: 6px;
   overflow: hidden;
   display: block;
@@ -33089,6 +33089,14 @@ body.modal-open {
   background: rgba(241, 241, 241, 0.3490196078);
   max-height: 150px;
   border-radius: 5px;
+}
+
+.show {
+  display: block;
+}
+
+.hide {
+  display: none;
 }
 
 @media only screen and (max-width: 575px) {
@@ -49953,7 +49961,7 @@ button {
 }
 .collection-product-wrapper .product-wrapper-grid .product-box {
   margin-top: 30px;
-  padding-right: 0;
+  
 }
 .collection-product-wrapper .product-wrapper-grid .product-box .product-detail p {
   display: none;
@@ -89993,7 +90001,7 @@ select {
 }
 @media only screen and (max-width: 991px) {
   .swiper-slide {
-    padding-bottom: 40px;
+    padding-bottom: 0px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -90200,7 +90208,7 @@ select {
 
 @media only screen and (max-width: 991px) {
   .swiper-slide {
-    padding-bottom: 30px;
+    padding-bottom: 0px;
     display: flex;
     flex-direction: column;
   }
@@ -90548,8 +90556,13 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
     margin: 0;
     color: #333;
   }
+  .swiper-button-next,
+  .swiper-button-prev {
+    display: none;
+    opacity: 0 !important;
+  }
   .next-prev-swiper-wrapper {
-    display: flex;
+    display: none;
     gap: 10px;
   }
   .product-count {
@@ -90567,6 +90580,9 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
   }
   .no-arrow .swiper-button-next,
   .no-arrow .swiper-button-prev {
+    display: none;
+  }
+  .d-lg-none {
     display: none;
   }
   /* Ensure consistent product box styling */
@@ -90593,6 +90609,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
 @media (max-width: 768px) and (max-width: 768px) {
   .product .product-box .product-detail.detail-inline {
     padding-top: 10px;
+    margin-top: 10px;
   }
   .title-area-between {
     flex-direction: column;
@@ -90629,7 +90646,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
     height: 100px;
   }
   .section-py-space {
-    padding: 30px 0;
+    padding: 15px 0;
   }
   .custom-container {
     padding: 0 15px;
@@ -90654,6 +90671,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before {
   }
   .title-left {
     font-size: 18px;
+    margin: 10px auto;
   }
 }
 @media (max-width: 768px) {

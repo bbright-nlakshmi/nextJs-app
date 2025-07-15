@@ -10,8 +10,8 @@ import { FilterContext } from "../../helpers/filter/filter.context";
 import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import { useRouter, useSearchParams } from "next/navigation";
-import { objCache, searchController } from "@/app/globalProvider";
-import { Category, Discount, CategoryProducts } from "@/app/models/models";
+import { objCache, searchController ,Category, Discount, CategoryProducts} from "@/app/globalProvider";
+
 import CollectionBanner from "./CollectionBanner";
 
 type CollectionProps = {
@@ -103,6 +103,7 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
                           <ProductBox
                             layout="layout-one"
                             data={item}
+                            hoverEffect={'icon-inline'}
                             newLabel={item.new}
                             item={item}
                             price={getPrice(item)}

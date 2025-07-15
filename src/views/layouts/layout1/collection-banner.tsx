@@ -25,7 +25,7 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
 
   if (categories.length) {
     return (<>
-      <section className="w-full rts-category-area section-py-space">
+      <section className="w-full rts-category-area section-pt-space">
         <div className="custom-container title-area-between">
           <h2 className="title-left">Featured Categories</h2>
           <div className="next-prev-swiper-wrapper" >
@@ -48,11 +48,11 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
                   delay: 3000,
                   disableOnInteraction: false,
                 }}
-              className="mySwiper-category-1 swiper-data"
+              className="swiper-data"
               breakpoints={{
                 0: { slidesPerView: 1, spaceBetween: 0 },
-                320: { slidesPerView: 3, spaceBetween: 10 },
-                480: { slidesPerView: 4, spaceBetween: 20 },
+                320: { slidesPerView: 2, spaceBetween: 10 },
+                480: { slidesPerView: 3, spaceBetween: 20 },
                 640: { slidesPerView: 4, spaceBetween: 20 },
                 840: { slidesPerView: 5, spaceBetween: 20 },
                 1140: { slidesPerView: 6, spaceBetween: 20 },
@@ -64,7 +64,7 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
               {
                 categories.map((item) => (
                   <SwiperSlide key={item.id}>
-                    <div className="single-shopping-card-one single-category-one " >
+                    <div className="single-category-one " >
                       <Link
                         className = "thumbnail-preview"
                         href={{
@@ -74,8 +74,9 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
                       >
                         <Media src={item.img[0]} className="img-fluid" alt={item.name} />
 
-                        <p>{item.name}</p>
+                        
                       </Link>
+                      <p>{item.name}</p>
                     </div>
                   </SwiperSlide>
                 ))
