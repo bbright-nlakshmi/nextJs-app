@@ -17091,7 +17091,7 @@ li.with-megamenu:hover .rts-megamenu {
   margin-right: 20px;
 }
 
-.rts-product-details-section2 .contents table {
+.rts-product-details-section2 .contents table,.w-full {
   width: 100%;
 }
 
@@ -18433,7 +18433,7 @@ li.with-megamenu:hover .rts-megamenu {
   animation: 0.5s mymove;
 }
 
-.single-shopping-card-one .thumbnail-preview {
+.single-shopping-card-one .thumbnail-preview,.single-category-one .thumbnail-preview  {
   border-radius: 6px;
   overflow: hidden;
   display: block;
@@ -24646,6 +24646,12 @@ body.modal-open {
   background: rgba(241, 241, 241, 0.3490196078);
   max-height: 150px;
   border-radius: 5px;
+}
+.show{
+  display:block;
+}
+.hide{
+  display:none;
 }
 
 @media only screen and (max-width: 575px) {

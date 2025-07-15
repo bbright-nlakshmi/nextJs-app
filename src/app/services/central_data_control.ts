@@ -3,17 +3,17 @@ import {
   objCache,
   DoneDiscount,
   TrackDiscount,
-  //API,
+  API,
   userService,
   Discount,
   DiscountItem
 } from '@/app/globalProvider';
-import {API} from '../services/api.js';
+//import {API} from '../services/api.js';
 // import { Category} from '../models/category/category.js';
-API.baseURL = 'https://devqarupeecomservice.rupeecom.in/v1';
-API.tenant_service_url = 'https://tenantservice.1rpapp.in/v1';
-API.tenantId = 'owuhhrlb';
-API.storeId = 'b0aec458-86f7-4c29-8587-ec4271b9168c';
+// API.baseURL = 'https://devqarupeecomservice.rupeecom.in/v1';
+// API.tenant_service_url = 'https://tenantservice.1rpapp.in/v1';
+// API.tenantId = 'owuhhrlb';
+// API.storeId = 'b0aec458-86f7-4c29-8587-ec4271b9168c';
 
 //import { userService } from './user.service';
 
