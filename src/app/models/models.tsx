@@ -11,7 +11,7 @@ export * from './coupon/coupon';
 export * from './discount/discount';
 export * from './discount_item/discount_item';
 export * from './job/job';
-export * from './kit/kit';
+//export * from './kit/kit';
 export * from './kit_product/kit_product';
 export * from './local_onerupeedb/local_onerupeedb';
 export * from './onboarding/onboarding';

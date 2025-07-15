@@ -25,6 +25,9 @@ interface productType {
   item?: any;
   data: any;
   type?: Array<string>;
+  name?:string;
+  img?:Array<string>;
+  rating?:number;
 
 }
 // { layout, id, item, title, newLabel, sale, price, discount, stock, images, addCart, addCompare, addWish, hoverEffect }

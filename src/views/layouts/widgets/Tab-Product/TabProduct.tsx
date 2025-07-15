@@ -42,7 +42,11 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
     return (
       <>
         <section className="section-pt-space">
+          <div className="custom-container title-area-between">
+             <h2 className="title-left">All Categories</h2>
+          </div>
           <div className="tab-product-main">
+            
             <div className="tab-prodcut-contain">
 
               <Nav tabs>
@@ -61,16 +65,16 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
                   modules={[Mousewheel]}
 
                 >
-                  {categories.map((c: any, i: any) =>
-                  (
-                    <SwiperSlide key={c.id}>
+                  { categories.map((c: any, i: any) => {
+                   if(c.category_products.length )
+                    return <SwiperSlide key={c.id}>
                       <NavItem key={i}>
                         <NavLink className={activeTab == i ? 'active' : ''} onClick={() => setActiveTab(i)}>
                           {c.name}
                         </NavLink>
                       </NavItem>
                     </SwiperSlide>
-                  ))
+                 })
                   }
                 </Swiper>
               </Nav>
@@ -78,7 +82,7 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
           </div>
         </section>
 
-        <section className="section-py-space ratio_asos product">
+        <section className="ratio_asos product">
           <div className="custom-container">
             <Row>
               <Col className="pe-0">

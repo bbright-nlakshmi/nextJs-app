@@ -1,23 +1,21 @@
 // services/CentralDataCollector.ts
-import { useEffect, useState } from 'react';
-
 import {
-  BannerModel,
-  CategoryRender,
-  Product,
-  StorePriceRanges,
-  Discount,
-  Kit,
-  Category,
-  Tags,
-  Job,
-  StoreAnnounce,
   objCache,
   DoneDiscount,
   TrackDiscount,
-  API
-} from '@/app/globalProvider'
-import { UserController } from '@/views/user_auth/user_controller';
+  //API,
+  userService,
+  Discount,
+  DiscountItem
+} from '@/app/globalProvider';
+import {API} from '../services/api.js';
+// import { Category} from '../models/category/category.js';
+API.baseURL = 'https://devqarupeecomservice.rupeecom.in/v1';
+API.tenant_service_url = 'https://tenantservice.1rpapp.in/v1';
+API.tenantId = 'owuhhrlb';
+API.storeId = 'b0aec458-86f7-4c29-8587-ec4271b9168c';
+
+//import { userService } from './user.service';
 
 
 
@@ -63,8 +61,6 @@ export class CentralDataCollector {
 
     try {
       const categories = await API.getCategories();
-
-      //this.categoryStream.setValue(categories);
       objCache.resetObjCacheCategoryList();
       objCache.insertObjCacheCategoryList(categories);
     } catch (error) {
@@ -77,8 +73,6 @@ export class CentralDataCollector {
 
     try {
       const categories = await API.getAllCategories();
-
-      //this.categoryStream.setValue(categories);
       objCache.resetObjCacheAllCategoryList();
       objCache.insertObjCacheAllCategoryList(categories);
     } catch (error) {
@@ -88,7 +82,6 @@ export class CentralDataCollector {
   public async getKits(): Promise<void> {
     try {
       const kits = await API.getKits();
-      //this.kitStream.setValue(kits);
       objCache.resetObjCacheKitList();
       objCache.insertObjCacheKitList(kits);
     } catch (error) {
@@ -196,7 +189,7 @@ export class CentralDataCollector {
   public async getStorePriceRanges(): Promise<void> {
     try {
       const priceRanges = await API.getStorePriceRanges();
-      //this.priceRangeStream.setValue(priceRanges);
+      
       objCache.insertObjCachePriceRangeStream(priceRanges);
     } catch (error) {
       console.error('Error fetching price ranges:', error);
@@ -234,8 +227,8 @@ export class CentralDataCollector {
     try {
       const result = await API.getDiscounts();
       const hideDiscounts: string[] = [];
-      // const userController = new UserController(); // Implement as needed
-      // const phoneNumber = userController.loggedInPhoneNumber;
+      
+       const phoneNumber = userService.loggedInPhoneNumber;
 
       // if (!phoneNumber) {
       //   throw new Error('Logged in phone number is null');
@@ -243,9 +236,9 @@ export class CentralDataCollector {
 
       // Filter out removed discounts
       const discountsToRemove = Array.from(TrackDiscount.discountsTracker.keys())
-        .filter(itemId => !result.some(discount =>
+        .filter(itemId => !result.some((discount:Discount) =>
           discount.id === itemId ||
-          discount.getDiscountItems().some(item => item.id === itemId)
+          discount.getDiscountItems().some((item:DiscountItem) => item.id === itemId)
         ));
 
       discountsToRemove.forEach(discountId => {
@@ -254,24 +247,24 @@ export class CentralDataCollector {
       });
 
       // Filter excluded discounts
-      // result.forEach(discount => {
-      //   if (discount.isDiscountExcludedToPhoneNumber(phoneNumber)) {
-      //     console.log(`Discount is excluded to this user: ${discount.id}`);
-      //     hideDiscounts.push(discount.id);
-      //   }
-      // });
+      result.forEach((discount:Discount) => {
+        if (discount.isDiscountExcludedToPhoneNumber(phoneNumber)) {
+          console.log(`Discount is excluded to this user: ${discount.id}`);
+          hideDiscounts.push(discount.id);
+        }
+      });
 
-      const filteredDiscounts = result.filter(discount =>
+      const filteredDiscounts = result.filter((discount:Discount) =>
         !hideDiscounts.includes(discount.id)
       );
 
       // Separate expired and active discounts
       const now = Date.now();
-      const notExpiredDiscounts = filteredDiscounts.filter(discount =>
+      const notExpiredDiscounts = filteredDiscounts.filter((discount:Discount) =>
         (discount.discountEndDate?.getTime() || 0) >= now
       );
 
-      const expiredDiscounts = filteredDiscounts.filter(discount =>
+      const expiredDiscounts = filteredDiscounts.filter((discount:Discount) =>
         (discount.discountEndDate?.getTime() || 0) < now
       );
 
@@ -280,15 +273,15 @@ export class CentralDataCollector {
       objCache.insertObjCacheDiscountList(notExpiredDiscounts);
 
       // Update trackers
-      notExpiredDiscounts.forEach(discount => {
+      notExpiredDiscounts.forEach((discount:Discount) => {
         TrackDiscount.insertDiscountDetail(discount.id, discount.discountEndDate);
-        discount.getDiscountItems().forEach(item => {
+        discount.getDiscountItems().forEach((item:DiscountItem) => {
           TrackDiscount.insertDiscountDetail(item.id, discount.discountEndDate);
         });
       });
 
       // Clean up expired discounts
-      expiredDiscounts.forEach(discount => {
+      expiredDiscounts.forEach((discount:Discount) => {
         TrackDiscount.removeDiscountDetail(discount.id);
         DoneDiscount.addDoneDiscount(discount.id);
       });

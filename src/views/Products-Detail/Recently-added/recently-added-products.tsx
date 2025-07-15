@@ -37,67 +37,67 @@ const RecentlyAddedProducts: React.FC = () => {
   }
 
   return (
-    <div className="rts-grocery-feature-area rts-section-gapBottom">
-      <div className="container">
-        <div className="row">
-          <div className="col-lg-12">
-            <div className="title-area-between">
-              <h2 className="title-left">New Products</h2>
-              <div className="next-prev-swiper-wrapper">
-                <div className="swiper-button-prev">
-                  <i className="fa-regular fa-chevron-left" />
-                </div>
-                <div className="swiper-button-next">
-                  <i className="fa-regular fa-chevron-right" />
-                </div>
-              </div>
-            </div>
+    <div className="section-pt-space">
+      <div className="custom-container title-area-between">
+
+        <h2 className="title-left">New Products</h2>
+        <div className="next-prev-swiper-wrapper">
+          <div className="swiper-button-prev">
+            <i className="fa-regular fa-chevron-left" />
           </div>
+          <div className="swiper-button-next">
+            <i className="fa-regular fa-chevron-right" />
+          </div>
+
         </div>
       </div>
 
       <div className="container">
         <div className="row">
           <div className="col-lg-12">
-            <div className="category-area-main-wrapper-one">
+            <div className="product product-slide-6 product-m no-arrow">
               <Swiper
-                modules={[Navigation, Autoplay]}
-                scrollbar={{ hide: true }}
+                navigation={{
+                  nextEl: '.swiper-button-next',
+                  prevEl: '.swiper-button-prev',
+                }}
+                spaceBetween={20}
+                slidesPerView={6}
+                loop={false}
+                speed={2000}
                 autoplay={{
                   delay: 3000,
                   disableOnInteraction: false,
                 }}
-                loop={true}
-                navigation={{
-                  nextEl: ".swiper-button-next",
-                  prevEl: ".swiper-button-prev",
-                }}
-                className="mySwiper-category-1"
+                className="mySwiper-category-1 swiper-data"
                 breakpoints={{
-                  0: { slidesPerView: 1, spaceBetween: 30 },
-                  320: { slidesPerView: 2, spaceBetween: 30 },
-                  480: { slidesPerView: 3, spaceBetween: 30 },
-                  640: { slidesPerView: 3, spaceBetween: 30 },
-                  840: { slidesPerView: 4, spaceBetween: 30 },
-                  1140: { slidesPerView: 6, spaceBetween: 30 },
+                  0: { slidesPerView: 1, spaceBetween: 0 },
+                  320: { slidesPerView: 2, spaceBetween: 10 },
+                  480: { slidesPerView: 3, spaceBetween: 20 },
+                  640: { slidesPerView: 4, spaceBetween: 20 },
+                  840: { slidesPerView: 5, spaceBetween: 20 },
+                  1140: { slidesPerView: 6, spaceBetween: 20 },
                 }}
+
+                modules={[Navigation, Autoplay]}
               >
                 {recentProducts.map((product) => (
                   <SwiperSlide key={product.id}>
-                    <div className="single-shopping-card-one w-full max-w-[250px]">
-                      <ProductBox
-                        id={Number(product.id)}
-                        name={product.name}
-                        img={product.img[0]}
-                        price={product.sellingPrice}
-                        discount={product.discount?.discount || 0}
-                        rating={product.rating?.rating || 0}
-                        addCart={() => console.log('Add to cart', product.id)}
-                        addWish={() => console.log('Add to wishlist', product.id)}
-                        addCompare={() => console.log('Add to compare', product.id)}
-                        data={product}
-                      />
-                    </div>
+                    
+                    <ProductBox
+                      id={Number(product.id)}
+                      name={product.name}
+                      img={product.img[0]}
+                      price={product.sellingPrice}
+                      hoverEffect={'icon-inline'}
+                      discount={product.discount?.discount || 0}
+                      rating={product.rating?.rating || 0}
+                      addCart={() => console.log('Add to cart', product.id)}
+                      addWish={() => console.log('Add to wishlist', product.id)}
+                      addCompare={() => console.log('Add to compare', product.id)}
+                      data={product}
+                    />
+                    
                   </SwiperSlide>
                 ))}
               </Swiper>

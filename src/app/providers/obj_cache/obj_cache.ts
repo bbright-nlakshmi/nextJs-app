@@ -1,4 +1,4 @@
-import { Product, Kit, Discount, Category, Tags, PriceBetween, KitProduct, BannerModel, StorePriceRanges, StoreAnnounce, DiscountItem } from "@/app/models/models";
+import { Product, Kit, Discount, Category, Tags, PriceBetween, KitProduct, BannerModel, StorePriceRanges, StoreAnnounce, DiscountItem } from "@bbright-nlakshmi/rupeecom-services";
 import EventEmitter from "events";
 import { BehaviorSubject, Subject } from "rxjs";
 
@@ -18,7 +18,7 @@ export class ObjCache extends EventEmitter {
   public allCategories: Category[] = [];
   public allProducts: Map<string, Product[]> = new Map();
   public allProducstsList: Product[] = [];
-  public priceRanges: StorePriceRanges | undefined;
+  public priceRanges!: StorePriceRanges;
   public announcement: StoreAnnounce | undefined;
   public tags: Tags | undefined;
   public refreshControllers: (() => void)[] = [];
@@ -131,14 +131,13 @@ export class ObjCache extends EventEmitter {
     this.allCategories = lst;
     this.emit('update');
     this.emit('updateAllCategories', lst)
-    // console.log(lst)
-    //this.allCategoryList.next(lst);
+    
   }
   insertObjCachePriceRangeStream(lst: StorePriceRanges) {
 
-    //this.priceRanges = lst;
-    this.emit('UpdatePriceRanges', lst);
+    this.priceRanges = lst;
     this.emit('update');
+    this.emit('UpdatePriceRanges', lst);
   }
 
   insertObjCacheAnnouncementStream(lst: StoreAnnounce) {
