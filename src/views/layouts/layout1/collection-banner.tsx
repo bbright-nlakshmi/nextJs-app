@@ -8,7 +8,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/grid";
-import { Category, ObjCache, Product } from "@/app/globalProvider";
+import { Category, Product } from "@bbright-nlakshmi/rupeecom-services";
 
 import router from "next/router";
 
@@ -33,7 +33,7 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
             <div className="swiper-button-next"><i className="fa-regular fa-chevron-right"></i></div>
           </div>
         </div>
-        <div className="custom-container">
+        <div >
           <div className="cover-card-main-over">
             <Swiper
               navigation={{
@@ -44,9 +44,10 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
               slidesPerView={6}
               loop={false}
               speed={2000}
-              // autoplay={{
-              //   delay: 4000,
-              // }}
+              autoplay={{
+                  delay: 3000,
+                  disableOnInteraction: false,
+                }}
               className="mySwiper-category-1 swiper-data"
               breakpoints={{
                 0: { slidesPerView: 1, spaceBetween: 0 },
@@ -57,15 +58,15 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
                 1140: { slidesPerView: 6, spaceBetween: 20 },
               }}
               
-              modules={[ Navigation]}
+              modules={[ Navigation, Autoplay]}
 
             >
               {
                 categories.map((item) => (
                   <SwiperSlide key={item.id}>
-                    <div className="single-category-one height-180" >
+                    <div className="single-shopping-card-one single-category-one " >
                       <Link
-
+                        className = "thumbnail-preview"
                         href={{
                           pathname: "/collections/no-sidebar",
                           query: { id: item.id, type: "category" },

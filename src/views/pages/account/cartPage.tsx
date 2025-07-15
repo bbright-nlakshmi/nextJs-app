@@ -5,8 +5,8 @@ import Link from "next/link";
 import { CartContext } from "../../../helpers/cart/cart.context";
 import Breadcrumb from "../../../views/Containers/Breadcrumb";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
-import { searchController } from "@/app/globalProvider";
-import { Kit } from "@/app/models/kit/kit";
+import { searchController , Kit} from "@/app/globalProvider";
+
 
 // Define proper interfaces
 interface KitRaw {
@@ -44,11 +44,11 @@ const CartPage: NextPage = () => {
       if (searchController?.kits && Array.isArray(searchController.kits)) {
         const kitRaw = searchController.kits.find((k: KitRaw) => k?.id === productId);
         if (kitRaw) {
-          const kit = new Kit();
+          //const kit = new Kit();
           // Safe method call with optional chaining
-          if (kit.fromMap && typeof kit.fromMap === "function") {
-            kit.fromMap(kitRaw);
-            return kit;
+          if (Kit.fromMap && typeof Kit.fromMap === "function") {
+           
+            return  Kit.fromMap(kitRaw);
           }
         }
       }

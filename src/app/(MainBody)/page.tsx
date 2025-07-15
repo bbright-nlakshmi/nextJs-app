@@ -38,18 +38,19 @@ const Home = () => {
   const [allCategories, setAllCategories] = useState<Array<Category>>();
   const [categoryProducts, setcategoryProducts] = useState<Array<Product>>([]);
   const [banners, setBanners] = useState<Array<BannerModel>>();
-  const [priceRanges, setPriceRanges] = useState<StorePriceRanges>();
+  const [priceRanges, setPriceRanges] = useState<StorePriceRanges>(StorePriceRanges.emptyPriceRanges());
   useEffect(() => {
+    
     // Subscribe to the Subject
     objCache.on('update', () => {
+      
       setKits(objCache.kitList);
       setProducts(objCache.discountList);
       setBanners(objCache.allBannersList);
       setCategories(objCache.categories);
       setAllCategories(objCache.allCategories);
       setcategoryProducts(objCache.allProducstsList);
-      
-       //setPriceRanges(objCache.priceRanges);
+      setPriceRanges(objCache.priceRanges);
 
     })
     

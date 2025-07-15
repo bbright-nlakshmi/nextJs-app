@@ -10789,7 +10789,8 @@ iframe {
 }
 
 .sqs-announcement-bar-content {
-    display: flex
+    display: flex;
+    margin:10px auto;
 }
 
 // Announcement Bar Text Colors //
@@ -16721,19 +16722,29 @@ li.with-megamenu:hover .rts-megamenu {
 .swiper-data {
     overflow: hidden
 }
-
+.single-price-range{
+    height:11vh !important;
+}
 .single-category-one {
-    padding: 25px 20px;
+    padding: 20px;
     border-radius: 6px;
     border: 1px solid #e2e2e2;
-    height: 161px;
+    height:32vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     background: #fff;
     transition: .3s;
-    cursor: pointer
+    cursor: pointer;
+    .thumbnail-preview  img { 
+        transform: scale(1.2);
+        height:20vh;
+        min-height:20vh;
+        max-height:20vh;
+        transition: .3s;
+
+    }
 }
 
 .single-category-one.height-180 {
@@ -16795,7 +16806,7 @@ li.with-megamenu:hover .rts-megamenu {
 }
 
 .single-category-one:hover {
-    border: 1px solid #629d23
+    border: 1px solid var(--theme-color1);
 }
 
 .cover-card-main-over-white {
@@ -17184,7 +17195,7 @@ li.with-megamenu:hover .rts-megamenu {
     overflow: hidden;
     display: block;
     position: relative;
-    padding:20px;
+    
 }
 
 .single-shopping-card-one .thumbnail-preview .badge {
@@ -24455,7 +24466,7 @@ header.header-three .sub-dropdown .submenu.third-lvl.base {
 }
 
 .rts-product-details-section {
-    padding-top: 100px;
+    //padding-top: 100px;
     padding-bottom: 30px
 }
 
@@ -27365,7 +27376,7 @@ select {
 
 /* title-left */
 .title-left {
-  font-size: 40px;
+  font-size: 3rem;
 }
 @media only screen and (max-width: 575px) {
   .title-left {
@@ -27375,6 +27386,9 @@ select {
 @media only screen and (max-width: 480px) {
   .title-left {
     font-size: 22px;
+  }
+  .single-shopping-card-one{
+    height:38vh;
   }
 }
 
@@ -28040,6 +28054,9 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
 
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 768px) {
+    .product .product-box .product-detail.detail-inline{
+        padding-top:10px;
+    }
   .title-area-between {
     flex-direction: column;
     gap: 15px;
@@ -28108,7 +28125,8 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
   }
 
   .single-category-one {
-    height: 90px;
+    height: 28vh;
+    justify-content: space-between;
   }
 
   .title-left {

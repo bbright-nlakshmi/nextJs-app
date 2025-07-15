@@ -27,8 +27,8 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
 
   
   return (
-    <section className="rts-grocery-feature-area ">
-      <div className="container">
+    <section className="rts-grocery-feature-area section-pt-space">
+      
         <Row>
           <Col lg="12">
             <div className="custom-container title-area-between">
@@ -152,7 +152,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
           ))}
         </Swiper>
       </div>
-      </div>
+      
     </section>
   );
 };
