@@ -10,7 +10,7 @@ import { CompareContext } from "../../helpers/compare/compare.context";
 import { objCache, Product } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
 interface RelatedProductsProps {
   productId: string;
   categoryId: string;
@@ -53,6 +53,8 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({ productId, categoryId
               ) : (
                 <Swiper
                   spaceBetween={20}
+                  modules={[Navigation, Pagination, Autoplay]}
+                  autoplay={{ delay: 1000, disableOnInteraction: true }}
                   grabCursor={true}
                   simulateTouch={true}
                   allowTouchMove={true}
