@@ -83,7 +83,7 @@ const Kits: NextPage<KitsProps> = ({ kits = [] }) => {
       }}
       className="single-category-one height-180"
     >
-      <div>
+      <div className="thumbnail-preview w-full ">
         <Media src={kit.img[0]} className="img-fluid" alt={kit.name} />
         <p>{kit.name}</p>
       </div>

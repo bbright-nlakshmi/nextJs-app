@@ -4,7 +4,7 @@ export * from './app_settings_model/app_settings_model';
 export * from './business_details/business_details';
 export * from './banner/banner';
 export * from './cart_object/cart_object';
-export * from './category/category';
+//export * from './category/category';
 export * from './category_product/category_product';
 export * from './coupon/coupon';
 // export * from './coupon_assigned_users/coupon_assigned_users';

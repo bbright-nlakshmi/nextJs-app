@@ -111,7 +111,7 @@ const NoSidebar: NextPage = () => {
     }
   };
 
-  const allBrands = ["Frito Lay", "Nespresso", "Oreo", "Quaker", "Welch's"];
+  //const allBrands = ["Frito Lay", "Nespresso", "Oreo", "Quaker", "Welch's"];
 
   const handleBrandChange = (brand: string) => {
     setSelectedBrands(prev =>
@@ -175,7 +175,7 @@ const NoSidebar: NextPage = () => {
       </div>
 
       {/* Brands */}
-      <div className="single-filter-box">
+      {/* <div className="single-filter-box">
         <h5 className="title">Select Brands</h5>
         <div className="filterbox-body">
           <div className="category-wrapper">
@@ -192,7 +192,7 @@ const NoSidebar: NextPage = () => {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* New Products */}
       <div className="sidebar-new-product mt-4">
@@ -224,7 +224,7 @@ const NoSidebar: NextPage = () => {
                   <Row>
                     <Collection
                       categoryProducts={filteredProducts}
-                      cols="col-xl-2 col-lg-3 col-md-4 col-4 col-grid-box"
+                      cols="col-xl-3 col-lg-3 col-md-4 col-4 col-grid-box"
                       layoutList=""
                     />
                   </Row>

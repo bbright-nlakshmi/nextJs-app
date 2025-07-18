@@ -86,7 +86,8 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                 {/* right products */}
                 <Col xl="8" lg="12" className="discount-products-col">
                   <Row>
-                    {(banner.discountItems ?? []).slice(0, 2).map((item, i) => (
+                    <div className="product product-slide-6 product-m no-arrow">
+                    {(banner.discountItems ?? []).slice(0, 2).map((item: any, i: number) => (
                       <Col md="6" xs="6" key={i}>                        
                         <div className="d-block d-lg-none">
                           <ProductBox
@@ -146,6 +147,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                         </div>                        
                       </Col>
                     ))}
+                    </div>
                   </Row>
                 </Col>
               </Row>
