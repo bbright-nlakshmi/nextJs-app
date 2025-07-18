@@ -12,8 +12,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { Category, Kit, objCache, Product, searchController } from "@/app/globalProvider";
 import { SearchResults } from "./search_results";
+import { useRouter } from "next/navigation";
 
-// ✅ Hook to force a re-render
 function useForceUpdate() {
   const [, setTick] = useState(0);
   const update = useCallback(() => setTick((tick) => tick + 1), []);
@@ -25,7 +25,7 @@ const Search: NextPage = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const { t } = useTranslation("common");
-
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [kits, setKits] = useState<Kit[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -107,10 +107,19 @@ const Search: NextPage = () => {
           <DropdownMenu>
             {/* <DropdownItem key="all">{t("All Category")}</DropdownItem> */}
             {allCategories.map((cat) => (
+<<<<<<< HEAD
               <DropdownItem key={cat.id} className="custom-dropdown-item">
                 <a href={`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`}>
                   {cat.name}
                 </a>
+=======
+              <DropdownItem key={cat.id}  className="custom-dropdown-item"
+              onClick={() =>router.push(`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`)
+            }
+            style={{ cursor: "pointer" }}
+          >
+                {cat.name}
+>>>>>>> a32e7df814641c286851869a75cec66af01b2420
               </DropdownItem>
             ))}
           </DropdownMenu>

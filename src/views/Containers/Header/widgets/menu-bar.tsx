@@ -42,7 +42,7 @@ const MenuBar1: NextPage<MenuBarState> = ({ menuData = data }) => {
         return (
           // Main Menu title
           <li key={i} className={` ${menuItem.megaMenu ? "mega" : ""}`}>
-            {(menuItem.type === "sub" || menuItem.megaMenu) && menuItem.children && (
+            {menuItem.type === "sub" && menuItem.children && (
               <a
                 className="dark-menu-item has-submenu"
                 onClick={() => {
@@ -53,6 +53,11 @@ const MenuBar1: NextPage<MenuBarState> = ({ menuData = data }) => {
                 {t(menuItem.title)}
                 <span className={`sub-arrow ${(path === "/Layouts/layout3" || mobileSize) && (isOpen === menuItem.title ? "minus" : "plus")}`}></span>
               </a>
+            )}
+            {menuItem.type === "link" && (
+              <Link className="dark-menu-item" href={menuItem.path}>
+                {t(menuItem.title)}
+              </Link>
             )}
 
             {/* MEGHA MENU For Feature and Product  */}

@@ -8,6 +8,15 @@ import {
   Discount,
   DiscountItem
 } from '@/app/globalProvider';
+// import {API} from '../services/api.js';
+// import { Category} from '../models/category/category.js';
+// API.baseURL = 'https://devqarupeecomservice.rupeecom.in/v1';
+// API.tenant_service_url = 'https://tenantservice.1rpapp.in/v1';
+// API.tenantId = 'owuhhrlb';
+// API.storeId = 'b0aec458-86f7-4c29-8587-ec4271b9168c';
+
+//import { userService } from './user.service';
+
 
 
 export class CentralDataCollector {
@@ -90,7 +99,7 @@ export class CentralDataCollector {
       const premiumData = await API.getPremium();
       objCache.resetObjCachePremiumList();
 
-      premiumData.forEach((products, category,) => {
+      premiumData.forEach((products: any, category: { name: any; },) => {
         objCache.premiumList.set(category.name, products)
       });
       objCache.insertObjCachePremiumList(objCache.premiumList);
@@ -132,7 +141,7 @@ export class CentralDataCollector {
     try {
       const allProducts = await API.getAllProducts();
       objCache.resetObjCacheAllProducts();
-      allProducts.forEach((products,category) => {
+      allProducts.forEach((products: any,category: { name: any; }) => {
         objCache.allProducts.set(category.name, products);
       });
       objCache.insertObjCacheAllProducts(allProducts);
@@ -194,7 +203,7 @@ export class CentralDataCollector {
 
       objCache.resetObjCacheNonPremiumList();
 
-      nonPremiumData.forEach((products,category) => {
+      nonPremiumData.forEach((products: any,category: { name: any; }) => {
          objCache.nonPremiumList.set(category.name, products);
       });
 

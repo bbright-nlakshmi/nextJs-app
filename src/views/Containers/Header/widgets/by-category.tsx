@@ -5,8 +5,9 @@ import { NextPage } from "next";
 import { Media } from "reactstrap";
 import { useTranslation } from "react-i18next";
 import { MenuContext } from "@/helpers/menu/MenuContext";
-import { Category, Category as ICategory, objCache } from "@/app/globalProvider";
+import {  Category as ICategory, objCache } from "@/app/globalProvider";
 import { centralDataCollector } from "@/app/services/central_data_control";
+import { useRouter } from "next/navigation";
 
 interface ByCategoryProps {
   category: boolean;
@@ -17,7 +18,7 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
   const { t } = useTranslation("common");
   const { leftMenu, setLeftMenu } = useContext(MenuContext);
   const [categories, setCategories] = useState<ICategory[]>([]);
-
+  const router = useRouter();
   useEffect(() => {
 
      setCategories(objCache.allCategories);
@@ -79,13 +80,12 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
             </li>
 
             {categories.map((cat) => (
-              <li key={cat.id}>
-                <a href={`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`}>
-                  {/* <Media src={cat.img[0]} className="img-fluid" alt={cat.name} />? */}
+              <li key={cat.id} 
+                  onClick={() => router.push(`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`)}
+                style={{ cursor: "pointer" }}
+              >                            
                   <span className="arrow-before">&gt;</span>
-                  <span className="category-name">{cat.name}</span>
-                  {/* <span className="arrow-before">{">"}{cat.name}</span> */}
-                </a>
+                  <span className="category-name">{cat.name}</span>                  
               </li>
             ))}
           </ul>
