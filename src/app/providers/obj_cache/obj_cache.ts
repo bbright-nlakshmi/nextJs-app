@@ -10,7 +10,7 @@ interface allProductsProps {
 export class ObjCache extends EventEmitter {
   public premiumList: Map<string, Product[]> = new Map();
   public nonPremiumList: Map<string, Product[]> = new Map();
-  //public nonPremiumList: Product[] = [];
+  public bannersList: BannerModel[] = [];
   public kitList: Kit[] = [];
   public allBannersList: BannerModel[] = [];
   public discountList: Discount[] = [];
@@ -38,7 +38,7 @@ export class ObjCache extends EventEmitter {
 
   resetAllObjCaches() {
     this.premiumList.clear();
-   // this.nonPremiumList.clear();
+    this.bannersList = [];
     this.kitList = [];
     this.discountList = [];
     this.discountProducts.next([])
@@ -54,11 +54,23 @@ export class ObjCache extends EventEmitter {
   }
 
   resetObjCacheNonPremiumList() {
-   // this.nonPremiumList = new Map();
+    this.nonPremiumList = new Map();
+  }
+
+  resetObjCacheBannersList(){
+    this.bannersList = [];
+  }
+  resetObjCacheAllBannersList(){
+    this.allBannersList = [];
   }
 
   resetObjCacheKitList() {
     this.kitList = [];
+  }
+
+  resetObjCacheAllProducts(){
+    this.allProducstsList = [];
+    this.allProducts = new Map();
   }
 
   resetObjCacheDiscountList() {
@@ -104,6 +116,12 @@ export class ObjCache extends EventEmitter {
     this.emit('updateDiscountProducts', lst);
   }
 
+  insertObjCacheBannerList(lst: BannerModel[]) {
+    this.bannersList = lst;
+    this.emit('update');
+    this.emit('updateBanners', lst);
+  }
+
   insertObjCacheAllBannersList(lst: BannerModel[]) {
     this.allBannersList = lst;
     this.emit('update');
@@ -133,6 +151,10 @@ export class ObjCache extends EventEmitter {
     this.emit('updateAllCategories', lst)
     
   }
+
+  resetObjCachePriceRangeStream(){
+    this.priceRanges = StorePriceRanges.emptyPriceRanges();
+  }
   insertObjCachePriceRangeStream(lst: StorePriceRanges) {
 
     this.priceRanges = lst;
@@ -140,6 +162,10 @@ export class ObjCache extends EventEmitter {
     this.emit('UpdatePriceRanges', lst);
   }
 
+  resetObjCacheAnnouncementStream(){
+    this.announcement = StoreAnnounce.emptyAnnounce();
+  }
+  
   insertObjCacheAnnouncementStream(lst: StoreAnnounce) {
     this.announcement = lst;
     this.emit('update');

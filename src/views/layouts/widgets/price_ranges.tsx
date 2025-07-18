@@ -181,13 +181,13 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                   slidesPerView={6}
                   autoplay={true}
                   breakpoints={{
-                    0: { slidesPerView: 1.5, spaceBetween: 10 },
+                    0: { slidesPerView: 1, spaceBetween: 10 },
                     350: { slidesPerView: 2, spaceBetween: 10 },
-                    480: { slidesPerView: 2.5, spaceBetween: 12 },
-                    640: { slidesPerView: 3, spaceBetween: 15 },
-                    768: { slidesPerView: 4, spaceBetween: 15 },
-                    1024: { slidesPerView: 5, spaceBetween: 15 },
-                    1200: { slidesPerView: 6, spaceBetween: 15 },
+                    480: { slidesPerView: 3, spaceBetween: 12 },
+                    640: { slidesPerView: 4, spaceBetween: 15 },
+                   
+                    840: { slidesPerView: 5, spaceBetween: 15 },
+                    1140: { slidesPerView: 6, spaceBetween: 15 },
                   }}
                   modules={[Navigation, Autoplay, Keyboard]}
                 >

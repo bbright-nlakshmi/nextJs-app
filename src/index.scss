@@ -1,5 +1,6 @@
 @import "../public/scss/app.scss";
 @import "react-toastify/dist/ReactToastify.css";
+//@import "../public/css/next.scss";
 @import "../public/css/styles.css";
 //@import "../public/css/global.css";
 
@@ -15811,9 +15812,9 @@ li.with-megamenu:hover .rts-megamenu {
 
 
 @media only screen and (min-width: 576px) {
-  .close-mobilesearch {
-    display: none !important;
-  }
+//   .close-mobilesearch {
+//     display: none !important;
+//   }
 }
 
 @media only screen and (max-width: 575px) {
@@ -16729,7 +16730,7 @@ li.with-megamenu:hover .rts-megamenu {
     padding: 20px;
     border-radius: 6px;
     border: 1px solid #e2e2e2;
-    height:32vh;
+    height:300px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -16739,9 +16740,9 @@ li.with-megamenu:hover .rts-megamenu {
     cursor: pointer;
     .thumbnail-preview  img { 
         transform: scale(1.2);
-        height:20vh;
-        min-height:20vh;
-        max-height:20vh;
+        height:200px;
+        min-height:200px;
+        max-height:200px;
         transition: .3s;
 
     }
@@ -27347,6 +27348,16 @@ select {
 .rts-section-gapBottom {
   padding-bottom: 60px;
 }
+.discount-products-col .product{
+    display:flex;
+    flex-direction: space-around;
+}
+.kit-list .swiper-button-next, .kit-list .swiper-button-prev{
+    display: none !important;
+}
+
+
+
 @media only screen and (min-width: 768px) and (max-width: 991px) {
   .rts-section-gapBottom {
     padding-bottom: 60px;
@@ -27377,6 +27388,7 @@ select {
 /* title-left */
 .title-left {
   font-size: 3rem;
+  margin-top:20px;
 }
 @media only screen and (max-width: 575px) {
   .title-left {
@@ -27388,7 +27400,7 @@ select {
     font-size: 22px;
   }
   .single-shopping-card-one{
-    height:38vh;
+    height:285px;
   }
 }
 
@@ -27441,9 +27453,13 @@ select {
 
 @media only screen and (max-width: 575px) {
   .discount-products-col .row > div {
-    width: 50% !important;
-    flex: 0 0 50% !important;
-    max-width: 50% !important;
+    display: flex;
+    justify-content: space-around;
+  }
+  .discount-products-col .product-imgbox img{
+    height:15vh;
+    min-height:15vh;
+    max-height:15vh;
   }
 }
 
@@ -27873,6 +27889,10 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
   padding: 4px 8px;
 }
 
+.product .product-box {
+  cursor: pointer;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .custom-dropdown-menu {
@@ -27930,10 +27950,11 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
 }
 
 .single-category-one {
-  height: 120px;
+ 
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor:pointer;
 }
 
 /* Product Item Wrapper - Similar to RecentlyAddedProducts */
@@ -28053,11 +28074,15 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor:pointer ;
 }
 
 .product-item-wrapper .product-box:hover {
   transform: translateY(-3px);
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.product-box:hover{
+    cursor:pointer;
 }
 
 /* Enhanced Mobile Responsiveness */
@@ -28104,9 +28129,6 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
     font-size: 10px;
   }
 
-  .single-category-one {
-    height: 100px;
-  }
 
   .section-py-space {
     padding: 15px 0;
@@ -28134,7 +28156,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
   }
 
   .single-category-one {
-    height: 28vh;
+    
     justify-content: space-between;
   }
 
@@ -28409,21 +28431,21 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
         right: 0;
   }
 
-  .main-menu-block .header-left {
-    width: 100%;
-    justify-content: center;
-    display: flex;
-    position: relative;
-  }
-
+ 
   .main-menu-block .logo-block {
     margin: 0 auto;
     text-align: center;
   }
 
-  .main-menu-block .sm-nav-block {
+  .main-menu-block .header-left .sm-nav-block {
     position: absolute;
     left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .main-menu-block .header-right .sm-nav-block {
+    position: absolute;
+    right: 4%;
     top: 50%;
     transform: translateY(-50%);
   }
@@ -28435,6 +28457,12 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
         margin: 0 auto;
         padding-right: 0px !important;
     }
+    .main-menu-block .header-right .sm-nav-block {
+    position: absolute;
+    right: 4%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
 }
 .layout-header2 {
     background-color: #ffffff;
@@ -28481,28 +28509,28 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
     -ms-flex-align: center;
     align-items: center;
     padding: 0.375rem 0.75rem;
-    font-size: 1rem;
+    font-size: 2.5rem;
     font-weight: 400;
     line-height: 1.5;
     color: #212529;
     text-align: center;
     white-space: nowrap;
-    background-color: #e9ecef;
-    border: 1px solid #ced4da;
+    background-color: #fff;
+    
     border-radius: 0.25rem;
 }
-.category-header-2 .navbar-menu .category-left .nav-block .nav-left .navbar {
+.category-header-2 .navbar-menu  .nav-block .nav-left .navbar {
     display: flex;
     justify-content: center;
     background-color: var(--theme-color1);
     padding: 32px 0px;
 }
-.category-header-2 .navbar-menu .category-left .icon-block ul .mobile-user {
+.category-header-2 .navbar-menu  .icon-block ul .mobile-user {
     padding-right: 0px;
     padding-left: 0px;
 }
 
-.category-header-2 .navbar-menu .category-right .gift-block .gift-offer p {
+.category-header-2 .navbar-menu  .gift-block .gift-offer p {
     text-transform: uppercase;
     line-height: 1;
     display: block;
@@ -28515,7 +28543,7 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
     letter-spacing: 0.05em;
     margin-top: 0;
 }
-.category-header-2 .navbar-menu .category-right .gift-block {
+.category-header-2 .navbar-menu  .gift-block {
     background-color: var(--theme-color1);
     padding: 20px 28px;
     display: flex;

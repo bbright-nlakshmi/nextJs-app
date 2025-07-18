@@ -70,7 +70,8 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
     setQuantity(parseInt(e.target.value));
   };
 
-  const QuickView = () => {
+  const QuickView = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    e.stopPropagation();
     setModal(!modal);
   };
 
@@ -84,9 +85,9 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
   return (
 
     <Fragment>
-      <div className="product-box single-shopping-card-one" >
+      <div className="product-box single-shopping-card-one" onClick={clickProductDetail}>
 
-        <div className="product-imgbox image-and-action-area-wrapper" onClick={clickProductDetail}>
+        <div className="product-imgbox image-and-action-area-wrapper" >
 
           <a className="thumbnail-preview">
             <Media src={data?.img[0]} alt="" className="img-fluid  image_zoom_cls-0" />
@@ -95,16 +96,16 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
 
 
           <div className={`product-icon ${hoverEffect}`}>
-            <button onClick={() => addCart()}>
+            <button onClick={(e) => {e.stopPropagation();addCart()}}>
               <i className="ti-bag"></i>
             </button>
-            <a onClick={() => addWish()}>
+            <a onClick={(e) => {e.stopPropagation();addWish(e)}}>
               <i className="ti-heart" aria-hidden="true"></i>
             </a>
-            <a href="#" title="Quick View" onClick={() => QuickView()}>
+            <a title="Quick View" onClick={(e) => QuickView(e)}>
               <i className="ti-search" aria-hidden="true"></i>
             </a>
-            <a href="#" title="Compare" onClick={() => addCompare()}>
+            <a href="#" title="Compare" onClick={(e) => {e.stopPropagation();addCompare(e)}}>
               <i className="ti-reload" aria-hidden="true"></i>
             </a>
           </div>
@@ -119,7 +120,7 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
           <div className="detail-title">
 
             <div className="detail-left">
-              <Link href={`/product-details/${data?.productId ? data?.productId : data?.id}`}>
+              <Link href="#" >
 
                 <h6 className="price-title">{data?.name}</h6>
               </Link>
@@ -157,21 +158,22 @@ const ProductBox: NextPage<productType> = ({ layout, hoverEffect, price, data, i
           </button>
           <div className="row">
             <div className="col-lg-6 col-xs-12">
-              <Slider asNavFor={nav1!} ref={(slider1) => setNav1(slider1)}>
-                {item &&
-                  item.img.map((img: any, i: any) => {
+              {/* <Slider asNavFor={nav1!} ref={(slider1) => setNav1(slider1)}> */}
+                {data &&
+                  data.img.map((img: any, i: any) => {
                     return (
                       <div key={i}>
                         <Media src={img} alt="" className="img-fluid  image_zoom_cls-0" />
                       </div>
                     );
                   })}
-              </Slider>
+              {/* </Slider> */}
             </div>
             <div className="col-lg-6 rtl-text">
               <div className="product-right">
-                <h2>{item?.name}</h2>
-                <h3>${item?.price}</h3>
+                <h2>{data?.name}</h2>
+                <h3> {selectedCurr.symbol}
+                  {(price * selectedCurr.value).toFixed(2)}</h3>
                 <ul className="color-variant">
                   {uniqueColor.map((vari, i) => {
                     return <li className={vari.color} key={i} title={vari.color} onClick={() => changeColorVar(i)}></li>;
