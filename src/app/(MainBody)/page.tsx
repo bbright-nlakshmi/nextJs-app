@@ -1,5 +1,5 @@
 "use client";
-
+ 
 import NewsLatter from "@/views/Containers/news-letter";
 import Layouts from "@/views/layouts/layout1";
 import CollectionBanner from "@/views/layouts/layout1/collection-banner";
@@ -19,18 +19,18 @@ import Category_View from "@/views/layouts/widgets/roundedCategory";
 import Testimonial from "@/views/layouts/widgets/testimonial";
 import SpecialProduct from "@/views/layouts/widgets/title-section";
 import DiscountProducts from "@/views/layouts/layout1/discounts";
-
+ 
 import { useEffect, useState } from "react";
-import { BannerModel, Category, CategoryProducts, Discount, Kit, ObjCache, Product, StorePriceRanges, objCache } from "../globalProvider";
-import { Subscription } from 'rxjs';
+import { BannerModel, Category,  Discount, Kit,  Product, StorePriceRanges, ObjCache, objCache } from "../globalProvider";
+
 import Kits from "@/views/Kits/kits_list";
 import RecentlyAddedProducts from "@/views/Products-Detail/Recently-added/recently-added-products";
-
-
-
-
+ 
+ 
+ 
+ 
 //const centralDataCollectorObj: CentralDataCollector = centralDataCollector;
-
+ 
 const Home = () => {
   const [kits, setKits] = useState<Kit[]>([]);
   const [products, setProducts] = useState<Discount[]>([]);
@@ -38,26 +38,27 @@ const Home = () => {
   const [allCategories, setAllCategories] = useState<Array<Category>>();
   const [categoryProducts, setcategoryProducts] = useState<Array<Product>>([]);
   const [banners, setBanners] = useState<Array<BannerModel>>();
-  const [priceRanges, setPriceRanges] = useState<StorePriceRanges>();
+  const [priceRanges, setPriceRanges] = useState<StorePriceRanges>(StorePriceRanges.emptyPriceRanges());
   useEffect(() => {
+
     // Subscribe to the Subject
     objCache.on('update', () => {
+
       setKits(objCache.kitList);
       setProducts(objCache.discountList);
       setBanners(objCache.allBannersList);
       setCategories(objCache.categories);
       setAllCategories(objCache.allCategories);
       setcategoryProducts(objCache.allProducstsList);
-      
-       //setPriceRanges(objCache.priceRanges);
-
+       setPriceRanges(objCache.priceRanges);
+ 
     })
-    
+   
     objCache.on('UpdatePriceRanges',(priceRanges: StorePriceRanges) => {
       setPriceRanges(priceRanges)
     })
   }, []);
-
+ 
   return (
     <>
       {/* <NewsLatter /> */}
@@ -68,16 +69,16 @@ const Home = () => {
           <TabProduct effect="icon-inline" categories={allCategories} />
           {/* <CategoryProducts effect="icon-inline" categories={allCategories} /> */}
           {/* <DiscountBanner /> */}
-
+ 
           {/* <CollectionBannerTwo /> */}
           <DiscountProducts products={products} />
-
+ 
           <RecentlyAddedProducts/>
-
+ 
           <Kits kits={kits} />
-
+ 
           {/* <DiscountBanner /> */}
-
+ 
           {/* <CollectionBannerTwo />
             <section className="deal-banner">
               <DealBanner />
@@ -99,10 +100,10 @@ const Home = () => {
               <InstagramSection />
             </section>
             <ContactBanner /> */}
-      
+     
       </Layouts>
     </>
   );
 };
-
+ 
 export default Home;

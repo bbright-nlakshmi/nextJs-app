@@ -1,12 +1,11 @@
 "use client";
 import React, { useContext } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NextPage } from "next";
 import { Col, Row, Button } from "reactstrap";
 import { Discount } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination"
@@ -27,8 +26,8 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
 
   
   return (
-    <section className="rts-grocery-feature-area ">
-      <div className="container">
+    <section className="rts-grocery-feature-area section-pt-space">
+      
         <Row>
           <Col lg="12">
             <div className="custom-container title-area-between">
@@ -38,20 +37,27 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
         </Row >
         <div  className="discount-banners-container">
         <Swiper
-          direction="vertical"
+          // direction="vertical"
           slidesPerView={products.length === 1 ? 1 : 2}
           spaceBetween={20}
           navigation
-          pagination={{ clickable: true }}
+          loop={false}
+              speed={2000}
+              
+          // navigation
+          // pagination={{ clickable: true }}
+          autoplay={{ delay: 3000, disableOnInteraction: true, pauseOnMouseEnter: true }}
+          modules={[Navigation, Autoplay]}
           className={`discount-products-swiper ${products.length === 1 ? "single-banner" : ""}`}
           breakpoints={{
             0: {
               slidesPerView: 1,
             },
             768: {
-              slidesPerView: products.length === 1 ? 1 : 2,
+              slidesPerView: products.length === 1 ? 1 : 1,
             },
           }}
+         
         >
           {products.map((banner) => (
             <SwiperSlide key={banner.id}>
@@ -85,18 +91,20 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                 {/* right products */}
                 <Col xl="8" lg="12" className="discount-products-col">
                   <Row>
-                    {(banner.discountItems ?? []).slice(0, 2).map((item, i) => (
+                    <div className="product product-slide-6 product-m no-arrow">
+                    {(banner.discountItems ?? []).slice(0, 2).map((item: any, i: number) => (
                       <Col md="6" xs="6" key={i}>                        
                         <div className="d-block d-lg-none">
                           <ProductBox
                             layout="mobile"
                             data={item}
                             item={item}
+                            hoverEffect={'icon-inline'}
                             price={item.getPrice()}
                             addCart={() => addToCart(item)}
                             addWish={() => console.log("addWish", item)}
                             addCompare={() => console.log("addCompare", item)}
-                            hoverEffect=""
+                            
                           />                        
                         </div>
                         <div className="d-none d-lg-block">                        
@@ -145,6 +153,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                         </div>                        
                       </Col>
                     ))}
+                    </div>
                   </Row>
                 </Col>
               </Row>
@@ -152,7 +161,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
           ))}
         </Swiper>
       </div>
-      </div>
+      
     </section>
   );
 };

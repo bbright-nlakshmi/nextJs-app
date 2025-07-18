@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NextPage } from "next";
-import { API } from "../../../../app/services/api.service"; // ✅ Adjust if needed
-import { CouponModel } from "../../../../app/models/coupon/coupon"; // ✅ Adjust if needed
+
+import { CouponModel , API} from "@/app/globalProvider"; // ✅ Adjust if needed
 import dayjs from "dayjs"; // For formatting expiry date
 
 interface giftProps {

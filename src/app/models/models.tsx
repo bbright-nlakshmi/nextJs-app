@@ -7,7 +7,7 @@ export * from './cart_object/cart_object';
 export * from './category/category';
 export * from './category_product/category_product';
 export * from './coupon/coupon';
-//export * from './coupon_assigned_users/coupon_assigned_users';
+// export * from './coupon_assigned_users/coupon_assigned_users';
 export * from './discount/discount';
 export * from './discount_item/discount_item';
 export * from './job/job';

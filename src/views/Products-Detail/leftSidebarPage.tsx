@@ -40,7 +40,7 @@ console.log(data);
               style={{
                 left: filterOpen ? "-15px" : "",
               }}>
-              <Sidebar />
+              {/* <Sidebar /> */}
               <ProductService />
               <NewProduct />
             </Col>

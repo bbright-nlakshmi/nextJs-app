@@ -10,6 +10,7 @@ import "swiper/css/pagination";
 import "swiper/css/grid";
 import { Category, Kit, ObjCache } from "@/app/globalProvider";
 import { takeLast } from "rxjs";
+import { useRouter } from "next/navigation";
 
 
 interface KitsProps {
@@ -17,7 +18,7 @@ interface KitsProps {
 }
 
 const Kits: NextPage<KitsProps> = ({ kits = [] }) => {
-
+const router = useRouter();
   if (!kits.length) {
     return (
       <section className="collection-banner section-pb-space">
@@ -48,12 +49,15 @@ const Kits: NextPage<KitsProps> = ({ kits = [] }) => {
              
           </div>
         <div className="custom-container">
-          <div className="cover-card-main-over">
+          <div className="cover-card-main-over kit-list">
             <Swiper
   
               mousewheel={true}
               keyboard={true}
-              pagination={{ type: "bullets", clickable: true }}
+              navigation={{
+                      nextEl: '.swiper-button-next',
+                      prevEl: '.swiper-button-prev',
+                    }}
               spaceBetween={20}
               slidesPerView={6}
               loop={true}
@@ -64,29 +68,27 @@ const Kits: NextPage<KitsProps> = ({ kits = [] }) => {
               className="mySwiper-category-1 swiper-data"
               breakpoints={{
                 0: { slidesPerView: 1, spaceBetween: 0 },
-                320: { slidesPerView: 3, spaceBetween: 10 },
-                480: { slidesPerView: 3, spaceBetween: 20 },
+                320: { slidesPerView: 2, spaceBetween: 10 },
+                480: { slidesPerView: kits.length > 2 ? 3 :kits.length, spaceBetween: 20 },
                 640: { slidesPerView: 4, spaceBetween: 20 },
                 840: { slidesPerView: 5, spaceBetween: 20 },
                 1140: { slidesPerView: 6, spaceBetween: 20 },
               }}
-              navigation={true}
+             
               modules={[Navigation, Mousewheel, Keyboard]}
               
             >
               {kits.map((kit) => (
-  <SwiperSlide key={kit.id}>
-    <Link
-      href={{
-        pathname: "/product-details/thumbnail-left",
-        query: { id: kit.id },
-      }}
+  <SwiperSlide key={kit.id} onClick={() => router.push(`/product-details/thumbnail-left?id=${kit.id}`,
+        )}>
+    <Link href="#"
+      
       className="single-category-one height-180"
     >
-      <div>
+      <div className="thumbnail-preview w-full ">
         <Media src={kit.img[0]} className="img-fluid" alt={kit.name} />
-        <p>{kit.name}</p>
       </div>
+       <p>{kit.name}</p>
     </Link>
   </SwiperSlide>
 ))}

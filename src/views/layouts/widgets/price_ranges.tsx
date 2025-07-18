@@ -1,9 +1,8 @@
-"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { NextPage } from "next";
-import { Col, Row, TabContent, TabPane } from "reactstrap";
-import { Kit, Product, StorePriceRanges, objCache, searchController } from "@/app/globalProvider";
+import { Col, Row} from "reactstrap";
+import {  Product, StorePriceRanges, objCache, searchController } from "@/app/globalProvider";
 import ProductBox from "./Product-Box/productbox";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import { CartContext } from "@/helpers/cart/cart.context";
@@ -13,8 +12,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 
-interface Props { 
-  priceRanges: StorePriceRanges | undefined; 
+interface Props {
+  priceRanges: StorePriceRanges;
 }
 
 const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
@@ -31,10 +30,10 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const ranges = priceRanges?.price_ranges || [];
 
   const getPrice = useCallback((product: Product): number => {
-    return searchController.getDetails(product.id, "getPrice") || 
-           product.getPriceWithDiscount?.() || 
-           (product.saleMode === 'custom' && product.sellingPrices?.[0]) || 
-           product.sellingPrice || 0;
+    return searchController.getDetails(product.id, "getPrice") ||
+      product.getPriceWithDiscount?.() ||
+      (product.saleMode === 'custom' && product.sellingPrices?.[0]) ||
+      product.sellingPrice || 0;
   }, []);
 
   // Fetch products
@@ -42,10 +41,10 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     const fetchProducts = async () => {
       try {
         let products: Product[] = [];
-        
+
         // Try API, then fallbacks
         const sources = [
-          
+
           () => searchController?.getAllProducts?.(),
           () => objCache?.getAllProducts?.(),
           () => objCache?.getAllKits?.()
@@ -75,7 +74,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         }
 
         // Remove duplicates and filter valid products
-        const unique = products.filter((p, i, arr) => 
+        const unique = products.filter((p, i, arr) =>
           p && p.id && arr.findIndex(x => x && x.id === p.id) === i
         );
 
@@ -95,7 +94,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   // Filter products by price range
   const filterByRange = useCallback((range: number) => {
     if (!range) return;
-    
+
     setLoading(prev => ({ ...prev, filter: true }));
     setActiveRange(range);
 
@@ -114,14 +113,14 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const getRangeText = useCallback((range: number) => {
     const index = ranges.findIndex(r => r === range);
     const prevPrice = index > 0 ? ranges[index - 1] : 0;
-    return index === 0 
+    return index === 0
       ? { main: `₹${range.toLocaleString('en-IN')}`, sub: "& below" }
       : { main: `₹${prevPrice.toLocaleString('en-IN')} - ₹${range.toLocaleString('en-IN')}`, sub: "range" };
   }, [ranges]);
 
-  const clearSelection = () => { 
-    setActiveRange(null); 
-    setFilteredProducts([]); 
+  const clearSelection = () => {
+    setActiveRange(null);
+    setFilteredProducts([]);
   };
 
   // Render states
@@ -134,7 +133,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       </div>
     );
   }
-  
+
   if (error && !allProducts.length) {
     return (
       <div className="section-py-space">
@@ -165,38 +164,30 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     <>
       {/* Price Range Selection */}
       <section className="section-py-space rts-category-area">
-        <div className="product-box single-shopping-card-one">
+        <div className="product-box">
           <Row>
             <Col className="pe-0">
-              <div className="title-area-between">
+              <div className="custom-container title-area-between">
                 <h2 className="title-left">Shop by Price</h2>
-                <div className="next-prev-swiper-wrapper price-range-nav">
-                  <div className="swiper-button-prev">
-                    <i className="fas fa-chevron-left"></i>
-                  </div>
-                  <div className="swiper-button-next">
-                    <i className="fas fa-chevron-right"></i>
-                  </div>
-                </div>
               </div>
-              
+
               <div className="cover-card-main-over">
                 <Swiper
-                  navigation={{ 
-                    nextEl: '.swiper-button-next', 
-                    prevEl: '.swiper-button-prev' 
+                  navigation={{
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev'
                   }}
-                  spaceBetween={15} 
-                  slidesPerView={6} 
+                  spaceBetween={15}
+                  slidesPerView={6}
                   autoplay={true}
                   breakpoints={{
-                    0: { slidesPerView: 1.5, spaceBetween: 10 },
+                    0: { slidesPerView: 1, spaceBetween: 10 },
                     350: { slidesPerView: 2, spaceBetween: 10 },
-                    480: { slidesPerView: 2.5, spaceBetween: 12 },
-                    640: { slidesPerView: 3, spaceBetween: 15 },
-                    768: { slidesPerView: 4, spaceBetween: 15 },
-                    1024: { slidesPerView: 5, spaceBetween: 15 },
-                    1200: { slidesPerView: 6, spaceBetween: 15 },
+                    480: { slidesPerView: 3, spaceBetween: 12 },
+                    640: { slidesPerView: 4, spaceBetween: 15 },
+                   
+                    840: { slidesPerView: 5, spaceBetween: 15 },
+                    1140: { slidesPerView: 6, spaceBetween: 15 },
                   }}
                   modules={[Navigation, Autoplay, Keyboard]}
                 >
@@ -204,9 +195,9 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     const { main, sub } = getRangeText(range);
                     return (
                       <SwiperSlide key={i}>
-                        <div className="single-category-one">
-                          <div 
-                            onClick={() => filterByRange(range)} 
+                        <div className="single-category-one single-price-range ">
+                          <div
+                            onClick={() => filterByRange(range)}
                             className={`price-range-card ${activeRange === range ? 'active' : ''}`}
                           >
                             <div className="price-range-content">
@@ -228,65 +219,64 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       {/* Products Display */}
       {filteredProducts.length > 0 && (
         <section className="section-py-space ratio_asos product">
-          <div className="product-box single-shopping-card-one">
-            <Row>
-              <Col className="pe-0">
-                <div className="title-area-between">
-                  <h2 className="title-left">
-                    {(() => {
-                      const index = ranges.findIndex(r => r === activeRange);
-                      const prevPrice = index > 0 ? ranges[index - 1] : 0;
-                      return index === 0 
-                        ? `Products under ₹${activeRange?.toLocaleString('en-IN')}`
-                        : `Products ₹${prevPrice.toLocaleString('en-IN')} - ₹${activeRange?.toLocaleString('en-IN')}`;
-                    })()}
-                    <span className="product-count ml-2">({filteredProducts.length})</span>
-                  </h2>
+
+          <div className="custom-container title-area-between">
+            <h2 className="title-left">
+              {(() => {
+                const index = ranges.findIndex(r => r === activeRange);
+                const prevPrice = index > 0 ? ranges[index - 1] : 0;
+                return index === 0
+                  ? `Products under ₹${activeRange?.toLocaleString('en-IN')}`
+                  : `Products ₹${prevPrice.toLocaleString('en-IN')} - ₹${activeRange?.toLocaleString('en-IN')}`;
+              })()}
+              <span className="product-count ml-2">({filteredProducts.length})</span>
+            </h2>
+          </div>
+
+          <div className="container">
+            <div className="row">
+              <div className="col-lg-12">
+                <div className="product product-slide-6 product-m no-arrow">
+                  {loading.filter ? (
+                    <div className="text-center py-4">Loading products...</div>
+                  ) : (
+                    <Swiper
+                      slidesPerView={6}
+                      spaceBetween={30}
+                      autoplay={true}
+                      breakpoints={{
+                        0: { slidesPerView: 1, spaceBetween: 0 },
+                        320: { slidesPerView: 2, spaceBetween: 20 },
+                        480: { slidesPerView: 3, spaceBetween: 20 },
+                        640: { slidesPerView: 4, spaceBetween: 20 },
+                        840: { slidesPerView: 6, spaceBetween: 20 },
+                        1140: { slidesPerView: 6, spaceBetween: 20 },
+                      }}
+                      modules={[Autoplay, Navigation, Keyboard]}
+                    >
+                      {filteredProducts.map((product: any, i: number) => (
+                        <SwiperSlide key={product.id || i}>
+                          {/* <div className="product"> */}
+                          <ProductBox
+                            layout="layout-one"
+                            data={product}
+                            newLabel={product.new}
+                            item={product}
+                            hoverEffect={'icon-inline'}
+                            price={getPrice(product)}
+                            addCart={() => addToCart(product)}
+                            addCompare={() => addToCompare(product)}
+                            addWish={() => addToWish(product)}
+                          />
+                          {/* </div> */}
+                        </SwiperSlide>
+                      ))}
+                    </Swiper>
+                  )}
                 </div>
-                
-                <TabContent activeTab="1">
-                  <TabPane tabId="1">
-                    <div className="product product-slide-6 product-m no-arrow">
-                      {loading.filter ? (
-                        <div className="text-center py-4">Loading products...</div>
-                      ) : (
-                        <Swiper
-                          slidesPerView={6} 
-                          spaceBetween={30} 
-                          autoplay={true}
-                          breakpoints={{
-                            0: { slidesPerView: 1, spaceBetween: 0 },
-                            320: { slidesPerView: 2, spaceBetween: 20 },
-                            480: { slidesPerView: 3, spaceBetween: 20 },
-                            640: { slidesPerView: 4, spaceBetween: 20 },
-                            840: { slidesPerView: 6, spaceBetween: 20 },
-                            1140: { slidesPerView: 6, spaceBetween: 20 },
-                          }}
-                          modules={[Autoplay, Navigation, Keyboard]}
-                        >
-                          {filteredProducts.map((product: any, i: number) => (
-                            <SwiperSlide key={product.id || i}>
-                              <div className="product">
-                                <ProductBox
-                                  layout="layout-one"
-                                  data={product}
-                                  newLabel={product.new}
-                                  item={product}
-                                  price={getPrice(product)}
-                                  addCart={() => addToCart(product)}
-                                  addCompare={() => addToCompare(product)}
-                                  addWish={() => addToWish(product)}
-                                />
-                              </div>
-                            </SwiperSlide>
-                          ))}
-                        </Swiper>
-                      )}
-                    </div>
-                  </TabPane>
-                </TabContent>
-              </Col>
-            </Row>
+
+              </div>
+            </div>
           </div>
         </section>
       )}

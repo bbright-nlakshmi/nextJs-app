@@ -3,26 +3,28 @@ import React, { useEffect, useState } from "react";
 import { Row, Col, Container, Media, Input } from "reactstrap";
 import { API } from "@/app/services/api.service";
 import { useRouter } from "next/navigation";
+import { BusinessDetails } from "@/app/globalProvider";
+
 const FooterSection: React.FC = () => {
   const router = useRouter();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [business, setBusiness] = useState<BusinessDetails | null>(null);
 
   useEffect(() => {
-    const fetchLogo = async () => {
+    const fetchData = async () => {
       try {
-        const res = await API.getAppLogo();
-        const logo = res?.appLogo;
-        if (logo) {
-          setLogoUrl(logo);
-        } else {
-          console.warn("Logo not found in response", res);
+        const logoRes = await API.getAppLogo();
+        if (logoRes?.appLogo) {
+          setLogoUrl(logoRes.appLogo);
         }
+        const businessRes = await API.getBusinessDetails();
+        setBusiness(businessRes);
       } catch (err) {
         console.error("Error fetching logo:", err);
       }
     };
 
-    fetchLogo();
+    fetchData();
   }, []);
 
   return (
@@ -61,7 +63,7 @@ const FooterSection: React.FC = () => {
                 <Col lg="8" md="12">
                   <div className="footer-right">
                     <Row>
-                      <Col md="12">
+                      {/* <Col md="12">
                         <div className="subscribe-section">
                           <Row>
                             <Col md="5">
@@ -92,7 +94,7 @@ const FooterSection: React.FC = () => {
                             </Col>
                           </Row>
                         </div>
-                      </Col>
+                      </Col> */}
 
                       <Col md="12">
                         <div className="account-right">
@@ -106,10 +108,12 @@ const FooterSection: React.FC = () => {
                                   <ul>
                                     <li><a onClick={() => router.push("/pages/about-us")} style={{ cursor: "pointer" }}>About Us</a></li>
                                     <li><a href="#">contact us</a></li>
+                                    <li><a href="#">about us</a></li>
+                                    <li><a onClick={() => router.push("/pages/ContactUs")} style={{ cursor: "pointer" }}>contact us</a></li>
                                     <li><a onClick={() => router.push("/pages/terms")} style={{ cursor: "pointer" }}>terms & conditions</a></li>
                                     <li><a onClick={() => router.push("/pages/privacy")} style={{ cursor: "pointer" }}>privacy Policy</a></li>
-                                    <li><a href="#">returns & exchanges</a></li>
-                                    <li><a href="#">shipping & delivery</a></li>
+                                    {/* <li><a href="#">returns & exchanges</a></li>
+                                    <li><a href="#">shipping & delivery</a></li> */}
                                   </ul>
                                 </div>
                               </div>
@@ -124,8 +128,10 @@ const FooterSection: React.FC = () => {
                                   <ul>
                                     <li><a onClick={() => router.push("/pages/store")} style={{ cursor: "pointer" }}>Store Location</a></li>
                                     <li><a href="#">my account</a></li>
+                                    <li><a href="#">store location</a></li>
+                                    <li><a onClick={() => router.push("/pages/account/profile")} style={{ cursor: "pointer" }}>my account</a></li>
                                     <li><a href="#">orders tracking</a></li>
-                                    <li><a href="#">size guide</a></li>
+                                    {/* <li><a href="#">size guide</a></li> */}
                                     <li><a href="#">FAQ</a></li>
                                   </ul>
                                 </div>
@@ -141,11 +147,20 @@ const FooterSection: React.FC = () => {
                                   <ul className="contact-list">
                                     <li>
                                       <i className="fa fa-map-marker"></i>
-                                      <span>big deal store demo store<br /><span>india-3654123</span></span>
+                                      <span>{business?.address || "Loading address..."}<br />
+                                        <span>India</span>
+                                      </span>
                                     </li>
-                                    <li><i className="fa fa-phone"></i><span>call us: 123-456-7898</span></li>
-                                    <li><i className="fa fa-envelope-o"></i><span>email us: support@bigdeal.com</span></li>
-                                    <li><i className="fa fa-fax"></i><span>fax 123456</span></li>
+                                    <li>
+                                      <i className="fa fa-phone"></i>
+                                      <span>call us: {business?.phone || "Loading..."}</span>
+                                    </li>
+                                    <li><i className="fa fa-envelope-o"></i>
+                                      <span>
+                                        email us: {business?.email || "Loading..."}
+                                      </span>
+                                    </li>
+                                    {/* <li><i className="fa fa-fax"></i><span>fax 123456</span></li> */}
                                   </ul>
                                 </div>
                               </div>
@@ -162,7 +177,7 @@ const FooterSection: React.FC = () => {
         </Row>
       </Container>
 
-      <div className="app-link-block bg-transparent">
+      {/* <div className="app-link-block bg-transparent">
         <Container>
           <Row>
             <div className="app-link-bloc-contain app-link-bloc-contain-1">
@@ -189,7 +204,7 @@ const FooterSection: React.FC = () => {
             </div>
           </Row>
         </Container>
-      </div>
+      </div> */}
 
       <div className="sub-footer">
         <Container>

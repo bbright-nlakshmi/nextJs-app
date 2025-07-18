@@ -12,20 +12,20 @@ import {
 import { useTranslation } from "react-i18next";
 import { Category, Kit, objCache, Product, searchController } from "@/app/globalProvider";
 import { SearchResults } from "./search_results";
+import { useRouter } from "next/navigation";
 
-// ✅ Hook to force a re-render
 function useForceUpdate() {
   const [, setTick] = useState(0);
   const update = useCallback(() => setTick((tick) => tick + 1), []);
   return update;
-  
+
 }
 
 const Search: NextPage = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const { t } = useTranslation("common");
-
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [kits, setKits] = useState<Kit[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -35,16 +35,16 @@ const Search: NextPage = () => {
 
   useEffect(() => {
     const updateListener = () => {
-      
+
 
       // Force React state update
       setKits([...searchController.kits]);
-      
+
       setProducts([...searchController.products]);
 
       const hasResults = searchController.kits.length > 0 || searchController.products.length > 0;
       setShowResults(hasResults);
-   console.log("🔁 UI re-rendering from controller");
+      console.log("🔁 UI re-rendering from controller");
       forceUpdate(); // 💡 Ensure UI reflects changes
     };
 
@@ -73,9 +73,9 @@ const Search: NextPage = () => {
   };
 
   const toggleDropDown = () => setDropdownOpen((prev) => !prev);
-
+  const closeMobileSearch = () => { document.getElementById("searchbar-input")?.classList.remove("open"); };
   return (
-    <form className="big-deal-form" style={{ position: "relative", zIndex: 100 }}>
+    <form className="big-deal-form" style={{ position: "relative", zIndex: 100}}>
       <InputGroup>
         <InputGroupText>
           <span className="search">
@@ -96,25 +96,32 @@ const Search: NextPage = () => {
             }
           }}
         />
-
-        <SearchResults show={showResults} kits={kits} products={products} />
-
+        <span className="close-mobilesearch d-xl-none" onClick={closeMobileSearch}>
+          <i className="fa fa-times" />
+        </span>
+        <InputGroupText>
         <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropDown}>
-          <DropdownToggle caret>
+          <DropdownToggle caret  className={'btn-light'}>
             <span className="category-label">{t("All Category")}</span>
           </DropdownToggle>
           <DropdownMenu>
             {/* <DropdownItem key="all">{t("All Category")}</DropdownItem> */}
             {allCategories.map((cat) => (
-              <DropdownItem key={cat.id}  className="custom-dropdown-item">
-                <a href={`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`}>
+              <DropdownItem key={cat.id}  className="custom-dropdown-item"
+              onClick={() =>router.push(`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`)
+            }
+            style={{ cursor: "pointer" }}
+          >
                 {cat.name}
-                </a>
               </DropdownItem>
             ))}
           </DropdownMenu>
         </ButtonDropdown>
+      </InputGroupText>
       </InputGroup>
+      <SearchResults show={showResults} kits={kits} products={products} />
+      
+
     </form>
   );
 };

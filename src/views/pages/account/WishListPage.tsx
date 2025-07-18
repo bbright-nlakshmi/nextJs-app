@@ -9,7 +9,7 @@ import Breadcrumb from "../../Containers/Breadcrumb";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { searchController } from "@/app/globalProvider";
 import { WishlistProduct } from "../../../helpers/wishlist/wishlistStore";
-import { Kit } from "@/app/models/kit/kit";
+//import { Kit } from "@/app/models/kit/kit";
 
 // Enhanced interface for enriched wishlist data
 interface EnrichedWishlistItem extends WishlistProduct {

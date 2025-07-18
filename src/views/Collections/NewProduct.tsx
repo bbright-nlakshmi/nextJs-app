@@ -76,7 +76,7 @@ const NewProduct: React.FC = () => {
                     />
                   </a>
                   <div className="media-body align-self-center">
-                    <div className="rating">
+                    <div className="rating-star">
                       {[...Array(5)].map((_, i) => (
                         <i
                           key={i}

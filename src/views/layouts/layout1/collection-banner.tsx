@@ -8,7 +8,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/grid";
-import { Category, ObjCache, Product } from "@/app/globalProvider";
+import { Category, Product } from "@bbright-nlakshmi/rupeecom-services";
 
 import router from "next/router";
 
@@ -25,7 +25,7 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
 
   if (categories.length) {
     return (<>
-      <section className="w-full rts-category-area section-py-space">
+      <section className="w-full rts-category-area section-pt-space">
         <div className="custom-container title-area-between">
           <h2 className="title-left">Featured Categories</h2>
           <div className="next-prev-swiper-wrapper" >
@@ -33,7 +33,7 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
             <div className="swiper-button-next"><i className="fa-regular fa-chevron-right"></i></div>
           </div>
         </div>
-        <div className="custom-container">
+        <div >
           <div className="cover-card-main-over">
             <Swiper
               navigation={{
@@ -44,37 +44,36 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
               slidesPerView={6}
               loop={false}
               speed={2000}
-              // autoplay={{
-              //   delay: 4000,
-              // }}
-              className="mySwiper-category-1 swiper-data"
+              autoplay={{
+                  delay: 3000,
+                  disableOnInteraction: false,
+                }}
+              className="swiper-data"
               breakpoints={{
                 0: { slidesPerView: 1, spaceBetween: 0 },
-                320: { slidesPerView: 3, spaceBetween: 10 },
-                480: { slidesPerView: 4, spaceBetween: 20 },
+                320: { slidesPerView: 2, spaceBetween: 10 },
+                480: { slidesPerView: 3, spaceBetween: 20 },
                 640: { slidesPerView: 4, spaceBetween: 20 },
                 840: { slidesPerView: 5, spaceBetween: 20 },
                 1140: { slidesPerView: 6, spaceBetween: 20 },
               }}
               
-              modules={[ Navigation]}
+              modules={[ Navigation, Autoplay]}
 
             >
               {
                 categories.map((item) => (
                   <SwiperSlide key={item.id}>
-                    <div className="single-category-one height-180" >
+                    <div className="single-category-one height-180" onClick={() => router.push(`/collections/no-sidebar?id=${item.id}&type=catgeory`)}>
                       <Link
-
-                        href={{
-                          pathname: "/collections/no-sidebar",
-                          query: { id: item.id, type: "category" },
-                        }}
+                        className = "thumbnail-preview"
+                        href="#"
                       >
                         <Media src={item.img[0]} className="img-fluid" alt={item.name} />
 
-                        <p>{item.name}</p>
+                        
                       </Link>
+                      <p>{item.name}</p>
                     </div>
                   </SwiperSlide>
                 ))
