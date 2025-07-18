@@ -22,7 +22,7 @@ export * from '@/app/models/models';
 export * from '@/app/providers/all_providers';
 
 export { userService } from '@/app/services/user.service';
- 
+
 // export * from '@/app/providers/providers';
  
 // SERVICES

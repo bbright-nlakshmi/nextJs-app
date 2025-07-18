@@ -1,29 +1,40 @@
+
 "use client";
 import React, { useContext } from "react";
 import { useRouter } from "next/navigation";
 import { NextPage } from "next";
 import { Col, Row, Button } from "reactstrap";
-import { Discount } from "@/app/globalProvider";
+import { Discount, searchController } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination"
 import { CartContext } from "../../../helpers/cart/cart.context";
+import { WishlistContext } from "../../../helpers/wishlist/wish.context";
+import { CompareContext } from "../../../helpers/compare/compare.context";
 import ProductBox from "@/views/layouts/widgets/Product-Box/productbox";
+import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 
 interface Props {
   products?: Discount[];
 }
 
-
 const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
   const router = useRouter();
+const { selectedCurr } = useContext(CurrencyContext);
 
-  const { addToCart } = useContext(CartContext);
+  const { addToWish } = React.useContext(WishlistContext);
+  const { addToCart } = React.useContext(CartContext);
+  const { addToCompare } = React.useContext(CompareContext);
 
   if (!products.length) return null;
 
+  const getPrice = (productId: string) => {
+      const price = searchController.getDetails(productId, 'getProductPrice');
+  
+      return price;
+    }
   
   return (
     <section className="rts-grocery-feature-area section-pt-space">
@@ -40,9 +51,8 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
           direction="vertical"
           slidesPerView={products.length === 1 ? 1 : 2}
           spaceBetween={20}
-          // navigation
-          // pagination={{ clickable: true }}
-          autoplay={{ delay: 3000, disableOnInteraction: true, pauseOnMouseEnter: true }}
+          loop={true}                    
+          autoplay={{ delay: 1000, disableOnInteraction: true, pauseOnMouseEnter: true }}
           modules={[Navigation, Autoplay]}
           className={`discount-products-swiper ${products.length === 1 ? "single-banner" : ""}`}
           breakpoints={{
@@ -50,8 +60,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
               slidesPerView: 1,
             },
             768: {
-              slidesPerView: products.length === 1 ? 1 : 2,
-            },
+              slidesPerView: products.length === 1 ? 1 : 2},
           }}
         >
           {products.map((banner) => (
@@ -84,21 +93,22 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                   </div>
                 </Col>
                 {/* right products */}
-                <Col xl="8" lg="12" className="discount-products-col">
-                  <Row>
-                    {(banner.discountItems ?? []).slice(0, 2).map((item, i) => (
+                <Col xl="8" lg="8" className="discount-products-col">
+                  <Row>                    
+                    {(banner.discountItems ?? []).slice(0, 2).map((item: any, i: number) => (
                       <Col md="6" xs="6" key={i}>                        
                         <div className="d-block d-lg-none">
-                          <ProductBox
-                            layout="mobile"
-                            data={item}
-                            item={item}
-                            price={item.getPrice()}
-                            addCart={() => addToCart(item)}
-                            addWish={() => console.log("addWish", item)}
-                            addCompare={() => console.log("addCompare", item)}
-                            hoverEffect=""
-                          />                        
+                          <div className="product">
+                          <ProductBox 
+                            layout="layout-one" 
+                            price={item.getPrice(item.productId)} 
+                            hoverEffect={"icon-inline"} 
+                            data={item} 
+                            newLabel={item.name} 
+                            addCart={() => addToCart(item)} 
+                            addCompare={() => addToCompare(item)} 
+                            addWish={() => addToWish(item)} />
+                          </div>
                         </div>
                         <div className="d-none d-lg-block">                        
                           <div className="custom-product-card d-flex align-items-center p-3 mb-4 shadow-sm rounded bg-white border position-relative">
@@ -117,7 +127,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                               <h5 className="mb-1 fw-bold">{item.name}</h5>
                               <div className="d-flex align-items-center mb-2">
                                 <span className="text-danger fs-5 fw-bold me-2">
-                                  ${item.getPrice()}
+                                  ₹{item.getPrice(item.productId)}
                                 </span>
                               </div>
                               <div className="d-flex align-items-center gap-2">
@@ -145,7 +155,7 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                           </div>
                         </div>                        
                       </Col>
-                    ))}
+                    ))}                    
                   </Row>
                 </Col>
               </Row>

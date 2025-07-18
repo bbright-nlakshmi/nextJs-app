@@ -14,6 +14,7 @@ import { Navigation, Pagination, Autoplay } from "swiper/modules";
 interface RelatedProductsProps {
   productId: string;
   categoryId: string;
+  hoverEffect?: string;
 }
 
 const RelatedProducts: NextPage<RelatedProductsProps> = ({ productId, categoryId }) => {
@@ -21,8 +22,8 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({ productId, categoryId
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [pageLimit, setPageLimit] = useState(6);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [pageLimit, setPageLimit] = useState(6);
+  // const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const handleUpdateAllProducts = (data: Map<string, Product[]>) => {
@@ -42,7 +43,7 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({ productId, categoryId
 
 
   return (
-    <section className="section-big-py-space ratio_asos bg-light">
+    <section className="section-big-py-space ratio_asos ">
       <div className="custom-container">
         <Row>
           <Col sm="12">
@@ -83,6 +84,7 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({ productId, categoryId
                           addCart={() => addToCart(item)}
                           addCompare={() => addToCompare(item)}
                           addWish={() => addToWish(item)}
+                          hoverEffect={"icon-inline"}
                         />
                       </div>
                     </SwiperSlide>
