@@ -62,7 +62,7 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
             className={`overlay-cat ${leftMenu ? "showoverlay" : ""}`}
           ></a>
 
-          <ul className={`nav-cat title-font  category-scroll ${leftMenu ? "openmenu" : ""}`}>
+          <ul className={`nav-cat title-font nav-slide category-scroll ${leftMenu ? "openmenu" : ""}`}>
             <li className="nav-heading">
               <h4>All Categories</h4>
             </li>

@@ -17,7 +17,7 @@ const HorizaontalMenu: NextPage = () => {
       ></div>
       <div className="menu-block">
         <nav id="main-nav">
-          <div
+          {/* <div
             className="toggle-nav"
             onClick={() => {
               setMenuResponsive(!menuResponsive);
@@ -25,7 +25,7 @@ const HorizaontalMenu: NextPage = () => {
             }}
           >
             <i className="fa fa-bars sidebar-bar"></i>
-          </div>
+          </div> */}
           <ul id="main-menu" className={`sm pixelstrap sm-horizontal ${menuResponsive ? "menu-open" : ""}`}>
             <MenuBar />
           </ul>

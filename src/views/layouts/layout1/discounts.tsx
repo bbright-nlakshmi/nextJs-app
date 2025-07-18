@@ -6,7 +6,7 @@ import { NextPage } from "next";
 import { Col, Row, Button } from "reactstrap";
 import { Discount } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination"
@@ -38,20 +38,26 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
         </Row >
         <div  className="discount-banners-container">
         <Swiper
-          direction="vertical"
+          // direction="vertical"
           slidesPerView={products.length === 1 ? 1 : 2}
           spaceBetween={20}
           navigation
-          pagination={{ clickable: true }}
+          loop={false}
+              speed={2000}
+              autoplay={{
+                  delay: 3000,
+                  disableOnInteraction: false,
+                }}
           className={`discount-products-swiper ${products.length === 1 ? "single-banner" : ""}`}
           breakpoints={{
             0: {
               slidesPerView: 1,
             },
             768: {
-              slidesPerView: products.length === 1 ? 1 : 2,
+              slidesPerView: products.length === 1 ? 1 : 1,
             },
           }}
+          modules={[ Navigation, Autoplay]}
         >
           {products.map((banner) => (
             <SwiperSlide key={banner.id}>
@@ -93,11 +99,12 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
                             layout="mobile"
                             data={item}
                             item={item}
+                            hoverEffect={'icon-inline'}
                             price={item.getPrice()}
                             addCart={() => addToCart(item)}
                             addWish={() => console.log("addWish", item)}
                             addCompare={() => console.log("addCompare", item)}
-                            hoverEffect=""
+                            
                           />                        
                         </div>
                         <div className="d-none d-lg-block">                        

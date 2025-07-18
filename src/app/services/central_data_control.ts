@@ -1,4 +1,4 @@
-// services/CentralDataCollector.ts
+
 import {
   objCache,
   DoneDiscount,
@@ -8,15 +8,6 @@ import {
   Discount,
   DiscountItem
 } from '@/app/globalProvider';
-//import {API} from '../services/api.js';
-// import { Category} from '../models/category/category.js';
-// API.baseURL = 'https://devqarupeecomservice.rupeecom.in/v1';
-// API.tenant_service_url = 'https://tenantservice.1rpapp.in/v1';
-// API.tenantId = 'owuhhrlb';
-// API.storeId = 'b0aec458-86f7-4c29-8587-ec4271b9168c';
-
-//import { userService } from './user.service';
-
 
 
 export class CentralDataCollector {
@@ -37,7 +28,7 @@ export class CentralDataCollector {
 
   private initialize(): void {
     this.resetInitialLoad();
-    this.refreshInterval = parseInt(process.env.NEXT_PUBLIC_REFRESH_INTERVAL || '60');
+    this.refreshInterval = 60;
 
   }
 
@@ -45,7 +36,7 @@ export class CentralDataCollector {
     this.dataScheduler = setInterval(async () => {
       console.log('Refreshing data');
       await this.getData();
-      // await refreshCurrentStore(); // Implement this function as needed
+      
     }, this.refreshInterval * 1000);
   }
 
@@ -97,7 +88,6 @@ export class CentralDataCollector {
   public async getPremium(): Promise<void> {
     try {
       const premiumData = await API.getPremium();
-      //this.premiumStream.setValue(premiumData);
       objCache.resetObjCachePremiumList();
 
       premiumData.forEach((products, category,) => {
@@ -112,8 +102,8 @@ export class CentralDataCollector {
   public async getBanners(): Promise<void> {
     try {
       const banners = await API.getBanners();
-
-      // objCache.insertObjCacheBannerList(banners);
+      objCache.resetObjCacheBannersList();
+       objCache.insertObjCacheBannerList(banners);
     } catch (error) {
       console.error('Error fetching banners:', error);
     }
@@ -122,7 +112,7 @@ export class CentralDataCollector {
   public async getAllBanners(): Promise<void> {
     try {
       const banners = await API.getAllBanners();
-
+      objCache.resetObjCacheAllBannersList();
       objCache.insertObjCacheAllBannersList(banners);
     } catch (error) {
       console.error('Error fetching banners:', error);
@@ -132,7 +122,7 @@ export class CentralDataCollector {
   public async getStoreJobs(): Promise<void> {
     try {
       const jobs = await API.getJobs();
-      //this.jobLiveData.setValue(jobs);
+      
     } catch (error) {
       console.error('Error fetching jobs:', error);
     }
@@ -141,6 +131,7 @@ export class CentralDataCollector {
   public async getAllProducts(): Promise<void> {
     try {
       const allProducts = await API.getAllProducts();
+      objCache.resetObjCacheAllProducts();
       allProducts.forEach((products,category) => {
         objCache.allProducts.set(category.name, products);
       });
@@ -175,10 +166,11 @@ export class CentralDataCollector {
       if (this.isInitialLoading) {
         this.isCentralLoading = false;
         this.isInitialLoading = false;
-        // Get.find<SearchPageController>().onInit(); // Implement as needed
+        
+        
       }
 
-      //objCache.refreshAllControllers();
+      
     }
   }
 
@@ -189,7 +181,7 @@ export class CentralDataCollector {
   public async getStorePriceRanges(): Promise<void> {
     try {
       const priceRanges = await API.getStorePriceRanges();
-      
+      objCache.resetObjCachePriceRangeStream();
       objCache.insertObjCachePriceRangeStream(priceRanges);
     } catch (error) {
       console.error('Error fetching price ranges:', error);
@@ -217,6 +209,7 @@ export class CentralDataCollector {
     try {
       const announcement = await API.getStoreAnnounce();
       this.announceLiveData.setValue(announcement);
+      objCache.resetObjCacheAnnouncementStream();
       objCache.insertObjCacheAnnouncementStream(announcement)
     } catch (error) {
       console.error('Error fetching announcement:', error);
@@ -291,7 +284,7 @@ export class CentralDataCollector {
         TrackDiscount.removeDiscountDetail(discountId);
         DoneDiscount.addDoneDiscount(discountId);
       });
-      objCache.discountProducts.next(notExpiredDiscounts);
+      
     } catch (error) {
       console.error('Error fetching discounts:', error);
     }

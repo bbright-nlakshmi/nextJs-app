@@ -26,6 +26,7 @@ interface HeaderProps {
 
 const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, layoutLogo, appLogo }) => {
   const { setLeftMenu, leftMenu } = useContext(MenuContext);
+  const { menuResponsive, setMenuResponsive } = useContext(MenuContext);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,13 +37,13 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
 
       if (scrollTop >= 300) {
         header?.classList.add("sticky");
-        search_bar?.classList.add("d-lg-none");
-        menu_bar?.classList.remove('d-lg-none');
+        //search_bar?.classList.add("d-xl-lg-none");
+        // menu_bar?.classList.remove('d-xl-lg-none');
 
       } else {
         header?.classList.remove("sticky");
-        search_bar?.classList.remove("d-lg-none");
-        menu_bar?.classList.add('d-lg-none');
+        //search_bar?.classList.remove("d-xl-lg-none");
+        //menu_bar?.classList.add('d-xl-lg-none');
       }
     };
 
@@ -57,47 +58,65 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
   const onOpenMobileSearch = () => { document.getElementById("searchbar-input")?.classList.add("open"); }
   const closeMobileSearch = () => { document.getElementById("searchbar-input")?.classList.remove("open"); };
   const toggleLeftMenu = () => { setLeftMenu(!leftMenu); document.body.style.overflow = "hidden"; };
+  const toggleRightMenu = () => { setMenuResponsive(!menuResponsive); document.body.style.overflow = "hidden"; };
 
   return (
     <Fragment>
-      <header>
+      <header id="stickyHeader">
         <div className="mobile-fix-option"></div>
         <div className="layout-header2">
-          <div id="stickyHeader">
-            <Container>
-              <Row>
-                <Col md="12">
-                  <div className="main-menu-block">
-                    <div className="header-left">
-                      <div className="sm-nav-block" onClick={toggleLeftMenu}>
-                        <span className="sm-nav-btn">
-                          <i className="fa fa-bars"></i>
-                        </span>
-                      </div>
 
-                      <div className="logo-block brand-logo logo-sm-center">
+          <Container>
+            <Row>
+              <Col md="12">
+                <div className="main-menu-block">
+                  <div className="header-left">
+                    <div className="sm-nav-block  d-xl-none" onClick={toggleLeftMenu}>
+                      <span className="sm-nav-btn">
+                        <i className="fa fa-bars"></i>
+                      </span>
+                    </div>
+                    <div className="logo-block">
+                      <div className="brand-logo logo-sm-center">
                         <a href="/#">
-                          <Media src={`${appLogo}`} className=" app-logo" alt="logo" />
+                          <Media src={`${appLogo}`} className="app-logo" alt="logo" />
                         </a>
                       </div>
                     </div>
-                    <div className="input-block searchbar-input" id="searchbar-input">
-                      <div className="input-box ">
-                        <span className="close-mobilesearch" onClick={closeMobileSearch}>
-                          <i className="fa fa-times"></i>
-                        </span>
-                        <Search />
-                      </div>
-                    </div>
-                    <div className="header-right d-lg-none" id="nav-menu">
-                      <HorizaontalMenu />
-                    </div>
-                    <ShoppingCart layout="layout2" />
                   </div>
-                </Col>
-              </Row>
-            </Container>
-          </div>
+
+                  <div className="input-block searchbar-input" id="searchbar-input">
+                     <div className="input-box ">
+                      {/* <span className="close-mobilesearch" onClick={closeMobileSearch}>
+                        <i className="fa fa-times"></i>
+                      </span>  */}
+                      <Search />
+                    </div>
+                  </div>
+                  <div className="header-right d-lg-show " id="nav-menu">
+                    <div className="icon-block d-lg-none" >
+                      <ul>
+                        <User />
+                        <WishList />
+                        <MobileSearch onOpen={onOpenMobileSearch} />
+                        <MobileSetting />
+                      </ul>
+                    </div>
+                     <ShoppingCart layout="layout2" />
+                    <div className="sm-nav-block" onClick={toggleRightMenu}>
+                      <span className="sm-nav-btn">
+                        <i className="fa fa-bars"></i>
+                      </span>
+                    </div>
+                    {/* <HorizaontalMenu /> */}
+                   
+                  </div>
+
+                </div>
+              </Col>
+            </Row>
+          </Container>
+
         </div>
 
         {/* Category and Navigation */}
@@ -106,22 +125,29 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
             <Row>
               <Col >
                 <div className="navbar-menu">
-                  <div className="category-left">
-                    <Category category={category} />
-                     <HorizaontalMenu />
-                    <div className="icon-block">
-                      <ul>
-                        <User />
-                        <WishList />
-                        <MobileSearch onOpen={onOpenMobileSearch} />
-                        <MobileSetting />
-                      </ul>
+                  <div className="logo-block">
+                    <div className="brand-logo logo-sm-center">
+                      <a href="/#">
+                        <Media src={`${appLogo}`} className="app-logo" alt="logo" />
+                      </a>
                     </div>
                   </div>
-                  <div className="category-right ">
-                    {/* <ContactUs spanClass="" /> */}
-                    <Gift />
+                  {/* <div className="category-left"> */}
+                  <Category category={category} />
+                  <HorizaontalMenu />
+                  <div className="icon-block">
+                    <ul>
+                      <User />
+                      <WishList />
+                      <MobileSearch onOpen={onOpenMobileSearch} />
+                      <MobileSetting />
+                    </ul>
                   </div>
+                  {/* </div> */}
+                  {/* <div className="category-right ">
+                    <ContactUs spanClass="" />
+                    <Gift />
+                  </div> */}
                 </div>
               </Col>
             </Row>

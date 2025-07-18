@@ -23,22 +23,29 @@
       "static/css/app/(MainBody)/product-details/[id]/page.css",
       "static/chunks/app/(MainBody)/product-details/[id]/page.js"
     ],
+    "/(MainBody)/collections/no-sidebar/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/(MainBody)/collections/no-sidebar/page.css",
+      "static/chunks/app/(MainBody)/collections/no-sidebar/page.js"
+    ],
+    "/(MainBody)/pages/account/wishlist/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/(MainBody)/pages/account/wishlist/page.css",
+      "static/chunks/app/(MainBody)/pages/account/wishlist/page.js"
+    ],
     "/(MainBody)/pages/account/cart/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/(MainBody)/pages/account/cart/page.css",
       "static/chunks/app/(MainBody)/pages/account/cart/page.js"
     ],
-    "/(MainBody)/pages/coming-soon/page": [
+    "/(MainBody)/product-details/thumbnail-left/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(MainBody)/pages/coming-soon/page.js"
-    ],
-    "/(MainBody)/collections/no-sidebar/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/(MainBody)/collections/no-sidebar/page.css",
-      "static/chunks/app/(MainBody)/collections/no-sidebar/page.js"
+      "static/css/app/(MainBody)/product-details/thumbnail-left/page.css",
+      "static/chunks/app/(MainBody)/product-details/thumbnail-left/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",

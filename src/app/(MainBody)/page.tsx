@@ -21,8 +21,8 @@ import SpecialProduct from "@/views/layouts/widgets/title-section";
 import DiscountProducts from "@/views/layouts/layout1/discounts";
 
 import { useEffect, useState } from "react";
-import { BannerModel, Category, CategoryProducts, Discount, Kit, ObjCache, Product, StorePriceRanges, objCache } from "../globalProvider";
-import { Subscription } from 'rxjs';
+import { BannerModel, Category,  Discount, Kit,  Product, StorePriceRanges, ObjCache, objCache } from "../globalProvider";
+
 import Kits from "@/views/Kits/kits_list";
 import RecentlyAddedProducts from "@/views/Products-Detail/Recently-added/recently-added-products";
 
