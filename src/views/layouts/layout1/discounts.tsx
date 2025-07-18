@@ -48,11 +48,16 @@ const { selectedCurr } = useContext(CurrencyContext);
         </Row >
         <div  className="discount-banners-container">
         <Swiper
-          direction="vertical"
+          // direction="vertical"
           slidesPerView={products.length === 1 ? 1 : 2}
           spaceBetween={20}
-          loop={true}                    
-          autoplay={{ delay: 1000, disableOnInteraction: true, pauseOnMouseEnter: true }}
+          navigation
+          loop={false}
+              speed={2000}
+              
+          // navigation
+          // pagination={{ clickable: true }}
+          autoplay={{ delay: 3000, disableOnInteraction: true, pauseOnMouseEnter: true }}
           modules={[Navigation, Autoplay]}
           className={`discount-products-swiper ${products.length === 1 ? "single-banner" : ""}`}
           breakpoints={{
@@ -60,8 +65,10 @@ const { selectedCurr } = useContext(CurrencyContext);
               slidesPerView: 1,
             },
             768: {
-              slidesPerView: products.length === 1 ? 1 : 2},
+              slidesPerView: products.length === 1 ? 1 : 1,
+            },
           }}
+         
         >
           {products.map((banner) => (
             <SwiperSlide key={banner.id}>

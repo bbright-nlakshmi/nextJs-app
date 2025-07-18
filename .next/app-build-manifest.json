@@ -17,17 +17,10 @@
       "static/css/app/(MainBody)/page.css",
       "static/chunks/app/(MainBody)/page.js"
     ],
-    "/(MainBody)/product-details/[id]/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/(MainBody)/product-details/[id]/page.css",
-      "static/chunks/app/(MainBody)/product-details/[id]/page.js"
-    ],
-    "/(MainBody)/collections/no-sidebar/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/(MainBody)/collections/no-sidebar/page.css",
-      "static/chunks/app/(MainBody)/collections/no-sidebar/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

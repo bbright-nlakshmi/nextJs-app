@@ -5,7 +5,7 @@ import { NextPage } from "next";
 import { Media } from "reactstrap";
 import { useTranslation } from "react-i18next";
 import { MenuContext } from "@/helpers/menu/MenuContext";
-import { Category, Category as ICategory, objCache } from "@/app/globalProvider";
+import {  Category as ICategory, objCache } from "@/app/globalProvider";
 import { centralDataCollector } from "@/app/services/central_data_control";
 import { useRouter } from "next/navigation";
 
@@ -63,7 +63,7 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
             className={`overlay-cat ${leftMenu ? "showoverlay" : ""}`}
           ></a>
 
-          <ul className={`nav-cat title-font  category-scroll ${leftMenu ? "openmenu" : ""}`}>
+          <ul className={`nav-cat title-font nav-slide category-scroll ${leftMenu ? "openmenu" : ""}`}>
             <li className="nav-heading">
               <h4>All Categories</h4>
             </li>

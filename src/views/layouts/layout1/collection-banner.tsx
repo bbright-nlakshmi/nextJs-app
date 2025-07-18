@@ -64,13 +64,10 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
               {
                 categories.map((item) => (
                   <SwiperSlide key={item.id}>
-                    <div className="single-category-one " >
+                    <div className="single-category-one height-180" onClick={() => router.push(`/collections/no-sidebar?id=${item.id}&type=catgeory`)}>
                       <Link
                         className = "thumbnail-preview"
-                        href={{
-                          pathname: "/collections/no-sidebar",
-                          query: { id: item.id, type: "category" },
-                        }}
+                        href="#"
                       >
                         <Media src={item.img[0]} className="img-fluid" alt={item.name} />
 

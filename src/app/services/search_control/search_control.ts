@@ -234,15 +234,15 @@ export class SearchPageControl extends EventEmitter {
         const allTags = new Set<string>();
 
         objCache.getAllNonPremiumProducts().forEach(product => {
-            product.getSearchTags().forEach(tag => allTags.add(tag));
+            product.getSearchTags().forEach((tag: string) => allTags.add(tag));
         });
 
         objCache.getAllPremiumProducts().forEach(product => {
-            product.getSearchTags().forEach(tag => allTags.add(tag));
+            product.getSearchTags().forEach((tag: string) => allTags.add(tag));
         });
 
         objCache.getAllKits().forEach(kit => {
-            kit.getSearchTags().forEach(tag => allTags.add(tag));
+            kit.getSearchTags().forEach((tag: string) => allTags.add(tag));
         });
 
         return Array.from(allTags);

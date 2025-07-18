@@ -18,7 +18,7 @@ function useForceUpdate() {
   const [, setTick] = useState(0);
   const update = useCallback(() => setTick((tick) => tick + 1), []);
   return update;
-  
+
 }
 
 const Search: NextPage = () => {
@@ -35,16 +35,16 @@ const Search: NextPage = () => {
 
   useEffect(() => {
     const updateListener = () => {
-      
+
 
       // Force React state update
       setKits([...searchController.kits]);
-      
+
       setProducts([...searchController.products]);
 
       const hasResults = searchController.kits.length > 0 || searchController.products.length > 0;
       setShowResults(hasResults);
-   console.log("🔁 UI re-rendering from controller");
+      console.log("🔁 UI re-rendering from controller");
       forceUpdate(); // 💡 Ensure UI reflects changes
     };
 
@@ -73,9 +73,9 @@ const Search: NextPage = () => {
   };
 
   const toggleDropDown = () => setDropdownOpen((prev) => !prev);
-
+  const closeMobileSearch = () => { document.getElementById("searchbar-input")?.classList.remove("open"); };
   return (
-    <form className="big-deal-form" style={{ position: "relative", zIndex: 100 }}>
+    <form className="big-deal-form" style={{ position: "relative", zIndex: 100}}>
       <InputGroup>
         <InputGroupText>
           <span className="search">
@@ -96,11 +96,12 @@ const Search: NextPage = () => {
             }
           }}
         />
-
-        <SearchResults show={showResults} kits={kits} products={products} />
-
+        <span className="close-mobilesearch d-xl-none" onClick={closeMobileSearch}>
+          <i className="fa fa-times" />
+        </span>
+        <InputGroupText>
         <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropDown}>
-          <DropdownToggle caret>
+          <DropdownToggle caret  className={'btn-light'}>
             <span className="category-label">{t("All Category")}</span>
           </DropdownToggle>
           <DropdownMenu>
@@ -116,7 +117,11 @@ const Search: NextPage = () => {
             ))}
           </DropdownMenu>
         </ButtonDropdown>
+      </InputGroupText>
       </InputGroup>
+      <SearchResults show={showResults} kits={kits} products={products} />
+      
+
     </form>
   );
 };
