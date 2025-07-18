@@ -83,7 +83,7 @@ const router = useRouter();
         )}>
     <Link href="#"
       
-      className="single-category-one height-200"
+      className="single-category-one height-180"
     >
       <div className="thumbnail-preview w-full ">
         <Media src={kit.img[0]} className="img-fluid" alt={kit.name} />
