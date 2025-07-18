@@ -10,6 +10,21 @@ import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { toast } from "react-toastify";
 import { API } from "@/app/services/api.service";
+import { searchController } from "@/app/globalProvider";
+import { Kit } from "@/app/models/kit/kit";
+
+// Simple OrderModel wrapper to match your API structure
+class OrderModel {
+  private orderData: any;
+  
+  constructor(data: any) {
+    this.orderData = data;
+  }
+  
+  toJsonObj() {
+    return this.orderData;
+  }
+}
 
 interface formType {
   firstName: string;
@@ -23,6 +38,11 @@ interface formType {
   pincode: string;
 }
 
+interface KitRaw {
+  id: string;
+  [key: string]: any;
+}
+
 // PayPal configuration
 const paypalOptions = {
   clientId: "AZ4S98zFa01vym7NVeo_qthZyOnBhtNvQDsjhaZSMH-2_Y9IAJFbSD3HPueErYqN8Sa8WYRbjP7wWtd_",
@@ -33,13 +53,13 @@ const paypalOptions = {
 // Static order data template
 const createStaticOrderData = (formData: formType, paymentMethod: string, cartItems: any[], totals: any) => {
   const currentTime = new Date().toISOString();
-  const orderNumber = Math.floor(Math.random() * 1000);
+  const orderNumber = Math.floor(Math.random() * 1000000);
   
   return {
     "id": `STEAKSSTAY-E${orderNumber}`,
     "img": [],
     "store": "store",
-    "store_id": "e9c60eb6-e7a7-4068-8aa4-b63231d4b0af",
+    "store_id": "5b547df0-967d-4aa4-8996-e02511c66e26",
     "order_gst": "",
     "tax_group": {},
     "tax_total": totals.tax,
@@ -47,9 +67,9 @@ const createStaticOrderData = (formData: formType, paymentMethod: string, cartIt
     "cart_total": totals.subtotal,
     "order_time": currentTime,
     "coupon_code": "",
-    "order_items": cartItems.map(item => ({
-      "id": item.productId || "8f757cd5-e241-49dc-8b9a-8a1ea9ecc6a9",
-      "url": item.image || "https://rupeecom-adminportal.blr1.digitaloceanspaces.com/upload/ikngosji/1751615315463199186-i want a logo for my consultancy *KridhnaVidya* it need to be modern and sleek design with lord kridhna reference or with krishnas fluet refference.jpg",
+    "order_items": cartItems.map((item, index) => ({
+      "id": item.productId || `product-${index}`,
+      "url": item.img?.[0] || "",
       "name": item.name || "Product",
       "rating": 0,
       "status": {
@@ -60,18 +80,18 @@ const createStaticOrderData = (formData: formType, paymentMethod: string, cartIt
         "process": currentTime,
         "transit": null
       },
-      "cost_price": item.price || 10,
+      "cost_price": totals.itemPrice || 10,
       "is_product": true,
-      "category_id": "acb67cd0-f12d-4981-b371-56452919778a",
+      "category_id": "default-category-id",
       "category_name": item.category || "General",
-      "choosed_price": (item.price || 10) * item.qty,
+      "choosed_price": totals.itemPrice * (item.qty || 1),
       "collected_tax": 0,
       "is_returnable": false,
-      "sale_quantity": item.qty.toString(),
-      "cart_item_count": item.qty,
+      "sale_quantity": (item.qty || 1).toString(),
+      "cart_item_count": item.qty || 1,
       "order_kit_items": [],
-      "sale_quantity_str": `${item.qty}kg`,
-      "base_choosed_price": (item.price || 10) * item.qty,
+      "sale_quantity_str": `${item.qty || 1}kg`,
+      "base_choosed_price": totals.itemPrice * (item.qty || 1),
       "selected_subscription": {
         "end_date": currentTime,
         "interval": 1,
@@ -135,40 +155,256 @@ const CheckoutPageContent: React.FC = () => {
     getValues
   } = useForm<formType>();
 
-  // Calculate totals
-  const getPrice = (item: any) => item.price || 10;
-  const subtotal = cartItems.reduce((sum: number, item: any) => sum + getPrice(item) * item.qty, 0);
+  // Price function from cart page - exact implementation
+  const getProductById = (productId: string): any => {
+    if (!productId) return null;
+
+    try {
+      if (searchController?.allProducts instanceof Map) {
+        for (const products of searchController.allProducts.values()) {
+          if (Array.isArray(products)) {
+            const product = products.find((p: any) => p?.id === productId);
+            if (product) return product;
+          }
+        }
+      }
+
+      if (searchController?.kits && Array.isArray(searchController.kits)) {
+        const kitRaw = searchController.kits.find((k: KitRaw) => k?.id === productId);
+        if (kitRaw) {
+          const kit = new Kit();
+          if (kit.fromMap && typeof kit.fromMap === "function") {
+            kit.fromMap(kitRaw);
+            return kit;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error finding product:", error);
+    }
+
+    return null;
+  };
+
+  const getPrice = (item: any): number => {
+    if (!item) return 0;
+
+    try {
+      const product = getProductById(item.productId);
+      
+      if (product) {
+        if (product instanceof Kit && typeof product.getPrice === "function") {
+          try {
+            const price = product.getPrice({ cartQuantity: item.qty });
+            if (typeof price === 'number' && !isNaN(price) && price > 0) {
+              return price;
+            }
+          } catch (methodError) {
+            console.warn("Kit getPrice method failed:", methodError);
+          }
+        }
+        
+        if (product?.getPrice && typeof product.getPrice === "function") {
+          try {
+            const price = product.getPrice({
+              cartQuantity: item.qty,
+              purchaseOptionStr: item.purchaseOptionStr || "",
+            });
+            if (typeof price === 'number' && !isNaN(price) && price > 0) {
+              return price;
+            }
+          } catch (methodError) {
+            console.warn("Product getPrice method failed:", methodError);
+          }
+        }
+      }
+
+      const extractPriceFromObject = (obj: any): number => {
+        if (!obj || typeof obj !== 'object') return 0;
+
+        const priceFields = ['price', 'kitPrice', 'discountPrice', 'salePrice', 'finalPrice', 'currentPrice', 'sellingPrice'];
+        
+        for (const field of priceFields) {
+          if (field in obj && typeof obj[field] === 'number' && obj[field] > 0) {
+            return obj[field];
+          }
+        }
+
+        const nestedPrice = obj.pricing || obj.priceInfo || obj.cost || obj.priceData;
+        if (typeof nestedPrice === 'number' && nestedPrice > 0) {
+          return nestedPrice;
+        }
+        if (typeof nestedPrice === 'object' && nestedPrice !== null) {
+          const extractedPrice = nestedPrice.amount || nestedPrice.value || nestedPrice.price || nestedPrice.final || nestedPrice.current;
+          if (typeof extractedPrice === 'number' && extractedPrice > 0) {
+            return extractedPrice;
+          }
+        }
+
+        return 0;
+      };
+
+      if (product) {
+        const productPrice = extractPriceFromObject(product);
+        if (productPrice > 0) return productPrice;
+      }
+
+      const itemPrice = extractPriceFromObject(item);
+      if (itemPrice > 0) return itemPrice;
+
+      if (typeof item.price === 'number' && item.price > 0) {
+        return item.price;
+      }
+
+      return 0;
+    } catch (err) {
+      console.error("Price extraction error:", err);
+      return item.price || 0;
+    }
+  };
+
+  // Calculate totals using the proper price function
+  const subtotal = cartItems.reduce((sum: number, item: any) => {
+    const price = getPrice(item);
+    const itemTotal = price * (item.qty || 1) * value;
+    return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+  }, 0);
+
   const taxAmount = subtotal * 0.1;
   const packageCost = 5;
   const finalTotal = subtotal + taxAmount + packageCost;
 
+  // Validate and sanitize order data before submission
+  const validateOrderData = (orderData: any) => {
+    const issues = [];
+    
+    // Check required fields
+    if (!orderData.user_name || orderData.user_name.trim() === '') {
+      issues.push("User name is required");
+    }
+    
+    if (!orderData.phone_number || orderData.phone_number.trim() === '') {
+      issues.push("Phone number is required");
+    }
+    
+    if (!orderData.delivery_address || !orderData.delivery_address.address) {
+      issues.push("Delivery address is required");
+    }
+    
+    if (!orderData.order_items || orderData.order_items.length === 0) {
+      issues.push("Order must contain at least one item");
+    }
+    
+    if (orderData.final_order_total <= 0) {
+      issues.push("Invalid order total");
+    }
+    
+    // Check order items
+    if (orderData.order_items) {
+      orderData.order_items.forEach((item: any, index: number) => {
+        if (!item.name || item.name.trim() === '') {
+          issues.push(`Item ${index + 1} is missing name`);
+        }
+        if (!item.sale_quantity || item.sale_quantity <= 0) {
+          issues.push(`Item ${index + 1} has invalid quantity`);
+        }
+        if (!item.choosed_price || item.choosed_price <= 0) {
+          issues.push(`Item ${index + 1} has invalid price`);
+        }
+      });
+    }
+    
+    if (issues.length > 0) {
+      throw new Error("Order validation failed: " + issues.join(", "));
+    }
+    
+    return true;
+  };
+
+  // Enhanced order submission with better error handling
   const submitOrder = async (orderData: any) => {
     try {
-      const response = await API.createOrder(orderData);
-      return response;
+      console.log("Submitting order data:", orderData);
+      
+      // Check if API service exists
+      if (!API || typeof API.saveOrder !== 'function') {
+        throw new Error("API service not available or saveOrder method not found");
+      }
+
+      // Validate order data
+      validateOrderData(orderData);
+
+      // Create OrderModel instance
+      const orderModel = new OrderModel(orderData);
+
+      // Call the saveOrder method (it returns void, so we'll treat success as no exception)
+      await API.saveOrder(orderModel);
+      console.log("Order submitted successfully");
+      
+      return { success: true, orderId: orderData.id };
     } catch (error) {
-      console.error("Order submission failed:", error);
-      throw error;
+      console.error("Order submission error details:", error);
+      
+      // More specific error messages
+      if (error.message?.includes("Network Error")) {
+        throw new Error("Network error. Please check your internet connection and try again.");
+      } else if (error.message?.includes("400")) {
+        throw new Error("Invalid order data. Please check your information and try again.");
+      } else if (error.message?.includes("401")) {
+        throw new Error("Authentication failed. Please login and try again.");
+      } else if (error.message?.includes("500")) {
+        throw new Error("Server error. Please try again later.");
+      } else if (error.message?.includes("validation failed")) {
+        throw new Error(error.message);
+      } else {
+        throw new Error(error.message || "An unexpected error occurred. Please try again.");
+      }
+    }
+  };
+
+  // Validate cart items before submission
+  const validateCartItems = () => {
+    if (!cartItems || cartItems.length === 0) {
+      throw new Error("Your cart is empty!");
+    }
+
+    for (const item of cartItems) {
+      if (!item.productId && !item.id) {
+        throw new Error("Invalid product found in cart. Please refresh and try again.");
+      }
+      if (!item.qty || item.qty <= 0) {
+        throw new Error("Invalid quantity for product: " + (item.name || "Unknown"));
+      }
+      const price = getPrice(item);
+      if (price <= 0) {
+        throw new Error("Invalid price for product: " + (item.name || "Unknown"));
+      }
     }
   };
 
   const onSubmit = async (data: formType) => {
-    if (cartItems.length === 0) {
-      toast.error("Your cart is empty!");
-      return;
-    }
-
     setIsProcessingOrder(true);
     
     try {
+      // Validate cart items
+      validateCartItems();
+      
+      // Validate totals
+      if (subtotal <= 0) {
+        throw new Error("Invalid cart total. Please refresh and try again.");
+      }
+      
       const totals = {
         subtotal: subtotal,
         tax: taxAmount,
-        final: finalTotal
+        final: finalTotal,
+        itemPrice: getPrice(cartItems[0]) // For order data structure
       };
       
       const orderData = createStaticOrderData(data, payment, cartItems, totals);
-      await submitOrder(orderData);
+      
+      // Submit order
+      const response = await submitOrder(orderData);
       
       // Store order data for success page
       const orderSuccessData = {
@@ -181,7 +417,8 @@ const CheckoutPageContent: React.FC = () => {
         billingAddress: data,
         paymentMethod: payment,
         orderDate: new Date().toISOString(),
-        status: "pending"
+        status: "pending",
+        apiResponse: response
       };
 
       sessionStorage.setItem("order-success-data", JSON.stringify(orderSuccessData));
@@ -191,7 +428,8 @@ const CheckoutPageContent: React.FC = () => {
       router.push("/pages/order-success");
       
     } catch (error) {
-      toast.error("Error processing order. Please try again.");
+      console.error("Order processing error:", error);
+      toast.error(error.message || "Error processing order. Please try again.");
     } finally {
       setIsProcessingOrder(false);
     }
@@ -202,15 +440,27 @@ const CheckoutPageContent: React.FC = () => {
       setIsProcessingOrder(true);
       
       try {
+        // Validate cart items
+        validateCartItems();
+        
         const formData = getValues();
         const totals = {
           subtotal: subtotal,
           tax: taxAmount,
-          final: finalTotal
+          final: finalTotal,
+          itemPrice: getPrice(cartItems[0])
         };
         
         const orderData = createStaticOrderData(formData, "paypal", cartItems, totals);
-        await submitOrder(orderData);
+        
+        // Add PayPal transaction details
+        orderData.txn_details = {
+          paypal_payment_id: data.id,
+          paypal_order_id: data.id,
+          payment_details: paymentDetails
+        };
+        
+        const response = await submitOrder(orderData);
         
         const orderSuccessData = {
           orderId: orderData.id,
@@ -219,7 +469,8 @@ const CheckoutPageContent: React.FC = () => {
           paymentMethod: "paypal",
           paymentId: data.id,
           orderDate: new Date().toISOString(),
-          status: "completed"
+          status: "completed",
+          apiResponse: response
         };
         
         sessionStorage.setItem("order-success-data", JSON.stringify(orderSuccessData));
@@ -229,224 +480,20 @@ const CheckoutPageContent: React.FC = () => {
         router.push("/pages/order-success");
         
       } catch (error) {
-        toast.error("Error processing order. Please try again.");
+        console.error("PayPal order processing error:", error);
+        toast.error(error.message || "Error processing order. Please try again.");
       } finally {
         setIsProcessingOrder(false);
       }
     });
 
+  // Helper function to get unique identifier for item
+  const getItemKey = (item: any): string => {
+    return item.cartItemId || item.key || item.id || item.productId || Math.random().toString();
+  };
+
   return (
     <>
-      <style jsx>{`
-        .checkout-container {
-          background: #f8f9fa;
-          padding: 60px 0;
-        }
-        
-        .checkout-form {
-          background: white;
-          padding: 30px;
-          border-radius: 10px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          margin-bottom: 30px;
-        }
-        
-        .checkout-title {
-          color: #333;
-          font-size: 24px;
-          margin-bottom: 30px;
-          padding-bottom: 10px;
-          border-bottom: 2px solid #007bff;
-        }
-        
-        .form-group {
-          margin-bottom: 20px;
-        }
-        
-        .field-label {
-          font-weight: 600;
-          color: #555;
-          margin-bottom: 8px;
-          display: block;
-        }
-        
-        .form-control {
-          width: 100%;
-          padding: 12px 15px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          font-size: 14px;
-          transition: border-color 0.3s ease;
-        }
-        
-        .form-control:focus {
-          outline: none;
-          border-color: #007bff;
-          box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-        }
-        
-        .error_border {
-          border-color: #dc3545 !important;
-        }
-        
-        .error-message {
-          color: #dc3545;
-          font-size: 12px;
-          margin-top: 5px;
-          display: block;
-        }
-        
-        .order-summary {
-          background: white;
-          padding: 30px;
-          border-radius: 10px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          position: sticky;
-          top: 20px;
-        }
-        
-        .cart-item {
-          display: flex;
-          align-items: center;
-          padding: 15px 0;
-          border-bottom: 1px solid #eee;
-        }
-        
-        .cart-item img {
-          width: 60px;
-          height: 60px;
-          object-fit: cover;
-          border-radius: 5px;
-          margin-right: 15px;
-        }
-        
-        .item-details {
-          flex: 1;
-        }
-        
-        .item-name {
-          font-weight: 600;
-          color: #333;
-          margin-bottom: 5px;
-        }
-        
-        .item-price {
-          color: #666;
-          font-size: 14px;
-        }
-        
-        .item-total {
-          font-weight: 600;
-          color: #007bff;
-        }
-        
-        .order-totals {
-          margin-top: 20px;
-        }
-        
-        .total-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 10px 0;
-          border-bottom: 1px solid #eee;
-        }
-        
-        .total-row.final {
-          border-bottom: none;
-          font-weight: 600;
-          font-size: 18px;
-          color: #333;
-          border-top: 2px solid #007bff;
-          padding-top: 15px;
-        }
-        
-        .payment-methods {
-          margin: 20px 0;
-        }
-        
-        .payment-option {
-          display: flex;
-          align-items: center;
-          padding: 15px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          margin-bottom: 10px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        
-        .payment-option:hover {
-          border-color: #007bff;
-          background: #f8f9ff;
-        }
-        
-        .payment-option.selected {
-          border-color: #007bff;
-          background: #f8f9ff;
-        }
-        
-        .payment-option input {
-          margin-right: 10px;
-        }
-        
-        .btn-primary {
-          background: #007bff;
-          border: none;
-          padding: 12px 30px;
-          border-radius: 5px;
-          font-weight: 600;
-          width: 100%;
-          cursor: pointer;
-          transition: background 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-          background: #0056b3;
-        }
-        
-        .btn-primary:disabled {
-          background: #6c757d;
-          cursor: not-allowed;
-        }
-        
-        .empty-cart {
-          text-align: center;
-          padding: 60px 20px;
-          background: white;
-          border-radius: 10px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .empty-cart h3 {
-          color: #666;
-          margin-bottom: 20px;
-        }
-        
-        .paypal-container {
-          margin-top: 20px;
-        }
-        
-        @media (max-width: 768px) {
-          .checkout-container {
-            padding: 30px 0;
-          }
-          
-          .checkout-form,
-          .order-summary {
-            padding: 20px;
-          }
-          
-          .cart-item {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-          
-          .cart-item img {
-            margin-bottom: 10px;
-          }
-        }
-      `}</style>
-
       <Breadcrumb title="checkout" parent="home" />
       
       <section className="checkout-container">
@@ -635,7 +682,7 @@ const CheckoutPageContent: React.FC = () => {
                           checked={payment === 'paypal'}
                           onChange={(e) => setPayment(e.target.value)}
                         />
-                        <label>PayPal</label>
+                        <label>Online Payment</label>
                       </div>
                     </div>
                   </div>
@@ -646,20 +693,32 @@ const CheckoutPageContent: React.FC = () => {
                     <h3 className="checkout-title">Order Summary</h3>
                     
                     <div className="cart-items">
-                      {cartItems.map((item: any, index: number) => (
-                        <div key={index} className="cart-item">
-                          
-                          <div className="item-details">
-                            <div className="item-name">{item.name}</div>
-                            <div className="item-price">
-                              Qty: {item.qty} × {symbol}{getPrice(item).toFixed(2)}
+                      {cartItems.map((item: any, index: number) => {
+                        const price = getPrice(item);
+                        const itemKey = getItemKey(item);
+                        
+                        return (
+                          <div key={itemKey} className="cart-item">
+                            <img 
+                              src={item.img?.[0] || "/static/images/placeholder.png"} 
+                              alt="product" 
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/static/images/placeholder.png";
+                              }}
+                            />
+                            <div className="item-details">
+                              <div className="item-name">{item.name || "Unknown Product"}</div>
+                              <div className="item-price">
+                                Qty: {item.qty || 1} × {symbol}{price.toFixed(2)}
+                              </div>
+                            </div>
+                            <div className="item-total">
+                              {symbol}{(price * (item.qty || 1) * value).toFixed(2)}
                             </div>
                           </div>
-                          <div className="item-total">
-                            {symbol}{(getPrice(item) * item.qty).toFixed(2)}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     
                     <div className="order-totals">
@@ -699,12 +758,16 @@ const CheckoutPageContent: React.FC = () => {
                                   value: finalTotal.toFixed(2),
                                   currency_code: "USD"
                                 }
-                              }]
+                              }],
+                              intent: "CAPTURE"
                             });
                           }}
                           onApprove={onPayPalSuccess}
                           onCancel={() => toast.error("Payment cancelled")}
-                          onError={(err) => toast.error("Payment error occurred")}
+                          onError={(err) => {
+                            console.error("PayPal error:", err);
+                            toast.error("Payment error occurred");
+                          }}
                         />
                       </div>
                     )}
