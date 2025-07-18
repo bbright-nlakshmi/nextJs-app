@@ -27,7 +27,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
 
-  const ranges = priceRanges?.priceRanges || [];
+  const ranges = priceRanges?.price_ranges || [];
 
   const getPrice = useCallback((product: Product): number => {
     return searchController.getDetails(product.id, "getPrice") ||
