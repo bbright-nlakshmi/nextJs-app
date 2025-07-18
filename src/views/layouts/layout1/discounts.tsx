@@ -1,12 +1,11 @@
 "use client";
 import React, { useContext } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NextPage } from "next";
 import { Col, Row, Button } from "reactstrap";
 import { Discount } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination"
@@ -41,8 +40,10 @@ const DiscountProducts: NextPage<Props> = ({ products = [] }) => {
           direction="vertical"
           slidesPerView={products.length === 1 ? 1 : 2}
           spaceBetween={20}
-          navigation
-          pagination={{ clickable: true }}
+          // navigation
+          // pagination={{ clickable: true }}
+          autoplay={{ delay: 3000, disableOnInteraction: true, pauseOnMouseEnter: true }}
+          modules={[Navigation, Autoplay]}
           className={`discount-products-swiper ${products.length === 1 ? "single-banner" : ""}`}
           breakpoints={{
             0: {

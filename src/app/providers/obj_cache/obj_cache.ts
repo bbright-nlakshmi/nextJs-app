@@ -1,4 +1,4 @@
-import { Product, Kit, Discount, Category, Tags, PriceBetween, KitProduct, BannerModel, StorePriceRanges, StoreAnnounce, DiscountItem } from "@bbright-nlakshmi/rupeecom-services";
+import { Product, Kit, Discount, Category, Tags, PriceBetween, KitProduct, BannerModel, StorePriceRanges, StoreAnnounce, DiscountItem } from "@/app/globalProvider";
 import EventEmitter from "events";
 import { BehaviorSubject, Subject } from "rxjs";
 

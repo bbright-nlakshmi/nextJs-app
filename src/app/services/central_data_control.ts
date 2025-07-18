@@ -8,7 +8,7 @@ import {
   Discount,
   DiscountItem
 } from '@/app/globalProvider';
-//import {API} from '../services/api.js';
+// import {API} from '../services/api.js';
 // import { Category} from '../models/category/category.js';
 // API.baseURL = 'https://devqarupeecomservice.rupeecom.in/v1';
 // API.tenant_service_url = 'https://tenantservice.1rpapp.in/v1';

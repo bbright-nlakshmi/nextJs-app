@@ -93,7 +93,7 @@ const Footer: NextPage = () => (
                             <a href="#">about us</a>
                           </li>
                           <li>
-                            <a href="#">contact us</a>
+                            <a onClick={() => router.push("/pages/ContactUs")} style={{ cursor: "pointer" }}>contact us</a>
                           </li>
                          <li>
                             <a onClick={() => router.push("/pages/terms")} style={{ cursor: "pointer" }}>terms & conditions</a>
@@ -122,7 +122,7 @@ const Footer: NextPage = () => (
                             <a href="#">store location</a>
                           </li>
                           <li>
-                            <a href="#"> my account</a>
+                            <a onClick={() => router.push("/pages/account/profile")} style={{ cursor: "pointer" }}> my account</a>
                           </li>
                           <li>
                             <a href="#"> orders tracking</a>
