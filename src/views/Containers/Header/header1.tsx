@@ -13,6 +13,7 @@ import HorizaontalMenu from "../Menu/horizontal";
 import MobileSearch from "./widgets/mobile-search";
 import MobileSetting from "./widgets/mobile-setting";
 import { MenuContext } from "@/helpers/menu/MenuContext";
+import CategoryList from "./widgets/category-list";
 
 
 interface HeaderProps {
@@ -64,18 +65,15 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
     <Fragment>
       <header id="stickyHeader">
         <div className="mobile-fix-option"></div>
-        <div className="layout-header2">
+        <div className="layout-header2 ptb_mobile--15">
 
           <Container>
             <Row>
               <Col md="12">
                 <div className="main-menu-block">
                   <div className="header-left">
-                    <div className="sm-nav-block  d-xl-none" onClick={toggleLeftMenu}>
-                      <span className="sm-nav-btn">
-                        <i className="fa fa-bars"></i>
-                      </span>
-                    </div>
+                    
+                    <CategoryList category={category} />
                     <div className="logo-block">
                       <div className="brand-logo logo-sm-center">
                         <a href="/#">
@@ -94,7 +92,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                     </div>
                   </div>
                   <div className="header-right d-lg-show " id="nav-menu">
-                    <div className="icon-block d-lg-none" >
+                    <div className="icon-block d-xl-none" >
                       <ul>
                         <User />
                         <WishList />
@@ -137,12 +135,16 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                   <HorizaontalMenu />
                   <div className="icon-block">
                     <ul>
-                      <User />
-                      <WishList />
                       <MobileSearch onOpen={onOpenMobileSearch} />
-                      <MobileSetting />
+                      <User />
+                       <MobileSetting />
+                      <WishList />
+                      
+                     
                     </ul>
+                    <ShoppingCart layout="layout2" />
                   </div>
+                  
                   {/* </div> */}
                   {/* <div className="category-right ">
                     <ContactUs spanClass="" />

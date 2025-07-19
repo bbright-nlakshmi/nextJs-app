@@ -10,7 +10,7 @@ import "swiper/css/pagination";
 import "swiper/css/grid";
 import { Category, Product } from "@bbright-nlakshmi/rupeecom-services";
 
-import router from "next/router";
+import {useRouter} from "next/navigation";
 
 interface Props {
   categories: Category[];
@@ -18,7 +18,7 @@ interface Props {
 }
 
 const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
-
+ const router = useRouter();
   const handleClickEvent = (id: string) => {
     router.push(`/product-details/${id}`);
   }
@@ -64,7 +64,7 @@ const CollectionBanner: NextPage<Props> = ({ categories,categoryProducts }) => {
               {
                 categories.map((item) => (
                   <SwiperSlide key={item.id}>
-                    <div className="single-category-one height-180" onClick={() => router.push(`/collections/no-sidebar?id=${item.id}&type=catgeory`)}>
+                    <div className="single-category-one height-230" onClick={() => router.push(`/collections/no-sidebar?id=${item.id}&type=catgeory`)}>
                       <Link
                         className = "thumbnail-preview"
                         href="#"

@@ -7,6 +7,7 @@ import { NextPage } from "next";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { objCache, CategoryProducts, Product } from "@/app/globalProvider";
+import { Row, Col } from "reactstrap";
 
 const LeftSidebar: NextPage = () => {
   const pathname = usePathname();
@@ -24,13 +25,17 @@ const LeftSidebar: NextPage = () => {
     <Layout1>
       {/* <Breadcrumb title="left sidebar" parent="product" /> */}
       <section className="section-big-pt-space shopdetails-style-1-wrapper">
-        <LeftSidebarPage pathId={secondPart} />
+        <Row>
+          <Col lg="12" xl="12">
+            <LeftSidebarPage pathId={secondPart} />
+          </Col>
+        </Row>
       </section>
       {productData?.categoryID && (
-        <RelatedProducts 
-        productId={secondPart}
-        categoryId={productData.categoryID}
-      />
+        <RelatedProducts
+          productId={secondPart}
+          categoryId={productData.categoryID}
+        />
       )}
     </Layout1>
   );
