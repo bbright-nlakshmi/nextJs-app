@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { NextPage } from "next";
 import Link from "next/link";
-import { CartContext } from "../../../helpers/cart/cart.context";
+import { CartContext, CartItem } from "../../../helpers/cart/cart.context";
 import Breadcrumb from "../../../views/Containers/Breadcrumb";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
-import { searchController , Kit} from "@/app/globalProvider";
-
+import { searchController, Kit } from "@/app/globalProvider";
 
 interface KitRaw {
   id: string;
@@ -34,11 +33,8 @@ const CartPage: NextPage = () => {
       if (searchController?.kits && Array.isArray(searchController.kits)) {
         const kitRaw = searchController.kits.find((k: KitRaw) => k?.id === productId);
         if (kitRaw) {
-          //const kit = new Kit();
-          // Safe method call with optional chaining
           if (Kit.fromMap && typeof Kit.fromMap === "function") {
-           
-            return  Kit.fromMap(kitRaw);
+            return Kit.fromMap(kitRaw);
           }
         }
       }
@@ -49,11 +45,11 @@ const CartPage: NextPage = () => {
     return null;
   };
 
-  const getPrice = (item: any): number => {
+  const getPrice = (item: CartItem): number => {
     if (!item) return 0;
 
     try {
-      const product = getProductById(item.productId);
+      const product = getProductById(item.productId || item.id);
       
       if (product) {
         if (product instanceof Kit && typeof product.getPrice === "function") {
@@ -126,13 +122,13 @@ const CartPage: NextPage = () => {
     }
   };
 
-  const handleQtyUpdate = (item: any, quantity: string) => {
+  const handleQtyUpdate = (item: CartItem, quantity: string) => {
     const qty = parseInt(quantity);
     if (qty >= 1 && !isNaN(qty)) {
       setQuantityErrorKey(null);
-      updateQty(item, qty);
+      updateQty(item, qty); // Pass the full CartItem object
     } else {
-      setQuantityErrorKey(item.key);
+      setQuantityErrorKey(item.cartItemId || item.key || item.id);
     }
   };
 
@@ -150,7 +146,7 @@ const CartPage: NextPage = () => {
   };
 
   // Helper function to get unique identifier for item
-  const getItemKey = (item: any): string => {
+  const getItemKey = (item: CartItem): string => {
     return item.cartItemId || item.key || item.id || item.productId || Math.random().toString();
   };
 
@@ -176,10 +172,11 @@ const CartPage: NextPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {cartItems.map((item: any, index: number) => {
+                      {cartItems.map((item: CartItem, index: number) => {
                         const price = getPrice(item);
                         const total = price * value;
                         const itemKey = getItemKey(item);
+                        const errorKey = item.cartItemId || item.key || item.id;
 
                         return (
                           <tr key={itemKey}>
@@ -209,7 +206,7 @@ const CartPage: NextPage = () => {
                                 className="form-control input-number"
                                 style={{
                                   width: "80px",
-                                  borderColor: quantityErrorKey === item.key ? "red" : undefined,
+                                  borderColor: quantityErrorKey === errorKey ? "red" : undefined,
                                 }}
                               />
                             </td>
@@ -248,10 +245,11 @@ const CartPage: NextPage = () => {
               {/* Mobile and Tablet View */}
               <div className="row d-block d-lg-none">
                 <div className="col-12">
-                  {cartItems.map((item: any, index: number) => {
+                  {cartItems.map((item: CartItem, index: number) => {
                     const price = getPrice(item);
                     const itemTotal = price * (item.qty || 1) * value;
                     const itemKey = getItemKey(item);
+                    const errorKey = item.cartItemId || item.key || item.id;
 
                     return (
                       <div key={itemKey} className="card mb-3 shadow-sm">
@@ -297,11 +295,11 @@ const CartPage: NextPage = () => {
                                   onChange={(e) => handleQtyUpdate(item, e.target.value)}
                                   className="form-control form-control-sm"
                                   style={{
-                                    borderColor: quantityErrorKey === item.key ? "red" : undefined,
+                                    borderColor: quantityErrorKey === errorKey ? "red" : undefined,
                                     maxWidth: '80px'
                                   }}
                                 />
-                                {quantityErrorKey === item.key && (
+                                {quantityErrorKey === errorKey && (
                                   <small className="text-danger">Please enter a valid quantity</small>
                                 )}
                               </div>

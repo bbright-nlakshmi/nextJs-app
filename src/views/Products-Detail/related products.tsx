@@ -84,7 +84,7 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({ productId, categoryId
                           addCart={() => addToCart(item)}
                           addCompare={() => addToCompare(item)}
                           addWish={() => addToWish(item)}
-                          hoverEffect={"icon-inline"}
+                          hoverEffect={'icon-inline'}
                         />
                       </div>
                     </SwiperSlide>

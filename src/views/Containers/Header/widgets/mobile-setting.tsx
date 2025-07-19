@@ -27,7 +27,7 @@ const MobileSetting: React.FC = () => {
           setOpen(true);
         }}
       >
-        <i className="icon-settings"></i>
+        <a href="#"> <i className="icon-settings"></i></a>
       </li>
       <div id="mySetting" className={`add_to_cart right ${open ? "open-side" : ""}`}>
         <a

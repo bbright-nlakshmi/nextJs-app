@@ -37,24 +37,27 @@ const ProductSlick: React.FC<ProductSlickProps> = ({ item, bundle, swatch }) => 
   return (
     <> <section className="rts-product-details-section rts-product-details-section2 ">
       <div className="details-product-area">
-        {/* <Col lg="5"> */}
-        <div className="product-thumb-area">
-          <div className="thumb-wrapper one filterd-items figure">
-            <div className="product-thumb">
-           
-              {item &&
-                item.img.map((img: any, i: any) => {
-                  return (
-                    
-                      <Media src={`${img}`} alt="" className="img-fluid  image_zoom_cls-0" />
-                    
-                  );
-                })}
-           
-          </div>
-          </div>
-        </div>
-        {/* <Row>
+        <Row>
+          <Col lg="5">
+            <div className="product-thumb-area">
+              <div className="thumb-wrapper one filterd-items figure">
+                <div className="product-thumb">
+
+                  {item &&
+                    item.img.map((img: any, i: any) => {
+                      return (
+
+                        <Media src={`${img}`} alt="" className="img-fluid  image_zoom_cls-0" />
+
+                      );
+                    })}
+
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          {/* <Row>
           <Col>
             <Slider {...setting1} className="slider-nav" asNavFor={nav1!} ref={(slider2) => setNav2(slider2)} slidesToShow={item.img.length >= 3 ? 3 :item.img.length} >
               {item &&
@@ -68,10 +71,11 @@ const ProductSlick: React.FC<ProductSlickProps> = ({ item, bundle, swatch }) => 
             </Slider>
           </Col>
         </Row> */}
-        {/* </Col> */}
-        {/* <Col lg="7" className="rtl-text"> */}
-        <ProductDetail item={item} changeColorVar={changeColorVar} bundle={bundle} swatch={swatch} />
-        {/* </Col> */}
+          {/* </Col> */}
+          <Col lg="7" className="rtl-text">
+            <ProductDetail item={item} changeColorVar={changeColorVar} bundle={bundle} swatch={swatch} />
+          </Col>
+        </Row>
       </div>
     </section>
     </>
