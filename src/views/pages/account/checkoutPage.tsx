@@ -59,7 +59,7 @@ const createStaticOrderData = (formData: formType, paymentMethod: string, cartIt
     "id": `STEAKSSTAY-E${orderNumber}`,
     "img": [],
     "store": "store",
-    "store_id": "b0aec458-86f7-4c29-8587-ec4271b9168c",
+    "store_id": "5e2f938f-5d53-4f33-bfd1-1248acec2fc7",
     "order_gst": "",
     "tax_group": {},
     "tax_total": totals.tax,
