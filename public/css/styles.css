@@ -123,6 +123,12 @@ body {
   position: relative;
   overflow-x: hidden;
 }
+.category-header-2 .navbar-menu .nav-block .nav-left .nav-cat{
+  position:absolute;
+  width:250px;
+  margin-top:0px;
+  max-height:500px;
+}
 
 @media only screen and (min-width: 992px) and (max-width: 1199px) {
   body {
