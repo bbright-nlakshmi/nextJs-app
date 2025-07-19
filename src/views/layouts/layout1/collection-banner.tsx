@@ -10,7 +10,6 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/grid";
 import { Category, Product } from "@/app/globalProvider";
-
 import {useRouter} from "next/navigation";
 
 interface Props {
