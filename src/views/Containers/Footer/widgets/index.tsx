@@ -207,7 +207,7 @@ const FooterSection: React.FC = () => {
           <Row>
             <Col xs="12">
               <div className="sub-footer-contain">
-                <p><span>2024 - 25 </span>copy right by Rupeecom</p>
+                <p><span>2025 </span>Copyright @rupeecom</p>
               </div>
             </Col>
           </Row>
