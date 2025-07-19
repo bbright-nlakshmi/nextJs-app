@@ -61,7 +61,7 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
       setIsLoading(false);
     }, 500);
   };
-
+console.log(productData)
   // Update productData whenever prop changes
   useEffect(() => {
     if (categoryType === "category") {
@@ -86,8 +86,8 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
     <Col className="collection-content">
       <div className="page-main-content">
         <Row>
-          <Col sm="12">
-            <CollectionBanner img={discount?.img?.[0]} name={discount?.name} details={discount?.details} />
+          <Col sm="12">{categoryType === "discount"? <CollectionBanner img={discount?.img?.[0]} name={discount?.name} details={discount?.details} />:''}
+            
             <div className="collection-product-wrapper">
               {/* Product Grid */}
               <div className={`product-wrapper-grid ${layout}`}>
