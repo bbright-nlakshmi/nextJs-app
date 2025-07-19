@@ -126,7 +126,7 @@ body {
 .category-header-2 .navbar-menu .nav-block .nav-left .nav-cat{
   position:absolute;
   width:250px;
-  margin-top:0px;
+  margin-top:0px !important;
   max-height:500px;
 }
 
@@ -18278,7 +18278,7 @@ li.with-megamenu:hover .rts-megamenu {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: #fff !important;
   transition: 0.3s;
   cursor: pointer;
 }
