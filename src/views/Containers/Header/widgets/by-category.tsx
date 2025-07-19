@@ -81,7 +81,7 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
 
             {categories.map((cat) => (
               <li key={cat.id} 
-                  onClick={() => router.push(`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`)}
+                  onClick={() => router.push(`/collections/no-sidebar?id=${cat.id}&type=category`)}
                 style={{ cursor: "pointer" }}
               >                            
                   <span className="arrow-before">&gt;</span>
