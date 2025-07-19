@@ -57,19 +57,20 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
     setQty(parseInt(e.target.value));
   };
   // const { id } = router.query; 
-  
+
   const uniqueColor: any[] = [];
   const uniqueSize: any[] = [];
   return (
     <div className="product-right contents">
       <div className="product-status">
         <span className="product-catagory">{item.categoryName}</span>
-        <div className="rating-stars-group">
-          <div className="rating-star"><i className="fas fa-star"></i></div>
-          <div className="rating-star"><i className="fas fa-star"></i></div>
-          <div className="rating-star"><i className="fas fa-star-half-alt"></i></div>
-          <span>10 Reviews</span>
-        </div>
+        <ul className="rating-star">
+          <i className="fa fa-star"></i>
+          <i className="fa fa-star"></i>
+          <i className="fa fa-star"></i>
+          <i className="fa fa-star"></i>
+          <i className="fa fa-star"></i>
+        </ul>
       </div>
       <h2>{item.name}</h2>
       {item.discount ? <h4>
@@ -151,7 +152,9 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
       <div className="product-description border-product">
         {stock !== "InStock" ? <span className="instock-cls">{stock}</span> : ""}
         <h6 className="product-title">quantity</h6>
-        <div className="qty-box">
+      </div>
+      <div className="flex-block">
+        <div className="qty-box contents">
           <div className="input-group">
             <span className="input-group-prepend">
               <button type="button" className="btn quantity-left-minus" data-type="minus" data-field="" onClick={minusQty}>
@@ -166,22 +169,22 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
             </span>
           </div>
         </div>
-      </div>
-      <div className="product-buttons">
-        <a
-          href="#"
-          data-toggle="modal"
-          data-target="#addtocart"
-          className="btn btn-normal"
-          onClick={(e) => {
-            e.preventDefault();
-            addToCart(item);
-          }}>
-          add to cart
-        </a>
-        <a href="/pages/account/checkout" className="btn btn-normal">
-          buy now
-        </a>
+        <div className="product-buttons">
+          <a
+            href="#"
+            data-toggle="modal"
+            data-target="#addtocart"
+            className="btn btn-normal"
+            onClick={(e) => {
+              e.preventDefault();
+              addToCart(item);
+            }}>
+            add to cart
+          </a>
+          <a href="/pages/account/checkout" className="btn btn-normal">
+            buy now
+          </a>
+        </div>
       </div>
       {/* <div className="border-product"> */}
       {/* <h6 className="product-title">product details</h6> */}
@@ -190,14 +193,14 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
       {/* {item.description[0]} */}
       {/* </p> */}
       {/* </div> */}
-      <div className="product-uniques">
+      {/* <div className="product-uniques">
         <span className="sku product-unipue mb--10"><strong>SKU:</strong> BO1D0MX8SJ</span>
         <span className="catagorys product-unipue mb--10"><strong>Categories:</strong> T-Shirts, Tops, Mens</span>
         <span className="tags product-unipue mb--10"><strong>Tags:</strong> fashion, t-shirts, Men</span>
         <span className="tags product-unipue mb--10"><strong>LIFE:</strong> 6 Months</span>
         <span className="tags product-unipue mb--10"><strong>Type:</strong> original</span>
         <span className="tags product-unipue mb--10"><strong>Category:</strong> Beverages, Dairy & Bakery</span>
-      </div>
+      </div> */}
       <div className="border-product">
         <div className="product-icon">
           <ul className="product-social">

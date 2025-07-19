@@ -218,11 +218,11 @@ const Wishlist: NextPage = () => {
       <li className="mobile-wishlist item-count" onClick={toggleWishlist}>
         <a>
           <i className="icon-heart"></i>
-          <div className="cart-item">
-            {/* <div>
+          {/* <div className="cart-item">
+            { <div>
               {totalItem} {t("item")} <span>{t("wishlist")}</span>
-            </div> */}
-          </div>
+            </div> }
+          </div> */}
           <div className="item-count-contain">
                       {totalItem}
                     </div>

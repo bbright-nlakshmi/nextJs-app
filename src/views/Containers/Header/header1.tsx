@@ -65,7 +65,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
     <Fragment>
       <header id="stickyHeader">
         <div className="mobile-fix-option"></div>
-        <div className="layout-header2">
+        <div className="layout-header2 ptb_mobile--15">
 
           <Container>
             <Row>
