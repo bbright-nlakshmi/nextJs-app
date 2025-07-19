@@ -12,7 +12,7 @@ export class Discount {
   creationTime?: string;
   itemSpecific?: boolean;
   discount?: number;
-  discountItems: DiscountItem[];
+  discountItems: DiscountItem[] | undefined;
   discountEndDate?: Date;
 
   constructor({
@@ -121,8 +121,10 @@ export class Discount {
     );
   }
 
-  isDiscountExcludedToPhoneNumber(phoneNumber: string): boolean {
+  isDiscountExcludedToPhoneNumber(phoneNumber: string | null): boolean {
+    if(phoneNumber)
     return this.excludeUsers?.includes(phoneNumber) ?? false;
+    else return false
   }
 
   isDiscountActive(): boolean {

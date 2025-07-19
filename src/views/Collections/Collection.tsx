@@ -61,7 +61,7 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
       setIsLoading(false);
     }, 500);
   };
-console.log(productData)
+
   // Update productData whenever prop changes
   useEffect(() => {
     if (categoryType === "category") {

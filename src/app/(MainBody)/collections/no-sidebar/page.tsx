@@ -56,7 +56,7 @@ const NoSidebar: NextPage = () => {
  
   const handlePriceFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const filtered = selectedCatgeoryProducts.filter(prod => {
+    const filtered = selectedCatgeoryProducts.filter((prod:any) => {
       const id = categoryType === "discount" ? prod.id : prod.productId;
       const price = searchController.getDetails(id, "getPrice");
       return typeof price === "number" && price >= minPrice && price <= maxPrice;
@@ -96,7 +96,7 @@ const NoSidebar: NextPage = () => {
  
   const updatePriceRangeFromFilteredProducts = (products: CategoryProducts[]) => {
     const prices: number[] = products
-      .map(prod => {
+      .map((prod:any) => {
         const id = categoryType === "discount" ? prod.id : prod.productId;
         return searchController.getDetails(id, "getPrice");
       })
@@ -224,7 +224,7 @@ const NoSidebar: NextPage = () => {
                   <Row>
                     <Collection
                       categoryProducts={filteredProducts}
-                      cols="col-xl-3 col-lg-3 col-md-4 col-4 col-grid-box"
+                      cols="col-xl-3 col-lg-3 col-sm-4 col-md-4 col-6 col-grid-box"
                       layoutList=""
                     />
                   </Row>

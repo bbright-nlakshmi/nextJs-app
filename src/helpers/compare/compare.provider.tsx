@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CompareContext } from "./compare.context";
-import { product } from "../interfaces/product";
+//import { product } from "../interfaces/product";
+import { Product } from "@/app/models/product/product";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
@@ -18,14 +19,14 @@ const getLocalCompareItems = () => {
 };
 
 export const CompareProvider = (props:any) => {
-  const [compareItems, setcompareItems] = useState(getLocalCompareItems() as product[]);
+  const [compareItems, setcompareItems] = useState(getLocalCompareItems() as Product[]);
   const router = useRouter();
   useEffect(() => {
     localStorage.setItem("compare", JSON.stringify(compareItems));
   }, [compareItems]);
 
   // Add Product To Wishlist
-  const addToCompare = (item: product) => {
+  const addToCompare = (item: Product) => {
     const index = compareItems.findIndex((compare) => compare.id === item.id);
     if (index === -1) {
       toast.success("Product Added to Compare Successfully !");
@@ -38,7 +39,7 @@ export const CompareProvider = (props:any) => {
 
   // Remove Product From compare
   const removeFromComapre = (item: { id: number; }) => {
-    setcompareItems(compareItems.filter((e) => e.id !== item.id));
+    setcompareItems(compareItems.filter((e:any) => e.id !== item.id));
     toast.error("Product Removed from Compare Successfully !");
   };
 

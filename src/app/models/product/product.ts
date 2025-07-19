@@ -61,8 +61,8 @@ export class Product {
   cartItemCount: number;
   cartPurchaseOptionStr: string;
   INCLUSIVE_TAX: string = INCLUSIVE_TAX;
-  specs: {};
-  images: boolean;
+  specs: {} ={};
+  images: boolean = false;
 
   constructor(params: {
     id: string;
@@ -607,7 +607,7 @@ export class Product {
     return this.getPrice({ cartQuantity, purchaseOptionStr });
   }
 
-   isDiscountExcluded( phoneNumber):boolean {
+   isDiscountExcluded( phoneNumber:string):boolean {
     return this.discount?.isDiscountExcludedToPhoneNumber(phoneNumber) ?? false;
   }
 

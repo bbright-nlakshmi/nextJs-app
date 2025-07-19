@@ -30,10 +30,18 @@ const CategoryList: NextPage<ByCategoryProps> = ({ category }) => {
         });
     }, []);
 
-    const toggleLeftMenu = () => { setLeftMenu(!leftMenu); document.body.style.overflow = "hidden"; };
+    const toggleLeftMenu = () => { setLeftMenu(!leftMenu); document.body.style.overflow = "visible";};
 
     return (
-       <><div className="sm-nav-block  d-xl-none" onClick={toggleLeftMenu}>
+       <>
+       <div
+        className={`menu-overlay ${leftMenu ? "active" : ""}`}
+        onClick={() => {
+          toggleLeftMenu();
+          document.body.style.overflow = "visible";
+        }}
+      ></div>
+      <div className="sm-nav-block  d-xl-none" onClick={toggleLeftMenu}>
                               <span className="sm-nav-btn">
                                 <i className="fa fa-bars"></i>
                               </span>
@@ -58,7 +66,7 @@ const CategoryList: NextPage<ByCategoryProps> = ({ category }) => {
 
             {categories.map((cat) => (
               <li key={cat.id} 
-                  onClick={() => router.push(`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`)}
+                  onClick={() => router.push(`/collections/no-sidebar?id=${cat.id}&type=category`)}
                 style={{ cursor: "pointer" }}
               >                            
                   <span className="arrow-before">&gt;</span>

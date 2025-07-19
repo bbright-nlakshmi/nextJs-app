@@ -18235,7 +18235,7 @@ li.with-megamenu:hover .rts-megamenu {
     display: none;
   }
   .layout-header2 .main-menu-block .cart-block{
-    margin:20px 0 !important;
+    margin:0px 20px !important;
   }
 }
 
@@ -18669,6 +18669,11 @@ li.with-megamenu:hover .rts-megamenu {
     height: 40px;
     padding: 0;
     width: 40px;
+  }
+  .layout-header2 .main-menu-block .input-block .input-box .big-deal-form .input-group span.close-mobilesearch{
+    display:block !important;
+    border-right:0px;
+    margin-top:15px;
   }
 }
 
@@ -20492,6 +20497,10 @@ li.with-megamenu:hover .rts-megamenu {
   .footer-main-content-wrapper {
     gap: 30px;
     flex-wrap: wrap;
+  }
+  .product .product-box .product-imgbox .product-icon.icon-inline button{
+    width:48px;
+    height:48px;
   }
 }
 

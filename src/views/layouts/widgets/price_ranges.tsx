@@ -46,13 +46,13 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       // Get products from search controller
       if (searchController?.getAllProducts) {
         const searchResults = searchController.getAllProducts();
-        if (searchResults instanceof Map) {
-          for (const products of searchResults.values()) {
-            if (Array.isArray(products)) fetchedProducts.push(...products);
-          }
-        } else if (Array.isArray(searchResults)) {
-          fetchedProducts = searchResults;
-        }
+        // if (searchResults instanceof Map) {
+        //   for (const products of searchResults.values()) {
+        //     if (Array.isArray(products)) fetchedProducts.push(...products);
+        //   }
+        // } else if (Array.isArray(searchResults)) {
+        //   fetchedProducts = searchResults;
+        // }
       }
 
       // Get products from cache
@@ -163,12 +163,12 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                   slidesPerView={6}
                   autoplay={true}
                   breakpoints={{
-                    0: { slidesPerView: 1, spaceBetween: 10 },
+                    0: { slidesPerView: 1, spaceBetween: 0 },
                     350: { slidesPerView: 2, spaceBetween: 10 },
-                    480: { slidesPerView: 3, spaceBetween: 12 },
-                    640: { slidesPerView: 4, spaceBetween: 15 },
-                    840: { slidesPerView: 5, spaceBetween: 15 },
-                    1140: { slidesPerView: 6, spaceBetween: 15 },
+                    480: { slidesPerView: 3, spaceBetween: 20 },
+                    640: { slidesPerView: 4, spaceBetween: 20 },
+                    840: { slidesPerView: 5, spaceBetween: 20 },
+                    1140: { slidesPerView: 6, spaceBetween: 20 },
                   }}
                   modules={[Navigation, Autoplay, Keyboard]}
                 >

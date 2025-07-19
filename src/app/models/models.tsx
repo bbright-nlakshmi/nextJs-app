@@ -33,7 +33,7 @@ export * from './store/store_base_details';
 export * from './store/store_contact_details';
 export * from './store/store_offer_ranges';
 export * from './store/store_price_ranges';
-export * from './sub_product/sub_product';
+
 export * from './success_order_items/success_order_items';
 export * from './tags/tags';
 export * from './tax_group_model/tax_group_model';
