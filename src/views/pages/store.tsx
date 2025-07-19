@@ -12,13 +12,10 @@ interface BusinessDetails {
   address?: string;
   phone?: string;
   email?: string;
-  aboutUs?: string;
   // Add other properties as needed based on your BusinessDetails model
 }
 
-
-
-const AboutPage: NextPage = () => {
+const StorePage: NextPage = () => {
   const [businessDetails, setBusinessDetails] = useState<BusinessDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +40,7 @@ const AboutPage: NextPage = () => {
   if (loading) {
     return (
       <div className="bg-light">
-        <Breadcrumb title="About-us" parent="home" />
+        <Breadcrumb title="Store" parent="home" />
         <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
           <div className="spinner-border" role="status">
             <span className="sr-only">Loading...</span>
@@ -56,10 +53,10 @@ const AboutPage: NextPage = () => {
   if (error) {
     return (
       <div className="bg-light">
-        <Breadcrumb title="About-us" parent="home" />
+        <Breadcrumb title="Store" parent="home" />
         <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
           <div className="alert alert-danger" role="alert">
-            Error loading business details: {error}
+            Error loading store data: {error}
           </div>
         </div>
       </div>
@@ -68,27 +65,18 @@ const AboutPage: NextPage = () => {
 
   return (
     <div className="bg-light">
-      <Breadcrumb title="About-us" parent="home" />
+      <Breadcrumb title="Store" parent="home" />
       
-      {/* Testimonial section */}
-      
-
-      {/* Business Details section */}
+      {/* Store Details section */}
       {businessDetails && (
-        <section className="business-details section-big-py-space">
+        <section className="store-details section-big-py-space">
           <Container>
             <Row>
               <Col sm="12">
-                <h2>About Our Business</h2>
-                <div className="business-info p-4 border rounded shadow-sm">
+                <h2>Store Location & Contact</h2>
+                <div className="store-info p-4 border rounded shadow-sm">
                   <h3 className="mb-3">{businessDetails.name}</h3>
                   
-                  {businessDetails.aboutUs && (
-                    <div className="mb-2">
-                      <strong>About Us: </strong>
-                      <span>{businessDetails.aboutUs}</span>
-                    </div>
-                  )}
                   {businessDetails.address && (
                     <div className="mb-2">
                       <strong>Address: </strong>
@@ -119,4 +107,4 @@ const AboutPage: NextPage = () => {
   );
 };
 
-export default AboutPage;
+export default StorePage;
