@@ -108,7 +108,7 @@ const Search: NextPage = () => {
             {/* <DropdownItem key="all">{t("All Category")}</DropdownItem> */}
             {allCategories.map((cat) => (
               <DropdownItem key={cat.id}  className="custom-dropdown-item"
-              onClick={() =>router.push(`/collections/no-sidebar?category=${encodeURIComponent(cat.name)}`)
+              onClick={() =>router.push(`/collections/no-sidebar?id=${cat.id}&type=category`)
             }
             style={{ cursor: "pointer" }}
           >
