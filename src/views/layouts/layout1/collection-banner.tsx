@@ -8,7 +8,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/grid";
-import { Category, Product } from "@bbright-nlakshmi/rupeecom-services";
+import { Category, Product } from "@/app/globalProvider";
 
 import router from "next/router";
 
