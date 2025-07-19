@@ -38,6 +38,17 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
  
     return price;
   }
+
+  // Function to handle adding item to cart with price included
+  const handleAddToCart = (item: any) => {
+    const price = getPrice(item.productId);
+    const cartItem = {
+      ...item,
+      price: price
+    };
+    addToCart(cartItem);
+  }
+
   if (categories)
     return (
       <>
@@ -114,7 +125,16 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
                           {categories[activeTab]?.category_products && categories[activeTab].category_products.map((item: any, i: any) => (
                             <SwiperSlide key={item.id}>
  
-                              <ProductBox layout="layout-one" price={getPrice(item.productId)} hoverEffect={effect} data={item} newLabel={item.name} addCart={() => addToCart(item)} addCompare={() => addToCompare(item)} addWish={() => addToWish(item)} />
+                              <ProductBox 
+                                layout="layout-one" 
+                                price={getPrice(item.productId)} 
+                                hoverEffect={effect} 
+                                data={item} 
+                                newLabel={item.name} 
+                                addCart={() => handleAddToCart(item)} 
+                                addCompare={() => addToCompare(item)} 
+                                addWish={() => addToWish(item)} 
+                              />
                             </SwiperSlide>
  
                           ))}
@@ -134,5 +154,3 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
 };
  
 export default TabProduct;
- 
- 

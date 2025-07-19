@@ -59,7 +59,7 @@ const createStaticOrderData = (formData: formType, paymentMethod: string, cartIt
     "id": `STEAKSSTAY-E${orderNumber}`,
     "img": [],
     "store": "store",
-    "store_id": "5b547df0-967d-4aa4-8996-e02511c66e26",
+    "store_id": "b0aec458-86f7-4c29-8587-ec4271b9168c",
     "order_gst": "",
     "tax_group": {},
     "tax_total": totals.tax,
@@ -429,7 +429,11 @@ const CheckoutPageContent: React.FC = () => {
       
     } catch (error) {
       console.error("Order processing error:", error);
-      toast.error(error.message || "Error processing order. Please try again.");
+      toast.error(
+        typeof error === "object" && error !== null && "message" in error
+          ? (error as { message?: string }).message || "Error processing order. Please try again."
+          : "Error processing order. Please try again."
+      );
     } finally {
       setIsProcessingOrder(false);
     }
