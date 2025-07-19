@@ -1,43 +1,54 @@
 import React, { useState, useEffect } from "react";
-
+ 
 import { NextPage } from "next";
-
+ 
 import { TabContent, TabPane, Nav, NavItem, NavLink, Row, Col, Media } from "reactstrap";
 import ProductBox from "../Product-Box/productbox";
-
+ 
 import { CartContext } from "../../../../helpers/cart/cart.context";
 import { WishlistContext } from "../../../../helpers/wishlist/wish.context";
 import { CompareContext } from "../../../../helpers/compare/compare.context";
 import { Skeleton } from "../../../../common/skeleton";
 import { Category, Product, searchController } from '@/app/globalProvider';
-
+ 
 // Swiper components, modules and styles
 import { Autoplay, Navigation, Pagination, Mousewheel, Keyboard, Grid } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-
-
-
+ 
+ 
+ 
 type TabProductProps = {
   effect?: any;
   categories?: Category[];
 };
-
+ 
 const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
-
+ 
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
   const [activeTab, setActiveTab] = useState(0);
-
-
+ 
+ 
   const getPrice = (productId: string) => {
     const price = searchController.getDetails(productId, 'getProductPrice');
-
+ 
     return price;
   }
+
+  // Function to handle adding item to cart with price included
+  const handleAddToCart = (item: any) => {
+    const price = getPrice(item.productId);
+    const cartItem = {
+      ...item,
+      price: price
+    };
+    addToCart(cartItem);
+  }
+
   if (categories)
     return (
       <>
@@ -46,9 +57,9 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
              <h2 className="title-left">All Categories</h2>
           </div>
           <div className="tab-product-main">
-            
+           
             <div className="tab-prodcut-contain">
-
+ 
               <Nav tabs>
                 <Swiper
                   mousewheel={true}
@@ -63,7 +74,7 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
                     1140: { slidesPerView: 6, spaceBetween: 20 },
                   }}
                   modules={[Mousewheel]}
-
+ 
                 >
                   { categories.map((c: any, i: any) => {
                    if(c.category_products.length )
@@ -81,7 +92,7 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
             </div>
           </div>
         </section>
-
+ 
         <section className="ratio_asos product">
           <div className="custom-container">
             <Row>
@@ -90,7 +101,7 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
                   <TabPane tabId={activeTab}>
                     <div className="product product-slide-6 product-m no-arrow">
                       <div>
-
+ 
                         <Swiper
                           slidesPerView={6}
                           navigation
@@ -110,17 +121,26 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
                           }}
                           modules={[Autoplay, Navigation, Keyboard]}
                         >
-
+ 
                           {categories[activeTab]?.category_products && categories[activeTab].category_products.map((item: any, i: any) => (
                             <SwiperSlide key={item.id}>
-
-                              <ProductBox layout="layout-one" price={getPrice(item.productId)} hoverEffect={effect} data={item} newLabel={item.name} addCart={() => addToCart(item)} addCompare={() => addToCompare(item)} addWish={() => addToWish(item)} />
+ 
+                              <ProductBox 
+                                layout="layout-one" 
+                                price={getPrice(item.productId)} 
+                                hoverEffect={effect} 
+                                data={item} 
+                                newLabel={item.name} 
+                                addCart={() => handleAddToCart(item)} 
+                                addCompare={() => addToCompare(item)} 
+                                addWish={() => addToWish(item)} 
+                              />
                             </SwiperSlide>
-
+ 
                           ))}
                         </Swiper>
-
-
+ 
+ 
                       </div>
                     </div>
                   </TabPane>
@@ -132,5 +152,5 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
       </>
     );
 };
-
+ 
 export default TabProduct;

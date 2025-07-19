@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import React, { useState } from "react";
 import { NextPage } from "next";
 import Link from "next/link";
@@ -8,29 +7,21 @@ import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { searchController , Kit} from "@/app/globalProvider";
 
 
-// Define proper interfaces
 interface KitRaw {
   id: string;
   [key: string]: any;
 }
 
-interface SearchController {
-  allProducts?: Map<string, any[]>;
-  kits?: KitRaw[] | null | undefined;
-}
-
 const CartPage: NextPage = () => {
-  const { cartItems, updateQty, removeFromCart } = React.useContext(CartContext);
+  const { cartItems, updateQty, removeFromCart, isProductInCart } = React.useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
   const [quantityErrorKey, setQuantityErrorKey] = useState<string | null>(null);
 
-  // ✅ Fixed getProductById with proper null checks and error handling
   const getProductById = (productId: string): any => {
     if (!productId) return null;
 
     try {
-      // Search in allProducts Map
       if (searchController?.allProducts instanceof Map) {
         for (const products of searchController.allProducts.values()) {
           if (Array.isArray(products)) {
@@ -40,7 +31,6 @@ const CartPage: NextPage = () => {
         }
       }
 
-      // Search in kits array with proper null checks
       if (searchController?.kits && Array.isArray(searchController.kits)) {
         const kitRaw = searchController.kits.find((k: KitRaw) => k?.id === productId);
         if (kitRaw) {
@@ -59,17 +49,13 @@ const CartPage: NextPage = () => {
     return null;
   };
 
-  // ✅ Enhanced getPrice function - matches the working price ranges logic
   const getPrice = (item: any): number => {
     if (!item) return 0;
 
     try {
-      // First try to get the product/kit from the system
       const product = getProductById(item.productId);
       
-      // If we have the product, try to get price from it using methods first
       if (product) {
-        // Try Kit getPrice method
         if (product instanceof Kit && typeof product.getPrice === "function") {
           try {
             const price = product.getPrice({ cartQuantity: item.qty });
@@ -81,7 +67,6 @@ const CartPage: NextPage = () => {
           }
         }
         
-        // Try Product getPrice method
         if (product?.getPrice && typeof product.getPrice === "function") {
           try {
             const price = product.getPrice({
@@ -97,46 +82,17 @@ const CartPage: NextPage = () => {
         }
       }
 
-      // Enhanced price extraction - same logic as working PriceRanges component
       const extractPriceFromObject = (obj: any): number => {
         if (!obj || typeof obj !== 'object') return 0;
 
-        // Check standard price fields first
-        if ('price' in obj && typeof obj.price === 'number' && obj.price > 0) {
-          return obj.price;
+        const priceFields = ['price', 'kitPrice', 'discountPrice', 'salePrice', 'finalPrice', 'currentPrice', 'sellingPrice'];
+        
+        for (const field of priceFields) {
+          if (field in obj && typeof obj[field] === 'number' && obj[field] > 0) {
+            return obj[field];
+          }
         }
 
-        // Check Kit-specific price fields
-        if ('kitPrice' in obj && typeof obj.kitPrice === 'number' && obj.kitPrice > 0) {
-          return obj.kitPrice;
-        }
-
-        // Check for discount price (prioritize over original price)
-        if (obj.discountPrice && typeof obj.discountPrice === 'number' && obj.discountPrice > 0) {
-          return obj.discountPrice;
-        }
-
-        // Check for sale price
-        if (obj.salePrice && typeof obj.salePrice === 'number' && obj.salePrice > 0) {
-          return obj.salePrice;
-        }
-
-        // Check for finalPrice
-        if (obj.finalPrice && typeof obj.finalPrice === 'number' && obj.finalPrice > 0) {
-          return obj.finalPrice;
-        }
-
-        // Check for currentPrice
-        if (obj.currentPrice && typeof obj.currentPrice === 'number' && obj.currentPrice > 0) {
-          return obj.currentPrice;
-        }
-
-        // Check for sellingPrice
-        if (obj.sellingPrice && typeof obj.sellingPrice === 'number' && obj.sellingPrice > 0) {
-          return obj.sellingPrice;
-        }
-
-        // Try extracting from nested price objects
         const nestedPrice = obj.pricing || obj.priceInfo || obj.cost || obj.priceData;
         if (typeof nestedPrice === 'number' && nestedPrice > 0) {
           return nestedPrice;
@@ -151,31 +107,18 @@ const CartPage: NextPage = () => {
         return 0;
       };
 
-      // Try to extract price from the found product first
       if (product) {
         const productPrice = extractPriceFromObject(product);
-        if (productPrice > 0) {
-          return productPrice;
-        }
+        if (productPrice > 0) return productPrice;
       }
 
-      // Try to extract price from the cart item itself
       const itemPrice = extractPriceFromObject(item);
-      if (itemPrice > 0) {
-        return itemPrice;
-      }
+      if (itemPrice > 0) return itemPrice;
 
-      // Final fallback - check if item has a direct price property
       if (typeof item.price === 'number' && item.price > 0) {
         return item.price;
       }
 
-      console.warn("Could not extract valid price for cart item:", {
-        productId: item.productId,
-        itemName: item.name,
-        item: item
-      });
-      
       return 0;
     } catch (err) {
       console.error("Price extraction error:", err);
@@ -206,6 +149,11 @@ const CartPage: NextPage = () => {
     }
   };
 
+  // Helper function to get unique identifier for item
+  const getItemKey = (item: any): string => {
+    return item.cartItemId || item.key || item.id || item.productId || Math.random().toString();
+  };
+
   return (
     <>
       <Breadcrumb parent="home" title="cart" />
@@ -214,7 +162,7 @@ const CartPage: NextPage = () => {
           {cartItems && cartItems.length > 0 ? (
             <>
               {/* Desktop Table View */}
-              <div className="row d-none d-md-block">
+              <div className="row d-none d-lg-block">
                 <div className="col-sm-12">
                   <table className="table cart-table table-responsive-xs">
                     <thead>
@@ -231,9 +179,10 @@ const CartPage: NextPage = () => {
                       {cartItems.map((item: any, index: number) => {
                         const price = getPrice(item);
                         const total = price * value;
+                        const itemKey = getItemKey(item);
 
                         return (
-                          <tr key={item.key || index}>
+                          <tr key={itemKey}>
                             <td>
                               <img 
                                 src={item.img?.[0] || "/static/images/placeholder.png"} 
@@ -245,11 +194,12 @@ const CartPage: NextPage = () => {
                                 }}
                               />
                             </td>
-                            <td>{item.name || "Unknown Product"}</td>
                             <td>
-                              {symbol}
-                              {price.toFixed(2)}
+                              <div>
+                                <span>{item.name || "Unknown Product"}</span>
+                              </div>
                             </td>
+                            <td>{symbol}{price.toFixed(2)}</td>
                             <td>
                               <input
                                 type="number"
@@ -259,8 +209,7 @@ const CartPage: NextPage = () => {
                                 className="form-control input-number"
                                 style={{
                                   width: "80px",
-                                  borderColor:
-                                    quantityErrorKey === item.key ? "red" : undefined,
+                                  borderColor: quantityErrorKey === item.key ? "red" : undefined,
                                 }}
                               />
                             </td>
@@ -276,10 +225,7 @@ const CartPage: NextPage = () => {
                                 <i className="ti-close"></i>
                               </a>
                             </td>
-                            <td>
-                              {symbol}
-                              {(price * (item.qty || 1) * value).toFixed(2)}
-                            </td>
+                            <td>{symbol}{(price * (item.qty || 1) * value).toFixed(2)}</td>
                           </tr>
                         );
                       })}
@@ -291,10 +237,7 @@ const CartPage: NextPage = () => {
                       <tr>
                         <td>Total Price:</td>
                         <td>
-                          <h2>
-                            {symbol}
-                            {getSubtotal().toFixed(2)}
-                          </h2>
+                          <h2>{symbol}{getSubtotal().toFixed(2)}</h2>
                         </td>
                       </tr>
                     </tfoot>
@@ -302,130 +245,151 @@ const CartPage: NextPage = () => {
                 </div>
               </div>
 
-              {/* Mobile Card View */}
-              <div className="row d-block d-md-none">
+              {/* Mobile and Tablet View */}
+              <div className="row d-block d-lg-none">
                 <div className="col-12">
-                  <div className="mobile-cart-items">
-                    {cartItems.map((item: any, index: number) => {
-                      const price = getPrice(item);
-                      const itemTotal = price * (item.qty || 1) * value;
+                  {cartItems.map((item: any, index: number) => {
+                    const price = getPrice(item);
+                    const itemTotal = price * (item.qty || 1) * value;
+                    const itemKey = getItemKey(item);
 
-                      return (
-                        <div key={item.key || index} className="mobile-cart-item">
-                          <div className="cart-item-card">
-                            <div className="cart-item-header">
-                              <div className="cart-item-image">
-                                <img 
-                                  src={item.img?.[0] || "/static/images/placeholder.png"} 
-                                  alt="cart" 
-                                  className="img-fluid"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = "/static/images/placeholder.png";
+                    return (
+                      <div key={itemKey} className="card mb-3 shadow-sm">
+                        <div className="card-body">
+                          {/* Top Row - Image, Name, Remove Button */}
+                          <div className="row align-items-center mb-3">
+                            <div className="col-3 col-sm-2">
+                              <img 
+                                src={item.img?.[0] || "/static/images/placeholder.png"} 
+                                alt="cart" 
+                                className="img-fluid rounded"
+                                style={{ width: '100%', maxWidth: '60px', height: '60px', objectFit: 'cover' }}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "/static/images/placeholder.png";
+                                }}
+                              />
+                            </div>
+                            <div className="col-6 col-sm-7">
+                              <h6 className="mb-1 font-weight-bold">{item.name || "Unknown Product"}</h6>
+                              <p className="text-muted mb-0 small">Unit Price: {symbol}{price.toFixed(2)}</p>
+                            </div>
+                            <div className="col-3 col-sm-3 text-right">
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => removeFromCart(item)}
+                                aria-label="Remove item"
+                              >
+                                <i className="ti-close"></i>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Bottom Row - Quantity and Total */}
+                          <div className="row align-items-center">
+                            <div className="col-6">
+                              <div className="form-group mb-0">
+                                <label className="small text-muted mb-1">Quantity:</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.qty || 1}
+                                  onChange={(e) => handleQtyUpdate(item, e.target.value)}
+                                  className="form-control form-control-sm"
+                                  style={{
+                                    borderColor: quantityErrorKey === item.key ? "red" : undefined,
+                                    maxWidth: '80px'
                                   }}
                                 />
-                              </div>
-                              <div className="cart-item-info">
-                                <h6 className="cart-item-name">{item.name || "Unknown Product"}</h6>
-                                <div className="cart-item-price">
-                                  <span className="price-label">Unit Price: </span>
-                                  <span className="price-value">{symbol}{price.toFixed(2)}</span>
-                                </div>
-                              </div>
-                              <div className="cart-item-remove">
-                                <a
-                                  href="#"
-                                  className="remove-btn"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    removeFromCart(item);
-                                  }}
-                                >
-                                  <i className="ti-close"></i>
-                                </a>
+                                {quantityErrorKey === item.key && (
+                                  <small className="text-danger">Please enter a valid quantity</small>
+                                )}
                               </div>
                             </div>
-                            
-                            <div className="cart-item-controls">
-                              <div className="quantity-section">
-                                <label className="quantity-label">Quantity:</label>
-                                <div className="quantity-input-wrapper">
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    value={item.qty || 1}
-                                    onChange={(e) => handleQtyUpdate(item, e.target.value)}
-                                    className="form-control quantity-input"
-                                    style={{
-                                      borderColor: quantityErrorKey === item.key ? "red" : undefined,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              
-                              <div className="total-section">
-                                <span className="total-label">Total: </span>
-                                <span className="total-value">{symbol}{itemTotal.toFixed(2)}</span>
+                            <div className="col-6 text-right">
+                              <div>
+                                <small className="text-muted d-block">Total</small>
+                                <strong className="h6 mb-0">{symbol}{itemTotal.toFixed(2)}</strong>
                               </div>
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
 
                   {/* Mobile Total Section */}
-                  <div className="mobile-cart-total">
-                    <div className="total-card">
-                      <div className="total-row">
-                        <span className="total-label">Total Price:</span>
-                        <h3 className="total-amount">
-                          {symbol}{getSubtotal().toFixed(2)}
-                        </h3>
+                  <div className="card">
+                    <div className="card-body">
+                      <div className="row">
+                        <div className="col-12 text-center">
+                          <h4 className="mb-0">Total Price: {symbol}{getSubtotal().toFixed(2)}</h4>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="row cart-buttons">
+              {/* Action Buttons - Vertical Stack on Mobile */}
+              <div className="row cart-buttons mt-4">
                 <div className="col-12">
-                  <div className="button-group">
-                    <Link href="/" className="btn btn-outline-primary continue-shopping-btn">
+                  {/* Desktop - Side by Side */}
+                  <div className="d-none d-md-flex justify-content-between">
+                    <Link href="/" className="btn btn-outline-primary btn-lg continue-shopping-btn">
+                      <i className="fa fa-arrow-left mr-2"></i>
                       Continue Shopping
                     </Link>
-                    <Link href="/pages/account/checkout" className="btn btn-primary checkout-btn">
+                    <Link href="/pages/account/checkout" className="btn btn-primary btn-lg checkout-btn">
                       Check Out
+                      <i className="fa fa-arrow-right ml-2"></i>
                     </Link>
+                  </div>
+
+                  {/* Mobile - Vertical Stack */}
+                  <div className="d-block d-md-none">
+                    <div className="d-grid gap-3">
+                      <Link href="/pages/account/checkout" className="btn btn-primary btn-lg checkout-btn-mobile">
+                        Check Out
+                        <i className="fa fa-arrow-right ml-2"></i>
+                      </Link>
+                      <Link href="/" className="btn btn-outline-primary btn-lg continue-shopping-btn-mobile">
+                        <i className="fa fa-arrow-left mr-2"></i>
+                        Continue Shopping
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
             </>
           ) : (
             <div className="col-sm-12 empty-cart-cls text-center">
-              <img
-                src="/static/images/icon-empty-cart.png"
-                className="img-fluid mb-4 empty-cart-image"
-                alt="empty cart"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                }}
-              />
-              <h3 className="empty-cart-title">
-                <strong>Your Cart is Empty</strong>
-              </h3>
-              <h4 className="empty-cart-subtitle">Explore more and shortlist some items.</h4>
-              <Link href="/" className="btn btn-primary mt-4 continue-shopping-empty">
-                Continue Shopping
-              </Link>
+              <div className="empty-cart-content">
+                <img
+                  src="/static/images/icon-empty-cart.png"
+                  className="img-fluid mb-4 empty-cart-image"
+                  alt="empty cart"
+                  style={{ maxWidth: '200px' }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                  }}
+                />
+                <h3 className="empty-cart-title mb-3">
+                  <strong>Your Cart is Empty</strong>
+                </h3>
+                <p className="empty-cart-subtitle text-muted mb-4">
+                  Explore more and shortlist some items.
+                </p>
+                <Link href="/" className="btn btn-primary btn-lg continue-shopping-empty">
+                  <i className="fa fa-shopping-cart mr-2"></i>
+                  Continue Shopping
+                </Link>
+              </div>
             </div>
           )}
         </div>
       </section>
-
-
     </>
   );
 };

@@ -13,11 +13,13 @@ interface CartStore {
   cartItems: CartItem[];
   cartTotal: number;
   setCartItems: (items: CartItem[]) => void;
-  addToCart: (item: CartItem) => void;
+  addToCart: (item: CartItem) => boolean; // Return boolean to indicate success
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
   emptyCart: () => void;
   calculateTotal: () => void;
+  isProductInCart: (id: string) => boolean; // New function to check if product exists
+  increaseQuantity: (id: string) => void; // New function to increase quantity of existing item
 }
  
 export const useCartStore = create<CartStore>()(
@@ -30,21 +32,33 @@ export const useCartStore = create<CartStore>()(
         set({ cartItems: items });
         get().calculateTotal();
       },
+
+      isProductInCart: (id) => {
+        return get().cartItems.some(item => item.id === id);
+      },
+
+      increaseQuantity: (id) => {
+        const updatedItems = get().cartItems.map(item =>
+          item.id === id ? { ...item, qty: item.qty + 1 } : item
+        );
+        set({ cartItems: updatedItems });
+        get().calculateTotal();
+      },
  
       addToCart: (item) => {
         const existing = get().cartItems;
-        const index = existing.findIndex(i => i.id === item.id);
+        const existingItem = existing.find(i => i.id === item.id);
  
-        let updatedItems;
-        if (index >= 0) {
-          updatedItems = [...existing];
-          updatedItems[index].qty += item.qty;
-        } else {
-          updatedItems = [...existing, item];
+        if (existingItem) {
+          // Product already exists, don't add duplicate
+          return false;
         }
- 
+
+        // Product doesn't exist, add it
+        const updatedItems = [...existing, item];
         set({ cartItems: updatedItems });
         get().calculateTotal();
+        return true;
       },
  
       removeFromCart: (id) => {
@@ -87,6 +101,12 @@ export const useCartStore = create<CartStore>()(
         cartItems: state.cartItems,
         cartTotal: state.cartTotal
       }),
+      onRehydrateStorage: () => (state) => {
+        // Recalculate total after rehydration
+        if (state) {
+          state.calculateTotal();
+        }
+      },
     }
   )
 );
