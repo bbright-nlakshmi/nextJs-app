@@ -9,6 +9,7 @@ import { API } from "@/app/services/api.service";
 
 const UserProfile: NextPage = () => {
   const [openAccount, setOpenAccount] = useState(false);
+  const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpArray, setOtpArray] = useState<string[]>(Array(6).fill(""));
   const [otpSent, setOtpSent] = useState(false);
@@ -105,6 +106,18 @@ const UserProfile: NextPage = () => {
           <Form className="userForm">
             {!user && (
               <>
+                <FormGroup>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="form-control d-inherit"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </FormGroup>
+
                 <FormGroup>
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
