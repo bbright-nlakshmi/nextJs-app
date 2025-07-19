@@ -53,31 +53,31 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
               <TabProduct description={productData.description ? productData.description[0].description : ''} />
             </Col>
         <Col
-              xl="3"
+              sm="12" lg="12" xs="12" xl="3"
               className="collection-filter"
               style={{
                 left: filterOpen ? "-15px" : "",
               }}>
-              <Row>
+                  <Row>
                 {/* <Sidebar /> */}
-                <Col lg="6">
+                <Col sm="12" lg="6" xs="12" xl="12" >
                   <ProductService />
                 </Col>
-                <Col lg="6">
+                <Col sm="12" lg="6" xs="12" xl="12" >
                   <NewProduct />
                 </Col>
               </Row>
             </Col>
           </Row>
-          <Row>
+          {/* <Row>
             <Col
               lg="12"
-              className="collection-filter d-xl-none d-lg-none"
+              className="collection-filter "
               style={{
                 left: filterOpen ? "-15px" : "",
               }}>
               <Row>
-                {/* <Sidebar /> */}
+                
                 <Col lg="6">
                   <ProductService />
                 </Col>
@@ -88,7 +88,7 @@ const LeftSidebarPage: NextPage<LeftSidebar> = ({ pathId }) => {
             </Col>
 
 
-          </Row>
+          </Row> */}
         </div>
       )}
     </div>
