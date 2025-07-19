@@ -44,9 +44,9 @@ const FooterSection: React.FC = () => {
                       )}
                     </div>
                     <div className="footer-detail">
-                      <p>
+                      {/* <p>
                         Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old.
-                      </p>
+                      </p> */}
                       <ul className="paymant-bottom">
                         {[1, 2, 3, 4, 5].map((num) => (
                           <li key={num}>
@@ -106,9 +106,7 @@ const FooterSection: React.FC = () => {
                                 </div>
                                 <div className="footer-contant">
                                   <ul>
-                                    <li><a onClick={() => router.push("/pages/about-us")} style={{ cursor: "pointer" }}>About Us</a></li>
-                                    <li><a href="#">contact us</a></li>
-                                    <li><a href="#">about us</a></li>
+                                    <li><a onClick={() => router.push("/pages/about-us")} style={{ cursor: "pointer" }}>About Us</a></li>                                                                        
                                     <li><a onClick={() => router.push("/pages/ContactUs")} style={{ cursor: "pointer" }}>contact us</a></li>
                                     <li><a onClick={() => router.push("/pages/terms")} style={{ cursor: "pointer" }}>terms & conditions</a></li>
                                     <li><a onClick={() => router.push("/pages/privacy")} style={{ cursor: "pointer" }}>privacy Policy</a></li>
@@ -126,9 +124,7 @@ const FooterSection: React.FC = () => {
                                 </div>
                                 <div className="footer-contant">
                                   <ul>
-                                    <li><a onClick={() => router.push("/pages/store")} style={{ cursor: "pointer" }}>Store Location</a></li>
-                                    <li><a href="#">my account</a></li>
-                                    <li><a href="#">store location</a></li>
+                                    <li><a onClick={() => router.push("/pages/store")} style={{ cursor: "pointer" }}>Store Location</a></li>                                                                        
                                     <li><a onClick={() => router.push("/pages/account/profile")} style={{ cursor: "pointer" }}>my account</a></li>
                                     <li><a href="#">orders tracking</a></li>
                                     {/* <li><a href="#">size guide</a></li> */}

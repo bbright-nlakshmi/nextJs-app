@@ -114,17 +114,18 @@ const ContactUsPage: NextPage = () => {
 
             <Col xl="6" className="map">
               <div className="theme-card">
-                {storeCoords ? (
+                {/* {storeCoords ? ( */}
                   <iframe
-                    src={`https://www.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&z=15&output=embed`}
+                    // src={`https://www.google.com/maps?q=${storeCoords.lat},${storeCoords.lng}&z=15&output=embed`}
+                    src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1605.811957341231!2d25.45976406005396!3d36.3940974010114!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin!4v1550912388321"
                     allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    style={{ width: "100%", height: "400px", border: 0 }}
+                    // loading="lazy"
+                    // referrerPolicy="no-referrer-when-downgrade"
+                    // style={{ width: "100%", height: "400px", border: 0 }}
                   ></iframe>
-                ) : (
-                  <p>Loading map...</p>
-                )}
+                {/* ) : ( */}
+                  {/* <p>Loading map...</p> */}
+                {/* )} */}
               </div>
             </Col>
           </Row>
