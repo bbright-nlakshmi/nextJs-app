@@ -9,7 +9,7 @@ interface MobileSearchProps {
 const MobileSearch: NextPage<MobileSearchProps> = ({ onOpen }) => {
   return (
     <li className="onhover-div mobile-search">
-      <i className="icon-search" onClick={onOpen}></i>
+     <a href="#"><i className="icon-search" onClick={onOpen}></i></a> 
     </li>
   );
 };

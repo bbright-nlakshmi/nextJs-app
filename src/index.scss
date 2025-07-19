@@ -17489,7 +17489,7 @@ li.with-megamenu:hover .rts-megamenu {
 
 @media only screen and (max-width: 767px) {
     .d-sm-none {
-        display: none
+        display: none !important;
     }
 }
 
@@ -28059,9 +28059,6 @@ input[type=checkbox] ~ label:before, input[type=radio] ~ label:before{
 .no-arrow .swiper-button-next,
 .no-arrow .swiper-button-prev {
   display: none;
-}
-.d-lg-none{
- display:none;
 }
 
 /* Ensure consistent product box styling */

@@ -5,7 +5,7 @@ import { NextPage } from "next";
 import { Media } from "reactstrap";
 import { useTranslation } from "react-i18next";
 import { MenuContext } from "@/helpers/menu/MenuContext";
-import {  Category as ICategory, objCache } from "@/app/globalProvider";
+import {  Category, Category as ICategory, objCache } from "@/app/globalProvider";
 import { centralDataCollector } from "@/app/services/central_data_control";
 import { useRouter } from "next/navigation";
 

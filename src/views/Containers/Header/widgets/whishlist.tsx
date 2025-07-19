@@ -219,9 +219,9 @@ const Wishlist: NextPage = () => {
         <a>
           <i className="icon-heart"></i>
           <div className="cart-item">
-            <div>
+            {/* <div>
               {totalItem} {t("item")} <span>{t("wishlist")}</span>
-            </div>
+            </div> */}
           </div>
           <div className="item-count-contain">
                       {totalItem}

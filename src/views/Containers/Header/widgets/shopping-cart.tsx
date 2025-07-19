@@ -15,7 +15,7 @@ const ShoppingCart = ({ layout }: { layout?: string }) => {
         <li className="mobile-cart cart-hover-div">
           <Link href="/pages/account/cart">
             <span className="cart-item">{itemCount}</span>
-            <i className="icon-shopping-cart"></i>
+           <a href="#"> <i className="icon-shopping-cart"></i></a>
           </Link>
         </li>
       ) : (
@@ -24,8 +24,8 @@ const ShoppingCart = ({ layout }: { layout?: string }) => {
             <div className="cart">
               <span className="cart-product">{itemCount}</span>
               <ul>
-                <li className="mobile-cart">
-                  <i className="icon-shopping-cart"></i>
+                <li className="mobile-cart ">
+                 <a href="#"> <i className="icon-shopping-cart"></i></a>
                 </li>
               </ul>
             </div>
