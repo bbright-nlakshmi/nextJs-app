@@ -24712,7 +24712,7 @@ ul.rating-star{
 }
 
 .rts-product-details-section .details-product-area .product-catagory {
-    background: var(--color-primary);
+    background: var(--theme-color1);
     padding: 0 10px;
     border-radius: 4px;
     font-size: 14px;
@@ -27647,7 +27647,7 @@ select {
   width: 70px;
   height: 30px;
   text-align: center;
-  border: 1px solid green;
+  border: 1px var(--theme-color1) solid;
   border-radius: 6px;
   font-size: 14px;
   padding: 0;
@@ -27655,8 +27655,15 @@ select {
   color: #000;
 }
 .quantity-input:focus {
-  outline: 1px solid green;
+  outline: 1px var(--theme-color1) solid;
   box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+}
+/* Always show number input arrows */
+.quantity-input::-webkit-inner-spin-button,
+.quantity-input::-webkit-outer-spin-button {
+  -webkit-appearance: inner-spin-button !important;     
+  opacity: 10 !important;
+  display: inline-block !important;
 }
 @media only screen and (max-width: 991px) {
   .swiper-slide {
@@ -27689,8 +27696,8 @@ select {
 /* button base style */
 .custom-product-card button {
   background-color: #fff;
-  border: 1px solid green;
-  color: green;
+  border: 1px var(--theme-color1) solid;
+  color: var(--theme-color1);
   height: 40px;
   width: 100px;
   font-size: 14px;
@@ -27736,7 +27743,7 @@ select {
 }
 
 .custom-product-card button:hover {
-  background-color: --var(--color-primary);
+  background-color: var(--theme-color1);
 }
 .add-to-cart-button i {
   margin-right: 4px;

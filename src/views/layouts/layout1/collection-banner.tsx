@@ -1,3 +1,4 @@
+"use client";
 import { NextPage } from "next";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -8,7 +9,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/grid";
-import { Category, Product } from "@bbright-nlakshmi/rupeecom-services";
+import { Category, Product } from "@app/globalProvider";
 
 import {useRouter} from "next/navigation";
 

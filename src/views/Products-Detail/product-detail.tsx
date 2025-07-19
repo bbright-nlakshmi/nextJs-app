@@ -8,7 +8,6 @@ import { CartContext } from "@/helpers/cart/cart.context";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import ImageSwatch from "./common/ImageSwatch";
-import router, { useRouter } from "next/router";
 import { Discount, Product, searchController } from "@/app/globalProvider";
 
 interface ProductRightProps {
@@ -89,13 +88,15 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
     <div className="product-right contents">
       <div className="product-status">
         <span className="product-catagory">{item.categoryName}</span>
-        <ul className="rating-star">
-          <i className="fa fa-star"></i>
-          <i className="fa fa-star"></i>
-          <i className="fa fa-star"></i>
-          <i className="fa fa-star"></i>
-          <i className="fa fa-star"></i>
-        </ul>
+        <div className="d-flex align-items-center gap-2">
+          <ul className="rating-star m-2 p-0">
+              <i className="fa fa-star text-warning"></i>
+              <i className="fa fa-star text-warning"></i>
+              <i className="fa fa-star text-warning"></i>
+              <i className="fa fa-star text-warning"></i>
+              <i className="fa fa-star-o text-warning"></i>
+            </ul>
+          </div>
       </div>
       <h2>{item.name}</h2>
       {item.discount ? <h4>
@@ -215,14 +216,14 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
       {/* {item.description[0]} */}
       {/* </p> */}
       {/* </div> */}
-      {/* <div className="product-uniques">
-        <span className="sku product-unipue mb--10"><strong>SKU:</strong> BO1D0MX8SJ</span>
-        <span className="catagorys product-unipue mb--10"><strong>Categories:</strong> T-Shirts, Tops, Mens</span>
-        <span className="tags product-unipue mb--10"><strong>Tags:</strong> fashion, t-shirts, Men</span>
+      <div className="product-uniques">
+        {/* <span className="sku product-unipue mb--10"><strong>SKU:</strong> BO1D0MX8SJ</span> */}
+        <span className="catagorys product-unipue mb--10"><strong>Categories:</strong></span>
+        <span className="tags product-unipue mb--10 "><strong>Tags:</strong>{item.tags.join(", ")}</span>
         <span className="tags product-unipue mb--10"><strong>LIFE:</strong> 6 Months</span>
         <span className="tags product-unipue mb--10"><strong>Type:</strong> original</span>
-        <span className="tags product-unipue mb--10"><strong>Category:</strong> Beverages, Dairy & Bakery</span>
-      </div> */}
+        <span className="tags product-unipue mb--10"><strong>BrandName:</strong>{item.brandName}</span>
+      </div>
       <div className="border-product">
         <div className="product-icon">
           <ul className="product-social">

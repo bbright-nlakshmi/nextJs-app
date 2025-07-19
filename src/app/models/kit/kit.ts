@@ -8,12 +8,10 @@ interface OrderKitItems {
   inKitCount: number;
   inKitCostPrice: number;
 }
-
 const TAX_CONDITION_LESS_THAN_OR_EQUAL_TO = 'less_than_or_equal_to';
 const TAX_CONDITION_MORE_THAN_OR_EQUAL_TO = 'more_than_or_equal_to';
 const TAX_CONDITION_IN_BETWEEN = 'in_between';
 const INCLUSIVE_TAX = 'inclusive';
-
 export class Kit {
   id: string;
   name: string;
@@ -43,7 +41,6 @@ export class Kit {
   discount: Discount | null;
   kitItems: KitProduct[];
   tags: string[];
-
   constructor({
     id,
     name,
@@ -132,7 +129,6 @@ export class Kit {
     this.kitItems = kitItems;
     this.tags = tags;
   }
-
   static copyWith(kit: Kit): Kit {
     return new Kit({
       id: kit.id,
@@ -165,7 +161,6 @@ export class Kit {
       tags: [...kit.tags],
     });
   }
-
   toMap(): Record<string, any> {
     return {
       id: this.id,
@@ -243,7 +238,6 @@ export class Kit {
       isAvailable: map.is_available || false,
     });
   }
-
   static emptyKit(): Kit {
     return new Kit({
       id: '',
@@ -276,7 +270,6 @@ export class Kit {
       isAvailable: false,
     });
   }
-
   //getOrderKitItems(): OrderKitItems[] {
     //return this.getKitProducts();
     // return this.getKitProducts().map(item => ({
@@ -467,7 +460,6 @@ export class Kit {
     // Note: You'll need to implement Get.find<UserController>() equivalent in your Next.js app
     const userPhoneNumber = ''; // Replace with actual user phone number
     if (!this.discount) return false;
-
     const isExcluded = this.discount.isDiscountExcludedToPhoneNumber(userPhoneNumber);
     const isActive = this.discount.active;
     // Note: You'll need to implement TrackDiscount and DoneDiscount equivalents
@@ -482,7 +474,6 @@ export class Kit {
     const discount = this.getDiscountAmount({ quantity });
     return price - discount;
   }
-
   getDiscountAmount({ quantity = 0 }: { quantity?: number } = {}): number {
     if (!this.isDiscount() || this.isDiscountExpired() || !this.isDiscountActive()) {
       return 0;
