@@ -8,12 +8,12 @@ import { Category, CategoryProducts, objCache, searchController } from "@/app/gl
 import { useSearchParams } from "next/navigation";
 import { FaSlidersH } from "react-icons/fa";
 import NewProduct from "@/views/Collections/NewProduct";
-
+ 
 const NoSidebar: NextPage = () => {
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("id");
   const categoryType = searchParams.get("type");
-
+ 
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(150);
@@ -23,9 +23,9 @@ const NoSidebar: NextPage = () => {
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-
+ 
   const toggleMobileFilter = () => setIsMobileFilterOpen(prev => !prev);
-
+ 
   useEffect(() => {
     const initialCategory = objCache.allCategories.find(cat => cat.id === categoryId);
     if (!hasInitialized) {
@@ -38,7 +38,7 @@ const NoSidebar: NextPage = () => {
         updatePriceRangeFromFilteredProducts(products);
       }
     }
-
+ 
     objCache.on("updateAllCategories", (data: Category[]) => {
       setAllCategories(data);
       setSelectedCategories((prevSelected) => {
@@ -53,7 +53,7 @@ const NoSidebar: NextPage = () => {
       });
     });
   }, []);
-
+ 
   const handlePriceFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const filtered = selectedCatgeoryProducts.filter(prod => {
@@ -63,29 +63,29 @@ const NoSidebar: NextPage = () => {
     });
     setFilteredProducts(filtered);
   };
-
+ 
   const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     if (!isNaN(val)) setMinPrice(val);
   };
-
+ 
   const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     if (!isNaN(val)) setMaxPrice(val);
   };
-
+ 
   const handleCategoryChange = (category: Category) => {
     const updatedCategories = selectedCategories.find(cat => cat.id === category.id)
       ? selectedCategories.filter(cat => cat.id !== category.id)
       : [...selectedCategories, category];
-
+ 
     setSelectedCategories(updatedCategories);
     const updatedProducts = getFilteredByCategoryProducts(updatedCategories);
     setselectedCatgeoryProducts(updatedProducts);
     setFilteredProducts(updatedProducts);
     updatePriceRangeFromFilteredProducts(updatedProducts);
   };
-
+ 
   const getFilteredByCategoryProducts = (catselected: Category[]): CategoryProducts[] => {
     const catProds: CategoryProducts[] = [];
     catselected.forEach(cat => {
@@ -93,7 +93,7 @@ const NoSidebar: NextPage = () => {
     });
     return catProds;
   };
-
+ 
   const updatePriceRangeFromFilteredProducts = (products: CategoryProducts[]) => {
     const prices: number[] = products
       .map(prod => {
@@ -101,7 +101,7 @@ const NoSidebar: NextPage = () => {
         return searchController.getDetails(id, "getPrice");
       })
       .filter((p): p is number => typeof p === "number" && !isNaN(p));
-
+ 
     if (prices.length > 0) {
       setMinPrice(Math.min(...prices));
       setMaxPrice(Math.max(...prices));
@@ -110,9 +110,9 @@ const NoSidebar: NextPage = () => {
       setMaxPrice(150);
     }
   };
-
+ 
   //const allBrands = ["Frito Lay", "Nespresso", "Oreo", "Quaker", "Welch's"];
-
+ 
   const handleBrandChange = (brand: string) => {
     setSelectedBrands(prev =>
       prev.includes(brand)
@@ -120,7 +120,7 @@ const NoSidebar: NextPage = () => {
         : [...prev, brand]
     );
   };
-
+ 
   const renderFilterSidebar = () => (
     <>
       {/* Price Filter */}
@@ -147,13 +147,13 @@ const NoSidebar: NextPage = () => {
               onChange={(e) => setMaxPrice(parseInt(e.target.value, 10))}
             />
             <div className="filter-value-min-max">
-              <span>Price: ${minPrice} — ${maxPrice}</span>
+              <span>Price: ₹{minPrice} — ₹{maxPrice}</span>
               <button type="submit" className="rts-btn btn-primary">Filter</button>
             </div>
           </form>
         </div>
       </div>
-
+ 
       {/* Categories */}
       <div className="single-filter-box">
         <h5 className="title">Product Categories</h5>
@@ -173,7 +173,7 @@ const NoSidebar: NextPage = () => {
           </div>
         </div>
       </div>
-
+ 
       {/* Brands */}
       {/* <div className="single-filter-box">
         <h5 className="title">Select Brands</h5>
@@ -193,14 +193,14 @@ const NoSidebar: NextPage = () => {
           </div>
         </div>
       </div> */}
-
+ 
       {/* New Products */}
       <div className="sidebar-new-product mt-4">
         <NewProduct />
       </div>
     </>
   );
-
+ 
   return (
     <Layout1>
       {/* Mobile Filter Toggle */}
@@ -209,7 +209,7 @@ const NoSidebar: NextPage = () => {
           <FaSlidersH className="me-2" /> Filter
         </button>
       </div>
-
+ 
       <div className="shop-grid-sidebar-area rts-section-gap">
         <div className="container">
           <div className="row g-0">
@@ -234,7 +234,7 @@ const NoSidebar: NextPage = () => {
           </div>
         </div>
       </div>
-
+ 
       {/* Mobile Sidebar */}
       <div
         className={`mobile-sidebar-overlay ${isMobileFilterOpen ? "open" : ""}`}
@@ -251,5 +251,6 @@ const NoSidebar: NextPage = () => {
     </Layout1>
   );
 };
-
+ 
 export default NoSidebar;
+ 
