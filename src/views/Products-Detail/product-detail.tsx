@@ -10,6 +10,7 @@ import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import ImageSwatch from "./common/ImageSwatch";
 import router, { useRouter } from "next/router";
 import { Discount, Product, searchController } from "@/app/globalProvider";
+
 interface ProductRightProps {
   item: Product | Discount;
   changeColorVar: Function | any;
@@ -53,9 +54,33 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
       setStock("Out of Stock !");
     }
   };
+  
   const changeQty = (e: any) => {
-    setQty(parseInt(e.target.value));
+    const newQty = parseInt(e.target.value);
+    if (newQty >= 1 && !isNaN(newQty)) {
+      setQty(newQty);
+      // Check stock availability
+      if (item.stock && newQty > item.stock) {
+        setStock("Out of Stock !");
+      } else {
+        setStock("InStock");
+      }
+    }
   };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Check stock before adding
+    if (item.stock && qty > item.stock) {
+      setStock("Out of Stock !");
+      return;
+    }
+    
+    // Add to cart with the selected quantity
+    addToCart(item, qty);
+  };
+  
   // const { id } = router.query; 
   
   const uniqueColor: any[] = [];
@@ -173,10 +198,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({ item, changeColorVar, bund
           data-toggle="modal"
           data-target="#addtocart"
           className="btn btn-normal"
-          onClick={(e) => {
-            e.preventDefault();
-            addToCart(item);
-          }}>
+          onClick={handleAddToCart}>
           add to cart
         </a>
         <a href="/pages/account/checkout" className="btn btn-normal">

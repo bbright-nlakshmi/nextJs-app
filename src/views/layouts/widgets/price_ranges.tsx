@@ -203,7 +203,6 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
           <div className="custom-container title-area-between">
             <h2 className="title-left">
               {getHeaderText()}
-              <span className="product-count ml-2">({filteredProducts.length})</span>
             </h2>
           </div>
           <div className="container">
