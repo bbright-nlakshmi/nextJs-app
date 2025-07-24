@@ -7,43 +7,17 @@ import { objCache, Product } from "@/app/globalProvider";
 
 const bestSellerSetting = {
   dots: false,
-  infinite: true,
+  infinite: false,
   speed: 300,
   slidesToShow: 1,
   slidesToScroll: 1,
-  arrows: true,
-  autoplay: true,
-  autoplaySpeed: 2000,
-  pauseonHover: true,
-
   responsive: [
-    {
-      breakpoint: 1400,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        infinite: true,
-        pauseOnHover: true,
-      },
-    },
     {
       breakpoint: 1200,
       settings: {
         slidesToShow: 1,
         slidesToScroll: 1,
         infinite: true,
-        pauseonHover: true,
-      },
-    },
-    {
-      breakpoint: 768,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        infinite: true,
-        autoplay: true,
-        autoplaySpeed: 2000,
-        pauseOnHover: true,
       },
     },
   ],
@@ -92,21 +66,20 @@ const NewProduct: React.FC = () => {
             <div key={groupIndex}>
               {group.map((product) => (
                 <div
-                  className="media cursor-pointer product-thumbnail flex-shrink-0 img.align-self-center p-3"
+                  className="media cursor-pointer"
                   key={product.id}
                   onClick={() => handleProductClick(product.id)}
                   style={{ cursor: "pointer" }}
                 >
                   <a>
                     <Media
-                      className="img-fluid product-thumbnail.img p-2 h-100"
+                      className="img-fluid"
                       src={product.img[0]}
                       alt={product.name}
                     />
                   </a>
-                  <div className="media-body align-self-center ms-4 ">                    
-                    <h6 className="mb-2">{product.name}</h6>
-                    <div className="rating-star mb-2">
+                  <div className="media-body align-self-center">
+                    <div className="rating-star">
                       {[...Array(5)].map((_, i) => (
                         <i
                           key={i}
@@ -121,7 +94,8 @@ const NewProduct: React.FC = () => {
                         ></i>
                       ))}
                     </div>
-                    <h5 className="mb-0 ">${product.sellingPrice.toFixed(2)}</h5>
+                    <h6>{product.name}</h6>
+                    <h4>${product.sellingPrice.toFixed(2)}</h4>
                   </div>
                 </div>
               ))}

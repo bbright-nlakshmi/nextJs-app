@@ -7,7 +7,7 @@ import { Skeleton } from "../../common/skeleton";
 import { CartContext } from "../../helpers/cart/cart.context";
 import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import { CompareContext } from "../../helpers/compare/compare.context";
-import { appConfig, objCache, Product, searchController } from "@/app/globalProvider";
+import { appConfig, objCache, Product } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
@@ -50,16 +50,6 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({
       objCache.off("updateAllProducts", handleUpdateAllProducts);
     };
   }, [categoryId, productId]);
-  
-const handleAddToCart = (item: any, qty = 1) => {
-    const price = searchController.getDetails(item.productId, "getPrice");
-    const cartItem = {
-      ...item,
-      price: price,
-      id: item.productId,
-    };
-    addToCart(cartItem, qty);
-  };
 
   return (
     <section className="section-big-py-space ratio_asos ">
@@ -74,7 +64,7 @@ const handleAddToCart = (item: any, qty = 1) => {
                 <Swiper
                   spaceBetween={20}
                   modules={[Navigation, Pagination, Autoplay]}
-                  autoplay={{ delay: 1000, pauseOnMouseEnter: true }}
+                  autoplay={{ delay: 1000, disableOnInteraction: true }}
                   grabCursor={true}
                   simulateTouch={true}
                   allowTouchMove={true}
@@ -89,7 +79,7 @@ const handleAddToCart = (item: any, qty = 1) => {
                           data={item}
                           item={item}
                           price={item.getPrice()}
-                          addCart={handleAddToCart}
+                          addCart={() => addToCart(item)}
                           addCompare={() => addToCompare(item)}
                           addWish={() => addToWish(item)}
                           hoverEffect={"icon-inline"}

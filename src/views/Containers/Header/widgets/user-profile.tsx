@@ -257,12 +257,7 @@ const UserProfile: NextPage = () => {
         </a>
       </li>
 
-      <div
-        id="myAccount"
-        className={`add_to_cart right account-bar ${
-          openAccount ? "open-side" : ""
-        }`}
-      >
+      <div id="myAccount" className={`add_to_cart right account-bar ${openAccount ? "open-side" : ""}`}>
         <a href="#" className="overlay" onClick={toggleAccount}></a>
         <div className="cart-inner">
           <div className="cart_top">
@@ -331,20 +326,10 @@ const UserProfile: NextPage = () => {
                 />
               </FormGroup>
 
-<<<<<<< HEAD
               {otpSent && (
                 <>
                   <Label className="form-label">Enter OTP</Label>
                     <div className="d-flex justify-content-center mb-3 otp-inputs" style={{ gap: "8px" }}>
-=======
-                {otpSent && (
-                  <>
-                    <Label className="form-label">Enter OTP</Label>
-                    <div
-                      className="d-flex justify-content-center mb-3 otp-inputs"
-                      style={{ gap: "8px" }}
-                    >
->>>>>>> 6647b515c3c79404cd96f6e3037acb6a227366de
                       {otpArray.map((val, i) => (
                         <input
                           key={i}

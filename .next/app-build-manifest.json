@@ -17,23 +17,22 @@
       "static/css/app/(MainBody)/page.css",
       "static/chunks/app/(MainBody)/page.js"
     ],
-    "/(MainBody)/pages/categories/page": [
+    "/(MainBody)/pages/account/cart/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/(MainBody)/pages/categories/page.css",
-      "static/chunks/app/(MainBody)/pages/categories/page.js"
+      "static/css/app/(MainBody)/pages/account/cart/page.css",
+      "static/chunks/app/(MainBody)/pages/account/cart/page.js"
     ],
-    "/(MainBody)/pages/search/page": [
+    "/(MainBody)/collections/no-sidebar/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/(MainBody)/pages/search/page.css",
-      "static/chunks/app/(MainBody)/pages/search/page.js"
+      "static/css/app/(MainBody)/collections/no-sidebar/page.css",
+      "static/chunks/app/(MainBody)/collections/no-sidebar/page.js"
     ],
-    "/(MainBody)/product-details/[id]/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/(MainBody)/product-details/[id]/page.css",
-      "static/chunks/app/(MainBody)/product-details/[id]/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

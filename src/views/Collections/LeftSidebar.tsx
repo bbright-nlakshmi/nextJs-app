@@ -18,7 +18,7 @@ const LeftSidebarCollection: NextPage = () => {
           left: leftSidebarOpen ? "-15px" : "",
         }}
         id="filter"
-        className="collection-filter category-page-side w-100">
+        className="collection-filter category-page-side">
         <div className="sticky-sidebar">
           <Sidebar />
           <NewProduct />

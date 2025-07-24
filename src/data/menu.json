@@ -1,25 +1,5 @@
 [
   {
-    "path": "/#",
-    "title": "home",
-    "type": "link"
-  },
-  {
-    "path": "/pages/about-us",
-    "title": "about us",
-    "type": "link"
-  },
-  {
-    "path": "/pages/search",
-    "title": "search",
-    "type": "link"
-  },
-  {
-    "path": "/pages/order-history",
-    "title": "order history",
-    "type": "link"
-  },
-  {
     "title": "Account",
     "type": "sub",
     "children": [
@@ -65,5 +45,20 @@
         "type": "link"
       }
     ]
+  },
+  {
+    "path": "/pages/about-us",
+    "title": "about us",
+    "type": "link"
+  },
+  {
+    "path": "/pages/search",
+    "title": "search",
+    "type": "link"
+  },
+  {
+    "path": "/pages/order-history",
+    "title": "order history",
+    "type": "link"
   }
 ]

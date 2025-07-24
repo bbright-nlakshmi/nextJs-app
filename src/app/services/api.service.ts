@@ -33,11 +33,10 @@ import {
   TermsAndConditions,
   UserModel,
 } from "@/app/globalProvider";
-import { ClientStorage } from "@/utils/storage";
+import { useEffect } from "react";
 
 // Configuration
 const API_BASE_URL = appConfig.apiBaseUrl;
-
 //const API_BASE_URL = "https://devqarupeecomservice.rupeecom.in/v1";
 
 const DEV_API_BASE_URL = API_BASE_URL;
@@ -51,17 +50,8 @@ const storeId = appConfig.defaultStoreId; // Default store ID if not set
 export class APIService {
   private static instance: APIService;
   private axiosInstance = axios.create();
-  private tenantId: string;
-  private storeId: string;
-  baseURL: string;
-  appName: string;
 
   private constructor() {
-    this.tenantId = tenantId;
-    this.storeId = this.getCurrentStoreId();
-    this.baseURL = DEV_API_BASE_URL;
-    this.appName = appName;
-
     // Initialize axios instance with default config
     this.axiosInstance.interceptors.response.use(
       (response) => response,
@@ -72,18 +62,6 @@ export class APIService {
     );
 
     NotificationService.initialize();
-  }
-
-  public setCurrentStore(storeId: string): void {
-    this.storeId = storeId;
-    ClientStorage.setItem("currentStoreId", storeId);
-  }
-
-  public getCurrentStoreId(): string {
-    return (
-      (this.storeId ? this.storeId : ClientStorage.getItem("currentStoreId")) ||
-      appConfig.defaultStoreId
-    );
   }
 
   public static getInstance(): APIService {
@@ -136,10 +114,10 @@ export class APIService {
   async getBanners(): Promise<BannerModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-banners`,
+        `${DEV_API_BASE_URL}/fetch-banners`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -168,9 +146,9 @@ export class APIService {
   async getAllBanners(): Promise<BannerModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-All-banners`,
+        `${DEV_API_BASE_URL}/fetch-All-banners`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -200,9 +178,9 @@ export class APIService {
   async getBusinessDetails(): Promise<BusinessDetails> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-business`,
+        `${DEV_API_BASE_URL}/get-business`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -220,9 +198,9 @@ export class APIService {
   async getTenantOnboardingStatus(): Promise<string> {
     try {
       const response = await this.get<string>(
-        `${this.baseURL}/get-tenant-onboarding-status`,
+        `${DEV_API_BASE_URL}/get-tenant-onboarding-status`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
       return response;
@@ -236,9 +214,9 @@ export class APIService {
   async getStoresBaseDetails(): Promise<Map<string, StoreBaseDetails>> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-store-base-details`,
+        `${DEV_API_BASE_URL}/fetch-store-base-details`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -265,10 +243,10 @@ export class APIService {
   public async getCurrentStoreBaseDetails(): Promise<StoreBaseDetails> {
     try {
       const response = await this.get<{ data: any }>(
-        `${this.baseURL}/fetch-single-store-base-details`,
+        `${DEV_API_BASE_URL}/fetch-single-store-base-details`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
       const stores = new Map<string, StoreBaseDetails>();
@@ -283,10 +261,10 @@ export class APIService {
   async getStoreAnnounce(): Promise<StoreAnnounce> {
     try {
       const response = await this.get<{ data: any }>(
-        `${this.baseURL}/fetch-store-announce`,
+        `${DEV_API_BASE_URL}/fetch-store-announce`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
       return StoreAnnounce.fromMap(response.data);
@@ -300,10 +278,10 @@ export class APIService {
   async getStorePriceRanges(): Promise<StorePriceRanges> {
     try {
       const response = await this.get<{ data: any }>(
-        `${this.baseURL}/fetch-store-price-ranges`,
+        `${DEV_API_BASE_URL}/fetch-store-price-ranges`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -329,9 +307,9 @@ export class APIService {
     try {
       let contactDetails = StoreContactDetails.emptyContactDetails();
       const response = await this.get<any[]>(
-        `${this.baseURL}/get-app-settings`,
+        `${DEV_API_BASE_URL}/get-app-settings`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -361,10 +339,10 @@ export class APIService {
   async getJobs(): Promise<Job[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-jobs`,
+        `${DEV_API_BASE_URL}/fetch-jobs`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -393,10 +371,10 @@ export class APIService {
   async getPremium(): Promise<Map<CategoryRender, Product[]>> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-premium-products`,
+        `${DEV_API_BASE_URL}/fetch-premium-products`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -440,10 +418,10 @@ export class APIService {
   async getNonPremium(): Promise<Map<CategoryRender, Product[]>> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-non-premium-products`,
+        `${DEV_API_BASE_URL}/fetch-non-premium-products`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -484,16 +462,15 @@ export class APIService {
   }
 
   // All Products
-  async getAllProducts() {
+  async getAllProducts(): Promise<Map<CategoryRender, Product[]>> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-all-products`,
+        `${DEV_API_BASE_URL}/fetch-all-products`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
-      console.log("All Products Response:", response);
-      // return response.data;
+
       const allProducts = new Map<CategoryRender, Product[]>();
       for (const element of response.data) {
         try {
@@ -511,9 +488,9 @@ export class APIService {
           for (const p of element.products) {
             try {
               const premiumProduct = Product.fromJson(p, true);
-              //const nonPremiumProduct = Product.fromJson(p, false);
+              const nonPremiumProduct = Product.fromJson(p, false);
               allProducts.get(sr)?.push(premiumProduct);
-              //allProducts.get(sr)?.push(nonPremiumProduct);
+              allProducts.get(sr)?.push(nonPremiumProduct);
             } catch (e) {
               console.error(`Error parsing product: ${JSON.stringify(p)}`);
             }
@@ -533,10 +510,10 @@ export class APIService {
   async getDiscounts(): Promise<Discount[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-discounts-details`,
+        `${DEV_API_BASE_URL}/fetch-discounts-details`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -562,9 +539,9 @@ export class APIService {
   async getAllDiscounts(): Promise<Discount[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-all-discounts`,
+        `${DEV_API_BASE_URL}/fetch-all-discounts`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -591,10 +568,10 @@ export class APIService {
   async getKits(): Promise<Kit[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-kits`,
+        `${DEV_API_BASE_URL}/fetch-kits`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -621,10 +598,10 @@ export class APIService {
   async getCategories(): Promise<Category[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-active-categories`,
+        `${DEV_API_BASE_URL}/fetch-active-categories`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -632,9 +609,7 @@ export class APIService {
         return response.data
           .map((categoryData) => {
             try {
-              return categoryData.category_products.length
-                ? Category.fromMap(categoryData)
-                : null;
+              return Category.fromMap(categoryData);
             } catch (e) {
               console.error(
                 `Error parsing category: ${JSON.stringify(categoryData)}`
@@ -654,9 +629,9 @@ export class APIService {
   async getAllCategories(): Promise<Category[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/fetch-all-categories`,
+        `${DEV_API_BASE_URL}/fetch-all-categories`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -664,9 +639,7 @@ export class APIService {
         return response.data
           .map((categoryData) => {
             try {
-              return categoryData.category_products.length
-                ? Category.fromMap(categoryData)
-                : null;
+              return Category.fromMap(categoryData);
             } catch (e) {
               console.error(
                 `Error parsing category: ${JSON.stringify(categoryData)}`
@@ -699,7 +672,7 @@ export class APIService {
       const response = await this.get<{ data: any }>(
         `${TENANT_SERVICE_URL}/get-app-config`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
       return AppLogo.fromMap(response.data);
@@ -713,18 +686,18 @@ export class APIService {
   async insertVisitor(phoneNumber: string): Promise<void> {
     try {
       const requestBody = {
-        tenant_id: this.tenantId,
+        tenant_id: tenantId,
         doc: {
           year: new Date().getFullYear(),
           month: new Date().getMonth() + 1,
           day: new Date().getDate(),
           hour: new Date().getHours(),
-          store_id: this.storeId,
+          store_id: storeId,
           phone_number: phoneNumber,
         },
       };
 
-      await this.put(`${this.baseURL}/insert-visitor`, requestBody);
+      await this.put(`${DEV_API_BASE_URL}/insert-visitor`, requestBody);
     } catch (error) {
       console.error("Error inserting visitor:", error);
       throw error;
@@ -739,13 +712,13 @@ export class APIService {
   ): Promise<void> {
     try {
       const data = {
-        tenant_id: this.tenantId,
+        tenant_id: tenantId,
         kit_id: kitId,
         rating: rating,
         order_id: orderId,
       };
 
-      await this.put(`${this.baseURL}/update-kit-rating`, data);
+      await this.put(`${DEV_API_BASE_URL}/update-kit-rating`, data);
     } catch (error) {
       console.error("Error updating kit rating:", error);
       throw error;
@@ -759,13 +732,13 @@ export class APIService {
   ): Promise<void> {
     try {
       const data = {
-        tenant_id: this.tenantId,
+        tenant_id: tenantId,
         product_id: productId,
         rating: rating,
         order_id: orderId,
       };
 
-      await this.put(`${this.baseURL}/update-product-rating`, data);
+      await this.put(`${DEV_API_BASE_URL}/update-product-rating`, data);
     } catch (error) {
       console.error("Error updating product rating:", error);
       throw error;
@@ -777,10 +750,10 @@ export class APIService {
     try {
       const appDetails = await this.getAppBuildVersion();
       const payload = {
-        tenant_id: this.tenantId,
+        tenant_id: tenantId,
         doc: {
-          business_id: (await this.getBusinessDetails()).id,
-          store_id: this.storeId,
+          business_id: AppBootStrap.getBusinessDetails().id,
+          store_id: storeId,
           log_code: code,
           log_count: 0, // You might want to track this properly
           log_message: message,
@@ -790,7 +763,7 @@ export class APIService {
         },
       };
 
-      await this.post(`${this.baseURL}/save-app-log`, payload);
+      await this.post(`${DEV_API_BASE_URL}/save-app-log`, payload);
     } catch (error) {
       console.error("Error saving app logs:", error);
       throw error;
@@ -801,9 +774,9 @@ export class APIService {
   async getOnboardingDetails(): Promise<OnBoardingModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-onboarding`,
+        `${DEV_API_BASE_URL}/get-onboarding`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -821,9 +794,9 @@ export class APIService {
   async getAppSettings(): Promise<AppSettingsModel> {
     try {
       const response = await this.get<any[]>(
-        `${this.baseURL}/get-app-settings`,
+        `${DEV_API_BASE_URL}/get-app-settings`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -841,9 +814,9 @@ export class APIService {
   async getOrders(phoneNumber: string): Promise<OrderModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-orders`,
+        `${DEV_API_BASE_URL}/get-orders`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
         }
       );
 
@@ -873,10 +846,10 @@ export class APIService {
   async getCoupons(phoneNumber: string): Promise<CouponModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-coupons`,
+        `${DEV_API_BASE_URL}/get-coupons`,
         {
-          tenant_id: this.tenantId,
-          store_id: this.storeId,
+          tenant_id: tenantId,
+          store_id: storeId,
         }
       );
 
@@ -908,11 +881,11 @@ export class APIService {
   async saveOrder(order: OrderModel): Promise<void> {
     try {
       const data = {
-        tenant_id: this.tenantId,
+        tenant_id: tenantId,
         doc: order.toJsonObj(),
       };
 
-      await this.post(`${this.baseURL}/create-order`, data);
+      await this.post(`${DEV_API_BASE_URL}/create-order`, data);
     } catch (error) {
       let errorMessage = "Failed to complete order";
       if (axios.isAxiosError(error) && error.response) {
@@ -934,11 +907,11 @@ export class APIService {
   async saveContactInfo(data: any): Promise<void> {
     try {
       const payload = {
-        tenant_id: this.tenantId,
+        tenant_id: tenantId,
         doc: data,
       };
 
-      await this.post(`${this.baseURL}/save-user-enquiry`, payload);
+      await this.post(`${DEV_API_BASE_URL}/save-user-enquiry`, payload);
     } catch (error) {
       let errorMessage = "Failed to save contact info";
       if (axios.isAxiosError(error) && error.response) {
@@ -960,11 +933,11 @@ export class APIService {
   async saveOrderStatus(order: OrderModel): Promise<void> {
     try {
       const data = {
-        tenant_id: this.tenantId,
+        tenant_id: tenantId,
         doc: order.toJsonObj(),
       };
 
-      await this.post(`${this.baseURL}/save-order-status`, data);
+      await this.post(`${DEV_API_BASE_URL}/save-order-status`, data);
     } catch (error) {
       let errorMessage = "Failed to save order status";
       if (axios.isAxiosError(error) && error.response) {
@@ -989,12 +962,15 @@ export class APIService {
   ): Promise<void> {
     try {
       const data = {
-        tenant_id: this.tenantId,
+        tenant_id: tenantId,
         doc: order.toJsonObj(),
         coupon_doc: coupon.toJsonObj(),
       };
 
-      await this.put(`${this.baseURL}/update-order-details-in-coupon`, data);
+      await this.put(
+        `${DEV_API_BASE_URL}/update-order-details-in-coupon`,
+        data
+      );
     } catch (error) {
       console.error("Error updating order details in coupon:", error);
       throw error;
@@ -1005,10 +981,10 @@ export class APIService {
   async getAppCredits(): Promise<AppCreditModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-app-credits`,
+        `${DEV_API_BASE_URL}/get-app-credits`,
         {
-          tenant_id: this.tenantId,
-          business_id: (await this.getBusinessDetails()).id,
+          tenant_id: tenantId,
+          business_id: AppBootStrap.getBusinessDetails().id,
         }
       );
 
@@ -1026,10 +1002,10 @@ export class APIService {
   async getReturnsAndRefunds(): Promise<ReturnsAndRefund[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-returns-refund`,
+        `${DEV_API_BASE_URL}/get-returns-refund`,
         {
-          tenant_id: this.tenantId,
-          business_id: (await this.getBusinessDetails()).id,
+          tenant_id: tenantId,
+          business_id: AppBootStrap.businessDetails.id,
         }
       );
 
@@ -1047,10 +1023,10 @@ export class APIService {
   async getPrivacyPolicy(): Promise<PrivacyModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-privacy`,
+        `${DEV_API_BASE_URL}/get-privacy`,
         {
-          tenant_id: this.tenantId,
-          business_id: (await this.getBusinessDetails()).id,
+          tenant_id: tenantId,
+          business_id: "wnysgv7k67z",
         }
       );
 
@@ -1068,10 +1044,10 @@ export class APIService {
   async getTermsAndConditions(): Promise<TermsAndConditions[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-termsAndConditions`,
+        `${DEV_API_BASE_URL}/get-termsAndConditions`,
         {
-          tenant_id: this.tenantId,
-          business_id: (await this.getBusinessDetails()).id,
+          tenant_id: tenantId,
+          business_id: "wnysgv7k67z",
         }
       );
 
@@ -1093,22 +1069,22 @@ export class APIService {
       formData.append("file", imageFile, fileName);
 
       const uploadResponse = await this.post<string>(
-        `${this.baseURL}/save-image-upload`,
+        `${DEV_API_BASE_URL}/save-image-upload`,
         formData,
-        { bucket_name: this.tenantId }
+        { bucket_name: tenantId }
       );
 
       const imageUrl = uploadResponse;
-      await this.put(`${this.baseURL}/save-order-image`, {
-        tenant_id: this.tenantId,
+      await this.put(`${DEV_API_BASE_URL}/save-order-image`, {
+        tenant_id: tenantId,
         order_id: orderId,
         img: [imageUrl],
       });
 
       return imageUrl;
     } catch (error) {
-      await this.delete(`${this.baseURL}/delete-image-upload`, {
-        params: { fileName: `${Date.now()}.jpg`, bucket_name: this.tenantId },
+      await this.delete(`${DEV_API_BASE_URL}/delete-image-upload`, {
+        params: { fileName: `${Date.now()}.jpg`, bucket_name: tenantId },
       });
       console.error("Error uploading image:", error);
       throw error;
@@ -1118,10 +1094,10 @@ export class APIService {
   // OTP Operations
   async sendOtp(phoneNumber: string): Promise<void> {
     try {
-      await this.post(`${this.baseURL}/send-otp`, null, {
-        tenant_id: this.tenantId,
+      await this.post(`${DEV_API_BASE_URL}/send-otp`, null, {
+        tenant_id: tenantId,
         phone_number: phoneNumber,
-        app_name: this.appName,
+        app_name: appName,
       });
     } catch (error) {
       console.error("Error sending OTP:", error);
@@ -1135,8 +1111,8 @@ export class APIService {
     otp: string
   ): Promise<void> {
     try {
-      await this.post(`${this.baseURL}/verify-otp`, null, {
-        tenant_id: this.tenantId,
+      await this.post(`${DEV_API_BASE_URL}/verify-otp`, null, {
+        tenant_id: tenantId,
         phone_number: phoneNumber,
         display_name: userName,
         otp: otp,
@@ -1149,10 +1125,10 @@ export class APIService {
 
   async resendOtp(phoneNumber: string): Promise<void> {
     try {
-      await this.post(`${this.baseURL}/resend-otp`, null, {
-        tenant_id: this.tenantId,
+      await this.post(`${DEV_API_BASE_URL}/resend-otp`, null, {
+        tenant_id: tenantId,
         phone_number: phoneNumber,
-        app_name: this.appName,
+        app_name: appName,
       });
     } catch (error) {
       console.error("Error resending OTP:", error);
@@ -1164,10 +1140,10 @@ export class APIService {
   async getRazorPayDetails(): Promise<RazorpayModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-razorpay`,
+        `${DEV_API_BASE_URL}/get-razorpay`,
         {
-          tenant_id: this.tenantId,
-          business_id: (await this.getBusinessDetails()).id,
+          tenant_id: tenantId,
+          business_id: AppBootStrap.businessDetails.id,
         }
       );
 
@@ -1196,10 +1172,10 @@ export class APIService {
   async getUserData(): Promise<UserModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
-        `${this.baseURL}/get-users`,
+        `${DEV_API_BASE_URL}/get-users`,
         {
-          tenant_id: this.tenantId,
-          business_id: (await this.getBusinessDetails()).id,
+          tenant_id: tenantId,
+          business_id: AppBootStrap.getBusinessDetails().id,
         }
       );
 
@@ -1249,11 +1225,11 @@ export class APIService {
   async getDeliveryAndPackageCost(distance: string): Promise<any> {
     try {
       const response = await this.get(
-        `${this.baseURL}/calculate-delivery-amount`,
+        `${DEV_API_BASE_URL}/calculate-delivery-amount`,
         {
-          tenant_id: this.tenantId,
+          tenant_id: tenantId,
           order_distance: distance,
-          delivery_setup_id: (await this.getBusinessDetails()).id,
+          delivery_setup_id: AppBootStrap.getStoreBaseDetails().deliverySetupId,
         }
       );
 

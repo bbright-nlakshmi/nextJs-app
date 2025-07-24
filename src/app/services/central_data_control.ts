@@ -1,3 +1,4 @@
+
 import {
   objCache,
   DoneDiscount,
@@ -5,8 +6,8 @@ import {
   API,
   userService,
   Discount,
-  DiscountItem,
-} from "@/app/globalProvider";
+  DiscountItem
+} from '@/app/globalProvider';
 // import {API} from '../services/api.js';
 // import { Category} from '../models/category/category.js';
 // API.baseURL = 'https://devqarupeecomservice.rupeecom.in/v1';
@@ -16,7 +17,10 @@ import {
 
 //import { userService } from './user.service';
 
+
+
 export class CentralDataCollector {
+
   // Loading states
   public isLoading = false;
   public isInitialLoading = true;
@@ -26,6 +30,7 @@ export class CentralDataCollector {
   private dataScheduler?: NodeJS.Timeout;
   announceLiveData: any;
 
+
   constructor() {
     this.initialize();
   }
@@ -33,41 +38,45 @@ export class CentralDataCollector {
   private initialize(): void {
     this.resetInitialLoad();
     this.refreshInterval = 60;
+
   }
 
   scheduleGetData(): void {
     this.dataScheduler = setInterval(async () => {
-      console.log("Refreshing data");
+      console.log('Refreshing data');
       await this.getData();
+      
     }, this.refreshInterval * 1000);
   }
 
   public cleanup(): void {
     if (this.dataScheduler) {
       clearInterval(this.dataScheduler);
-      console.log("Data scheduler stopped");
+      console.log('Data scheduler stopped');
     }
   }
 
   // Data fetching methods
   public async getCategories(): Promise<void> {
+
     try {
       const categories = await API.getCategories();
       objCache.resetObjCacheCategoryList();
       objCache.insertObjCacheCategoryList(categories);
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      console.error('Error fetching categories:', error);
     }
   }
 
   // Data fetching methods
   public async getAllCategories(): Promise<void> {
+
     try {
       const categories = await API.getAllCategories();
       objCache.resetObjCacheAllCategoryList();
       objCache.insertObjCacheAllCategoryList(categories);
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      console.error('Error fetching categories:', error);
     }
   }
   public async getKits(): Promise<void> {
@@ -76,7 +85,7 @@ export class CentralDataCollector {
       objCache.resetObjCacheKitList();
       objCache.insertObjCacheKitList(kits);
     } catch (error) {
-      console.error("Error fetching kits:", error);
+      console.error('Error fetching kits:', error);
     }
   }
 
@@ -90,12 +99,12 @@ export class CentralDataCollector {
       const premiumData = await API.getPremium();
       objCache.resetObjCachePremiumList();
 
-      premiumData.forEach((products: any, category: { name: any }) => {
-        objCache.premiumList.set(category.name, products);
+      premiumData.forEach((products: any, category: { name: any; },) => {
+        objCache.premiumList.set(category.name, products)
       });
       objCache.insertObjCachePremiumList(objCache.premiumList);
     } catch (error) {
-      console.error("Error fetching premium data:", error);
+      console.error('Error fetching premium data:', error);
     }
   }
 
@@ -103,18 +112,9 @@ export class CentralDataCollector {
     try {
       const banners = await API.getBanners();
       objCache.resetObjCacheBannersList();
-      objCache.insertObjCacheBannerList(banners);
+       objCache.insertObjCacheBannerList(banners);
     } catch (error) {
-      console.error("Error fetching banners:", error);
-    }
-  }
-
-  public async getStores() {
-    try {
-      const stores = await API.getStoresBaseDetails();
-      objCache.storeList = stores;
-    } catch (error) {
-      console.error("Error fetching stores:", error);
+      console.error('Error fetching banners:', error);
     }
   }
 
@@ -124,15 +124,16 @@ export class CentralDataCollector {
       objCache.resetObjCacheAllBannersList();
       objCache.insertObjCacheAllBannersList(banners);
     } catch (error) {
-      console.error("Error fetching banners:", error);
+      console.error('Error fetching banners:', error);
     }
   }
 
   public async getStoreJobs(): Promise<void> {
     try {
       const jobs = await API.getJobs();
+      
     } catch (error) {
-      console.error("Error fetching jobs:", error);
+      console.error('Error fetching jobs:', error);
     }
   }
 
@@ -140,13 +141,13 @@ export class CentralDataCollector {
     try {
       const allProducts = await API.getAllProducts();
       objCache.resetObjCacheAllProducts();
-      allProducts.forEach((products: any, category: { name: any }) => {
-        objCache.allProducstsList.push(...products);
+      allProducts.forEach((products: any,category: { name: any; }) => {
         objCache.allProducts.set(category.name, products);
       });
-      objCache.insertObjCacheAllProducts(objCache.allProducstsList);
+      objCache.insertObjCacheAllProducts(allProducts);
+
     } catch (error) {
-      console.error("Error fetching jobs:", error);
+      console.error('Error fetching jobs:', error);
     }
   }
 
@@ -159,7 +160,6 @@ export class CentralDataCollector {
       await Promise.all([
         this.getAnnounce(),
         this.getAllBanners(),
-        this.getBanners(),
         this.getCategories(),
         this.getAllCategories(),
         this.getDiscounts(),
@@ -168,7 +168,6 @@ export class CentralDataCollector {
         this.getAllNonPremiumProducts(),
         this.getAllProducts(),
         this.getKits(),
-        this.getStores(),
       ]);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -176,7 +175,11 @@ export class CentralDataCollector {
       if (this.isInitialLoading) {
         this.isCentralLoading = false;
         this.isInitialLoading = false;
+        
+        
       }
+
+      
     }
   }
 
@@ -190,7 +193,7 @@ export class CentralDataCollector {
       objCache.resetObjCachePriceRangeStream();
       objCache.insertObjCachePriceRangeStream(priceRanges);
     } catch (error) {
-      console.error("Error fetching price ranges:", error);
+      console.error('Error fetching price ranges:', error);
     }
   }
 
@@ -200,13 +203,14 @@ export class CentralDataCollector {
 
       objCache.resetObjCacheNonPremiumList();
 
-      nonPremiumData.forEach((products: any, category: { name: any }) => {
-        objCache.nonPremiumList.set(category.name, products);
+      nonPremiumData.forEach((products: any,category: { name: any; }) => {
+         objCache.nonPremiumList.set(category.name, products);
       });
 
       objCache.insertObjCacheNonPremiumList(objCache.nonPremiumList);
+      
     } catch (error) {
-      console.error("Error fetching non-premium products:", error);
+      console.error('Error fetching non-premium products:', error);
     }
   }
 
@@ -215,9 +219,9 @@ export class CentralDataCollector {
       const announcement = await API.getStoreAnnounce();
       this.announceLiveData.setValue(announcement);
       objCache.resetObjCacheAnnouncementStream();
-      objCache.insertObjCacheAnnouncementStream(announcement);
+      objCache.insertObjCacheAnnouncementStream(announcement)
     } catch (error) {
-      console.error("Error fetching announcement:", error);
+      console.error('Error fetching announcement:', error);
     }
   }
 
@@ -225,53 +229,45 @@ export class CentralDataCollector {
     try {
       const result = await API.getDiscounts();
       const hideDiscounts: string[] = [];
-
-      const phoneNumber = userService.loggedInPhoneNumber;
+      
+       const phoneNumber = userService.loggedInPhoneNumber;
 
       // if (!phoneNumber) {
       //   throw new Error('Logged in phone number is null');
       // }
 
       // Filter out removed discounts
-      const discountsToRemove = Array.from(
-        TrackDiscount.discountsTracker.keys()
-      ).filter(
-        (itemId) =>
-          !result.some(
-            (discount: Discount) =>
-              discount.id === itemId ||
-              discount
-                .getDiscountItems()
-                .some((item: DiscountItem) => item.id === itemId)
-          )
-      );
+      const discountsToRemove = Array.from(TrackDiscount.discountsTracker.keys())
+        .filter(itemId => !result.some((discount:Discount) =>
+          discount.id === itemId ||
+          discount.getDiscountItems().some((item:DiscountItem) => item.id === itemId)
+        ));
 
-      discountsToRemove.forEach((discountId) => {
+      discountsToRemove.forEach(discountId => {
         TrackDiscount.removeDiscountDetail(discountId);
         DoneDiscount.addDoneDiscount(discountId);
       });
 
       // Filter excluded discounts
-      result.forEach((discount: Discount) => {
+      result.forEach((discount:Discount) => {
         if (discount.isDiscountExcludedToPhoneNumber(phoneNumber)) {
           console.log(`Discount is excluded to this user: ${discount.id}`);
           hideDiscounts.push(discount.id);
         }
       });
 
-      const filteredDiscounts = result.filter(
-        (discount: Discount) => !hideDiscounts.includes(discount.id)
+      const filteredDiscounts = result.filter((discount:Discount) =>
+        !hideDiscounts.includes(discount.id)
       );
 
       // Separate expired and active discounts
       const now = Date.now();
-      const notExpiredDiscounts = filteredDiscounts.filter(
-        (discount: Discount) =>
-          (discount.discountEndDate?.getTime() || 0) >= now
+      const notExpiredDiscounts = filteredDiscounts.filter((discount:Discount) =>
+        (discount.discountEndDate?.getTime() || 0) >= now
       );
 
-      const expiredDiscounts = filteredDiscounts.filter(
-        (discount: Discount) => (discount.discountEndDate?.getTime() || 0) < now
+      const expiredDiscounts = filteredDiscounts.filter((discount:Discount) =>
+        (discount.discountEndDate?.getTime() || 0) < now
       );
 
       // this.discountLiveData.setValue(notExpiredDiscounts);
@@ -279,29 +275,27 @@ export class CentralDataCollector {
       objCache.insertObjCacheDiscountList(notExpiredDiscounts);
 
       // Update trackers
-      notExpiredDiscounts.forEach((discount: Discount) => {
-        TrackDiscount.insertDiscountDetail(
-          discount.id,
-          discount.discountEndDate
-        );
-        discount.getDiscountItems().forEach((item: DiscountItem) => {
+      notExpiredDiscounts.forEach((discount:Discount) => {
+        TrackDiscount.insertDiscountDetail(discount.id, discount.discountEndDate);
+        discount.getDiscountItems().forEach((item:DiscountItem) => {
           TrackDiscount.insertDiscountDetail(item.id, discount.discountEndDate);
         });
       });
 
       // Clean up expired discounts
-      expiredDiscounts.forEach((discount: Discount) => {
+      expiredDiscounts.forEach((discount:Discount) => {
         TrackDiscount.removeDiscountDetail(discount.id);
         DoneDiscount.addDoneDiscount(discount.id);
       });
 
       // Clean up hidden discounts
-      hideDiscounts.forEach((discountId) => {
+      hideDiscounts.forEach(discountId => {
         TrackDiscount.removeDiscountDetail(discountId);
         DoneDiscount.addDoneDiscount(discountId);
       });
+      
     } catch (error) {
-      console.error("Error fetching discounts:", error);
+      console.error('Error fetching discounts:', error);
     }
   }
 }

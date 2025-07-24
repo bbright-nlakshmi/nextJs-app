@@ -8,6 +8,8 @@ import { WishlistProvider } from "@/helpers/wishlist/wish.provider";
 import Customizer from "@/views/Containers/customizer";
 import TaptoTop from "@/views/Containers/TapTop";
 import { ToastContainer } from "react-toastify";
+import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
+
 
 // const client = new ApolloClient({
 //   uri: "https://bigdeal-api-git-main-pixelstrapthemes.vercel.app/"  ,
@@ -16,23 +18,27 @@ import { ToastContainer } from "react-toastify";
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div>
-      <CurrencyContextProvider>
-        <MenuContextProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <CompareProvider>
-                <FilterProvider>{children}</FilterProvider>
-              </CompareProvider>
-            </WishlistProvider>
-          </CartProvider>
-        </MenuContextProvider>
-      </CurrencyContextProvider>
-      <ToastContainer />
-      <TaptoTop />
-      <Customizer />
-    </div>
+    // <ApolloProvider>
+      <div>
+        <CurrencyContextProvider>
+          <MenuContextProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <CompareProvider>
+                  <FilterProvider>{children}</FilterProvider>
+                </CompareProvider>
+              </WishlistProvider>
+            </CartProvider>
+          </MenuContextProvider>
+        </CurrencyContextProvider>
+        <ToastContainer />
+        <TaptoTop />
+        {/* <Customizer /> */}
+      </div>
+    // </ApolloProvider>
   );
 };
 
 export default layout;
+
+

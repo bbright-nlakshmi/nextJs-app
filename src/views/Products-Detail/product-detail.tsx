@@ -105,13 +105,16 @@ const ProductDetail: React.FC<ProductRightProps> = ({
       </div>
       <h2>{item.name}</h2>
       {item.discount ? (
-        <h2>
-          <span className="text-danger me-3">-{item.getDiscount()}%</span>
-          <del className="text-muted ">
-            M.R.P:{symbol}
+        <h4>
+          <del>
+            {symbol}
             {item.getProductPrice() * value}
           </del>
-        </h2>
+          <span>
+            {symbol}
+            {item.getDiscountAmount()} off
+          </span>
+        </h4>
       ) : (
         ""
       )}
@@ -272,26 +275,51 @@ const ProductDetail: React.FC<ProductRightProps> = ({
         <span className="tags product-unipue mb--10">
           <strong>Type:</strong> original
         </span>
-        {item.brandName ? (
+        {item.brandName ?? (
           <span className="tags product-unipue mb--10">
-            <strong>Brand Name: </strong>
+            <strong>BrandName:</strong>
             {item.brandName}
           </span>
-        ) : (
-          <></>
         )}
       </div>
-      <div className="border-product ">
+      <div className="border-product">
         <div className="product-icon">
-          <div className="d-inline-block ">
+          <ul className="product-social">
+            <li>
+              <a href="#">
+                <i className="fa fa-facebook"></i>
+              </a>
+            </li>
+            <li>
+              <a href="#">
+                <i className="fa fa-google-plus"></i>
+              </a>
+            </li>
+            <li>
+              <a href="#">
+                <i className="fa fa-twitter"></i>
+              </a>
+            </li>
+            <li>
+              <a href="#">
+                <i className="fa fa-instagram"></i>
+              </a>
+            </li>
+            <li>
+              <a href="#">
+                <i className="fa fa-rss"></i>
+              </a>
+            </li>
+          </ul>
+          <div className="d-inline-block">
             <button
-              className="wishlist-btn p-4 center"
+              className="wishlist-btn"
               onClick={() => {
                 addToWish(item);
               }}
             >
               <i className="fa fa-heart"></i>
-              <span className="title-font ">Add To WishList</span>
+              <span className="title-font">Add To WishList</span>
             </button>
           </div>
         </div>
