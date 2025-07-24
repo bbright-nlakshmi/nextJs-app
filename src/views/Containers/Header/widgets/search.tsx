@@ -53,11 +53,35 @@ const Search: NextPage = () => {
       forceUpdate(); // 💡 Ensure UI reflects changes
     };
 
+    // Fetch all products when component mounts
+    const fetchAllProducts = async () => {
+      try {
+        const productsMap = await objCache.getAllProducts();
+        console.log("📦 All products fetched:", productsMap);
+        
+        // Update categories with products data
+        const updatedCategories = objCache.allCategories.map(category => {
+          const categoryProducts = productsMap.get(category) || [];
+          return {
+            ...category,
+            category_products: categoryProducts
+          };
+        });
+        
+        setAllCategories(updatedCategories);
+      } catch (error) {
+        console.error("❌ Error fetching products:", error);
+      }
+    };
+
     searchController.on("update", updateListener);
     setAllCategories(objCache.allCategories);
     objCache.on("updateAllCategories", (data: Category[]) =>
       setAllCategories(data)
     );
+
+    // Fetch products on component mount
+    fetchAllProducts();
 
     return () => {
       searchController.off("update", updateListener);
@@ -121,23 +145,22 @@ const Search: NextPage = () => {
             </DropdownToggle>
             <DropdownMenu>
               {/* <DropdownItem key="all">{t("All Category")}</DropdownItem> */}
-              {allCategories.map(
-                (cat) =>
-                  cat.category_products.length ?? (
-                    <DropdownItem
-                      key={cat.id}
-                      className="custom-dropdown-item"
-                      onClick={() =>
-                        router.push(
-                          `/collections/no-sidebar?id=${cat.id}&type=category`
-                        )
-                      }
-                      style={{ cursor: "pointer" }}
-                    >
-                      {cat.name}
-                    </DropdownItem>
-                  )
-              )}
+              {allCategories
+                .filter(cat => cat.category_products && cat.category_products.length > 0)
+                .map((cat) => (
+                  <DropdownItem
+                    key={cat.id}
+                    className="custom-dropdown-item"
+                    onClick={() =>
+                      router.push(
+                        `/collections/no-sidebar?id=${cat.id}&type=category`
+                      )
+                    }
+                    style={{ cursor: "pointer" }}
+                  >
+                    {cat.name}
+                  </DropdownItem>
+                ))}
             </DropdownMenu>
           </ButtonDropdown>
         </InputGroupText>

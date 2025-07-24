@@ -17,6 +17,24 @@ interface ProfileData {
   regionState: string;
 }
 
+interface SavedAddress {
+  id: string;
+  label: string;
+  flatPlot: string;
+  address: string;
+  zipCode: string;
+  country: string;
+  city: string;
+  regionState: string;
+  isDefault: boolean;
+}
+
+interface UserLoginInfo {
+  name: string;
+  phoneNumber: string;
+  email: string;
+}
+
 const Profile: NextPage = () => {
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: '',
@@ -34,19 +52,73 @@ const Profile: NextPage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [currentUser, setCurrentUser] = useState<UserLoginInfo | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [showAddressList, setShowAddressList] = useState(false);
+  const [addressLabel, setAddressLabel] = useState('');
 
-  // Load data from localStorage on component mount
+  // Load data from memory storage on component mount
   useEffect(() => {
-    const savedProfile = localStorage.getItem('userProfile');
-    if (savedProfile) {
+    // Check if user is logged in
+    const loginInfo = getStoredData('userLoginInfo');
+    if (loginInfo) {
       try {
-        const parsedProfile = JSON.parse(savedProfile);
-        setProfileData(parsedProfile);
+        const parsedLoginInfo: UserLoginInfo = JSON.parse(loginInfo);
+        setCurrentUser(parsedLoginInfo);
+        
+        // Load user's profile data
+        const userProfileKey = `userProfile_${parsedLoginInfo.email}`;
+        const savedProfile = getStoredData(userProfileKey);
+        if (savedProfile) {
+          const parsedProfile = JSON.parse(savedProfile);
+          setProfileData(parsedProfile);
+        } else {
+          // Pre-fill with login info if no saved profile
+          setProfileData(prev => ({
+            ...prev,
+            firstName: parsedLoginInfo.name.split(' ')[0] || '',
+            lastName: parsedLoginInfo.name.split(' ').slice(1).join(' ') || '',
+            phoneNumber: parsedLoginInfo.phoneNumber,
+            email: parsedLoginInfo.email
+          }));
+        }
+        
+        // Load user's saved addresses
+        loadUserAddresses(parsedLoginInfo.email);
       } catch (error) {
-        console.error('Error parsing saved profile:', error);
+        console.error('Error parsing login info:', error);
       }
     }
   }, []);
+
+  // Memory storage functions (replacing localStorage)
+  const memoryStorage: { [key: string]: string } = {};
+  
+  const getStoredData = (key: string): string | null => {
+    return memoryStorage[key] || null;
+  };
+  
+  const setStoredData = (key: string, value: string): void => {
+    memoryStorage[key] = value;
+  };
+  
+  const removeStoredData = (key: string): void => {
+    delete memoryStorage[key];
+  };
+
+  // Load user's saved addresses
+  const loadUserAddresses = (userEmail: string) => {
+    const addressesKey = `savedAddresses_${userEmail}`;
+    const addresses = getStoredData(addressesKey);
+    if (addresses) {
+      try {
+        setSavedAddresses(JSON.parse(addresses));
+      } catch (error) {
+        console.error('Error parsing saved addresses:', error);
+        setSavedAddresses([]);
+      }
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (field: keyof ProfileData, value: string) => {
@@ -59,21 +131,29 @@ const Profile: NextPage = () => {
   // Save profile data
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+      setSaveMessage('Please log in to save your profile.');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+    
     setIsLoading(true);
     
     // Simulate API call delay
     setTimeout(() => {
       try {
-        // Save to localStorage
-        localStorage.setItem('userProfile', JSON.stringify(profileData));
+        // Save to memory storage with user-specific key
+        const userProfileKey = `userProfile_${currentUser.email}`;
+        setStoredData(userProfileKey, JSON.stringify(profileData));
         
-        // Also save essential login info separately for quick access
-        const loginInfo = {
+        // Update login info with current profile data
+        const updatedLoginInfo = {
           name: `${profileData.firstName} ${profileData.lastName}`.trim(),
           phoneNumber: profileData.phoneNumber,
           email: profileData.email
         };
-        localStorage.setItem('userLoginInfo', JSON.stringify(loginInfo));
+        setStoredData('userLoginInfo', JSON.stringify(updatedLoginInfo));
+        setCurrentUser(updatedLoginInfo);
         
         setSaveMessage('Profile saved successfully!');
         setIsLoading(false);
@@ -86,6 +166,76 @@ const Profile: NextPage = () => {
         setIsLoading(false);
       }
     }, 1000);
+  };
+
+  // Save current address
+  const handleSaveAddress = () => {
+    if (!currentUser) {
+      setSaveMessage('Please log in to save addresses.');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+
+    if (!addressLabel.trim()) {
+      setSaveMessage('Please enter an address label.');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+
+    const newAddress: SavedAddress = {
+      id: Date.now().toString(),
+      label: addressLabel,
+      flatPlot: profileData.flatPlot,
+      address: profileData.address,
+      zipCode: profileData.zipCode,
+      country: profileData.country,
+      city: profileData.city,
+      regionState: profileData.regionState,
+      isDefault: savedAddresses.length === 0 // First address becomes default
+    };
+
+    const updatedAddresses = [...savedAddresses, newAddress];
+    setSavedAddresses(updatedAddresses);
+    
+    const addressesKey = `savedAddresses_${currentUser.email}`;
+    setStoredData(addressesKey, JSON.stringify(updatedAddresses));
+    
+    setAddressLabel('');
+    setSaveMessage('Address saved successfully!');
+    setTimeout(() => setSaveMessage(''), 3000);
+  };
+
+  // Load saved address
+  const handleLoadAddress = (addressId: string) => {
+    const address = savedAddresses.find(addr => addr.id === addressId);
+    if (address) {
+      setProfileData(prev => ({
+        ...prev,
+        flatPlot: address.flatPlot,
+        address: address.address,
+        zipCode: address.zipCode,
+        country: address.country,
+        city: address.city,
+        regionState: address.regionState
+      }));
+      setShowAddressList(false);
+      setSaveMessage(`Address "${address.label}" loaded successfully!`);
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  // Delete saved address
+  const handleDeleteAddress = (addressId: string) => {
+    const updatedAddresses = savedAddresses.filter(addr => addr.id !== addressId);
+    setSavedAddresses(updatedAddresses);
+    
+    if (currentUser) {
+      const addressesKey = `savedAddresses_${currentUser.email}`;
+      setStoredData(addressesKey, JSON.stringify(updatedAddresses));
+    }
+    
+    setSaveMessage('Address deleted successfully!');
+    setTimeout(() => setSaveMessage(''), 3000);
   };
 
   // Clear profile data
@@ -103,15 +253,56 @@ const Profile: NextPage = () => {
       city: '',
       regionState: ''
     });
-    localStorage.removeItem('userProfile');
-    localStorage.removeItem('userLoginInfo');
+    
+    if (currentUser) {
+      const userProfileKey = `userProfile_${currentUser.email}`;
+      removeStoredData(userProfileKey);
+    }
+    
     setSaveMessage('Profile cleared successfully!');
+    setTimeout(() => setSaveMessage(''), 3000);
+  };
+
+  // Logout function
+  const handleLogout = () => {
+    removeStoredData('userLoginInfo');
+    setCurrentUser(null);
+    setProfileData({
+      firstName: '',
+      lastName: '',
+      phoneNumber: '',
+      email: '',
+      message: '',
+      flatPlot: '',
+      address: '',
+      zipCode: '',
+      country: 'India',
+      city: '',
+      regionState: ''
+    });
+    setSavedAddresses([]);
+    setSaveMessage('Logged out successfully!');
     setTimeout(() => setSaveMessage(''), 3000);
   };
 
   return (
     <>
       <Breadcrumb title="Profile" parent="home" />
+      
+      {/* Login Status */}
+      {currentUser ? (
+        <div className="alert alert-success d-flex justify-content-between align-items-center" role="alert">
+          <span>Welcome back, {currentUser.name}! ({currentUser.email})</span>
+          <button className="btn btn-sm btn-outline-danger" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      ) : (
+        <div className="alert alert-warning" role="alert">
+          Please log in to save and access your profile data.
+        </div>
+      )}
+      
       {/* Success/Error Message */}
       {saveMessage && (
         <div className="alert alert-info text-center" role="alert">
@@ -200,7 +391,52 @@ const Profile: NextPage = () => {
               </Form>
             </Col>
             <Col lg="6">
-              <h3 className="mb-3 spc-responsive">SHIPPING ADDRESS</h3>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h3 className="mb-0 spc-responsive">SHIPPING ADDRESS</h3>
+                {currentUser && savedAddresses.length > 0 && (
+                  <button 
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => setShowAddressList(!showAddressList)}
+                  >
+                    {showAddressList ? 'Hide' : 'Show'} Saved Addresses ({savedAddresses.length})
+                  </button>
+                )}
+              </div>
+              
+              {/* Saved Addresses List */}
+              {showAddressList && savedAddresses.length > 0 && (
+                <div className="mb-4 p-3 border rounded bg-white">
+                  <h5>Your Saved Addresses</h5>
+                  {savedAddresses.map((addr) => (
+                    <div key={addr.id} className="border-bottom pb-2 mb-2">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <strong>{addr.label}</strong>
+                          {addr.isDefault && <span className="badge badge-primary ml-2">Default</span>}
+                          <div className="small text-muted">
+                            {addr.flatPlot}, {addr.address}, {addr.city}, {addr.regionState}, {addr.zipCode}
+                          </div>
+                        </div>
+                        <div>
+                          <button 
+                            className="btn btn-sm btn-outline-success mr-1"
+                            onClick={() => handleLoadAddress(addr.id)}
+                          >
+                            Use
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleDeleteAddress(addr.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <Form className="theme-form">
                 <div className="form-row row">
                   <Col md="6">
@@ -288,6 +524,34 @@ const Profile: NextPage = () => {
                       />
                     </FormGroup>
                   </Col>
+                  
+                  {/* Save Address Section */}
+                  {currentUser && (
+                    <Col md="12">
+                      <div className="border-top pt-3 mb-3">
+                        <FormGroup>
+                          <Label htmlFor="addressLabel">Save this address as:</Label>
+                          <Input 
+                            type="text" 
+                            className="form-control mb-2" 
+                            id="addressLabel" 
+                            placeholder="e.g., Home, Office, Work" 
+                            value={addressLabel}
+                            onChange={(e) => setAddressLabel(e.target.value)}
+                          />
+                          <button 
+                            className="btn btn-sm btn-outline-info" 
+                            type="button"
+                            onClick={handleSaveAddress}
+                            disabled={!addressLabel.trim()}
+                          >
+                            Save Address
+                          </button>
+                        </FormGroup>
+                      </div>
+                    </Col>
+                  )}
+                  
                   <Col md="12">
                     <div className="d-flex gap-2">
                       <button 
