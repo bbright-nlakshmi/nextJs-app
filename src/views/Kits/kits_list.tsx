@@ -79,7 +79,7 @@ const Kits: NextPage<KitsProps> = ({ kits = [] }) => {
                   640: { slidesPerView: 4, spaceBetween: 20 },
                   840: { slidesPerView: 5, spaceBetween: 20 },
                   1140: {
-                    slidesPerView: kits.length > 6 ? 6 : kits.length,
+                    slidesPerView: 6,
                     spaceBetween: 20,
                   },
                 }}
@@ -94,7 +94,7 @@ const Kits: NextPage<KitsProps> = ({ kits = [] }) => {
                       )
                     }
                   >
-                    <Link href="#" className="single-category-one height-180">
+                    <Link href="#" className="single-category-one height-200">
                       <div className="thumbnail-preview w-full ">
                         <Media
                           src={kit.img[0]}

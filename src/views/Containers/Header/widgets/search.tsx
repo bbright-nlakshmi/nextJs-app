@@ -48,7 +48,7 @@ const Search: NextPage = () => {
       const hasResults =
         searchController.kits.length > 0 ||
         searchController.products.length > 0;
-      setShowResults(hasResults);
+      //setShowResults(hasResults);
       console.log("🔁 UI re-rendering from controller");
       forceUpdate(); // 💡 Ensure UI reflects changes
     };

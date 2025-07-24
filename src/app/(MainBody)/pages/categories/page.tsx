@@ -2,14 +2,14 @@
 import React from "react";
 import { NextPage } from "next";
 import Layout1 from "@/views/layouts/layout1";
-import About from "@/views/pages/aboutUs";
+import CategoryPage from "@/views/pages/categories";
 
-const AboutUs: NextPage = () => {
+const Search: NextPage = () => {
   return (
     <Layout1>
-      <About />
+      <CategoryPage />
     </Layout1>
   );
 };
 
-export default AboutUs;
+export default Search;

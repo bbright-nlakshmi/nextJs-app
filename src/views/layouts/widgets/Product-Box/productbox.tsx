@@ -6,6 +6,7 @@ import React, { Fragment, useContext, useRef, useState } from "react";
 import { Media, Modal, ModalBody } from "reactstrap";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import Slider from "react-slick";
+import { objCache } from "@/app/globalProvider";
 
 interface productType {
   id?: Number;
@@ -27,6 +28,7 @@ interface productType {
   name?: string;
   img?: Array<string>;
   rating?: number;
+  description?: string;
 }
 // { layout, id, item, title, newLabel, sale, price, discount, stock, images, addCart, addCompare, addWish, hoverEffect }
 const ProductBox: NextPage<productType> = ({
@@ -35,6 +37,7 @@ const ProductBox: NextPage<productType> = ({
   price,
   data,
   item,
+  description,
   addCart,
   addCompare,
   addWish,
@@ -55,6 +58,8 @@ const ProductBox: NextPage<productType> = ({
   const uniqueSize: any[] = [];
   const uniqueColor: any[] = [];
   const titleProps = data?.name.split(" ").join("");
+
+  const productInfo = objCache.getProductById(data?.productId);
 
   const changeColorVar = (img_id: number) => {
     slider2.current?.slickGoTo(img_id);
@@ -82,9 +87,16 @@ const ProductBox: NextPage<productType> = ({
   };
 
   const clickProductDetail = () => {
-    router.push(
-      `/product-details/${data?.productId ? data?.productId : data?.id}`
-    );
+    if (data.type === "kit") {
+      router.push(
+        `/product-details/thumbnail-left/${
+          data?.productId ? data?.productId : data?.id
+        }`
+      );
+    } else
+      router.push(
+        `/product-details/${data?.productId ? data?.productId : data?.id}`
+      );
   };
 
   return (
@@ -205,7 +217,7 @@ const ProductBox: NextPage<productType> = ({
             <div className="col-lg-6 rtl-text">
               <div className="product-right">
                 <h2>{data?.name}</h2>
-                <h3>
+                <h3 className="theme-color price-tag">
                   {" "}
                   {selectedCurr.symbol}
                   {(price * selectedCurr.value).toFixed(2)}
@@ -225,6 +237,41 @@ const ProductBox: NextPage<productType> = ({
                 <div className="border-product">
                   <h6 className="product-title">product details</h6>
                   {/* <p>{item?.description}</p> */}
+                  <ul className="product-description-list">
+                    {productInfo?.description?.length ? (
+                      <>
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html:
+                              productInfo.description[0]?.description.slice(
+                                0,
+                                150
+                              ),
+                          }}
+                        ></div>
+                      </>
+                    ) : (
+                      ""
+                    )}
+                    {/* {data?.brandName && (
+                      <li>
+                        <strong>Brand:</strong> {data.brandName}
+                      </li>
+                    )} */}
+                    {data?.categoryName && (
+                      <li>
+                        <strong>Category:</strong> {data.categoryName}
+                      </li>
+                    )}
+                    {/* <li>
+                      <strong>Type:</strong> Original
+                    </li> */}
+                    {/* {data?.tags && data.tags.length > 0 && (
+                      <li>
+                        <strong>Tags:</strong> {data.tags.join(", ")}
+                      </li>
+                    )} */}
+                  </ul>
                 </div>
                 <div className="product-description border-product">
                   <div className="size-box">

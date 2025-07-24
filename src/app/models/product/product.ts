@@ -1,7 +1,12 @@
 // models/Product.ts
-import { DoneDiscount, TrackDiscount } from '@/app/globalProvider';
-import { Discount, RatingModel, TaxGroupModel, TaxModel } from '@/app/models/models';
-const INCLUSIVE_TAX = 'inclusive'; // Define your tax type constant
+import { DoneDiscount, TrackDiscount } from "@/app/globalProvider";
+import {
+  Discount,
+  RatingModel,
+  TaxGroupModel,
+  TaxModel,
+} from "@/app/models/models";
+const INCLUSIVE_TAX = "inclusive"; // Define your tax type constant
 
 export class Product {
   // Core Product Properties
@@ -61,7 +66,7 @@ export class Product {
   cartItemCount: number;
   cartPurchaseOptionStr: string;
   INCLUSIVE_TAX: string = INCLUSIVE_TAX;
-  specs: {} ={};
+  specs: {} = {};
   images: boolean = false;
 
   constructor(params: {
@@ -158,32 +163,35 @@ export class Product {
     this.brandName = params.brandName;
     this.isAvailable = params.isAvailable;
     this.cartItemCount = params.cartItemCount ?? 1;
-    this.cartPurchaseOptionStr = params.cartPurchaseOptionStr ?? '';
+    this.cartPurchaseOptionStr = params.cartPurchaseOptionStr ?? "";
     this.tax = params.tax;
     this.discount = params.discount;
   }
 
   // Factory method to create from JSON
-  static fromJson(map: Record<string, any>, isPremium: boolean = false): Product {
+  static fromJson(
+    map: Record<string, any>,
+    isPremium: boolean = false
+  ): Product {
     return new Product({
       id: map.id,
       storeId: map.store_id,
       name: map.name,
       img: Array.isArray(map.img) ? map.img.map(String) : [],
       sort: map.sort || 0,
-      sellingDisplayOption: map.selling_display_option || '',
+      sellingDisplayOption: map.selling_display_option || "",
       sellingPrice: map.selling_price || 0,
       costPrice: map.cost_price || 0,
       rangeMargin: map.range_margin || 0,
       rangeMarginIsPercent: map.range_margin_is_percent || false,
-      categoryID: map.category_id || '',
-      categoryName: map.category_name || '',
+      categoryID: map.category_id || "",
+      categoryName: map.category_name || "",
       isReturnable: map.is_returnable || false,
       acceptBackFill: map.accept_back_fill || false,
       outOfStock: map.out_of_stock || false,
       description: Array.isArray(map.description) ? map.description : [],
       discount: map.discount ? Discount.fromMap(map.discount) : undefined,
-      saleMode: map.sale_mode || '',
+      saleMode: map.sale_mode || "",
       sellingDisplayOptions: Array.isArray(map.selling_display_options)
         ? map.selling_display_options.map(String)
         : [],
@@ -202,17 +210,17 @@ export class Product {
       stock: map.stock ?? 0,
       active: map.active || false,
       inKitSalePrice: map.in_kit_sale_price || 0,
-      inKitQuantity: map.in_kit_quantity?.toString() || '',
+      inKitQuantity: map.in_kit_quantity?.toString() || "",
       rating: map.rating
         ? RatingModel.fromMap(map.rating)
         : RatingModel.emptyRating(),
       saleCount: map.sale_count ?? 0,
-      label: map.label || '',
-      mfgDate: map.mfg_date || '',
-      expDate: map.exp_date || ' ',
-      creationTime: map.creation_time || '',
+      label: map.label || "",
+      mfgDate: map.mfg_date || "",
+      expDate: map.exp_date || " ",
+      creationTime: map.creation_time || "",
       timing: map.timing,
-      taxType: map.tax_type || '',
+      taxType: map.tax_type || "",
       tax: map.tax ? TaxModel.fromMap(map.tax) : undefined,
       tags:
         map.tags && Array.isArray(map.tags)
@@ -221,8 +229,8 @@ export class Product {
       inKitCount: map.in_kit_count || 0,
       finalPrice: map.final_price || 0,
       cartItemCount: map.cart_item_count ?? 1,
-      cartPurchaseOptionStr: map.cart_purchase_option_str || '',
-      brandName: map.brand_name || '',
+      cartPurchaseOptionStr: map.cart_purchase_option_str || "",
+      brandName: map.brand_name || "",
       isAvailable: map.is_available || false,
     });
   }
@@ -258,17 +266,21 @@ export class Product {
       name: params.name ?? this.name,
       img: params.img ?? [...this.img],
       sort: params.sort ?? this.sort,
-      sellingDisplayOption: params.sellingDisplayOption ?? this.sellingDisplayOption,
+      sellingDisplayOption:
+        params.sellingDisplayOption ?? this.sellingDisplayOption,
       sellingPrice: params.sellingPrice ?? this.sellingPrice,
       costPrice: params.costPrice ?? this.costPrice,
       rangeMargin: params.rangeMargin ?? this.rangeMargin,
-      rangeMarginIsPercent: params.rangeMarginIsPercent ?? this.rangeMarginIsPercent,
+      rangeMarginIsPercent:
+        params.rangeMarginIsPercent ?? this.rangeMarginIsPercent,
       categoryID: params.categoryID ?? this.categoryID,
       isReturnable: params.isReturnable ?? this.isReturnable,
       acceptBackFill: params.acceptBackFill ?? this.acceptBackFill,
       description: params.description ?? [...this.description],
       saleMode: params.saleMode ?? this.saleMode,
-      sellingDisplayOptions: params.sellingDisplayOptions ?? [...this.sellingDisplayOptions],
+      sellingDisplayOptions: params.sellingDisplayOptions ?? [
+        ...this.sellingDisplayOptions,
+      ],
       sellingPrices: params.sellingPrices ?? [...this.sellingPrices],
       costPrices: params.costPrices ?? [...this.costPrices],
       margin: params.margin ?? this.margin,
@@ -297,7 +309,8 @@ export class Product {
       brandName: params.brandName ?? this.brandName,
       isAvailable: params.isAvailable ?? this.isAvailable,
       cartItemCount: params.cartItemCount ?? this.cartItemCount,
-      cartPurchaseOptionStr: params.cartPurchaseOptionStr ?? this.cartPurchaseOptionStr,
+      cartPurchaseOptionStr:
+        params.cartPurchaseOptionStr ?? this.cartPurchaseOptionStr,
       tax: params.tax ?? this.tax,
       discount: params.discount ?? this.discount,
     });
@@ -306,23 +319,23 @@ export class Product {
   // Empty product factory
   static empty(): Product {
     return new Product({
-      id: '',
-      name: '',
-      storeId: '',
+      id: "",
+      name: "",
+      storeId: "",
       img: [],
       sort: 0,
-      sellingDisplayOption: '',
+      sellingDisplayOption: "",
       sellingPrice: 0,
       costPrice: 0,
       rangeMargin: 0,
       rangeMarginIsPercent: false,
-      categoryID: '',
-      categoryName: '',
+      categoryID: "",
+      categoryName: "",
       isReturnable: false,
       acceptBackFill: false,
       outOfStock: false,
       description: [],
-      saleMode: '',
+      saleMode: "",
       sellingDisplayOptions: [],
       sellingPrices: [],
       costPrices: [],
@@ -335,51 +348,60 @@ export class Product {
       stock: 0,
       active: false,
       inKitSalePrice: 0,
-      inKitQuantity: '',
+      inKitQuantity: "",
       rating: RatingModel.emptyRating(),
       saleCount: 0,
-      label: '',
-      mfgDate: '',
-      expDate: '',
-      creationTime: '',
+      label: "",
+      mfgDate: "",
+      expDate: "",
+      creationTime: "",
       timing: null,
-      taxType: '',
+      taxType: "",
       tax: undefined,
       inKitCount: 0,
       finalPrice: 0,
       cartItemCount: 1,
-      cartPurchaseOptionStr: '',
+      cartPurchaseOptionStr: "",
       tags: [],
       discount: undefined,
-      brandName: '',
+      brandName: "",
       isAvailable: false,
     });
   }
 
   // Price calculation methods
   getProductPrice(): number {
-    if (this.saleMode === 'range') {
+    if (this.saleMode === "range") {
       return this.sellingPrice * this.minCount;
-    } else if (this.saleMode === 'custom' || this.saleMode === 'flexible') {
-      return this.sellingPrices.length > 0 ? this.sellingPrices[0] * this.minCount : 0;
+    } else if (this.saleMode === "custom" || this.saleMode === "flexible") {
+      return this.sellingPrices.length > 0
+        ? this.sellingPrices[0] * this.minCount
+        : 0;
     }
     return 0;
   }
 
-  getPrice(params: { cartQuantity?: number; purchaseOptionStr?: string } = {}): number {
+  getPrice(
+    params: { cartQuantity?: number; purchaseOptionStr?: string } = {}
+  ): number {
     const cartQuantity = params.cartQuantity ?? this.cartItemCount;
-    const purchaseOptionStr = params.purchaseOptionStr ?? this.cartPurchaseOptionStr;
+    const purchaseOptionStr =
+      params.purchaseOptionStr ?? this.cartPurchaseOptionStr;
 
-    if (this.saleMode === 'range') {
+    if (this.saleMode === "range") {
       return this.sellingPrice * cartQuantity;
     }
 
     let purchaseOptionIndex = 0;
-    if (purchaseOptionStr && this.sellingDisplayOptions.includes(purchaseOptionStr)) {
-      purchaseOptionIndex = this.sellingDisplayOptions.indexOf(purchaseOptionStr);
+    if (
+      purchaseOptionStr &&
+      this.sellingDisplayOptions.includes(purchaseOptionStr)
+    ) {
+      purchaseOptionIndex =
+        this.sellingDisplayOptions.indexOf(purchaseOptionStr);
     }
 
-    if (this.saleMode === 'custom' || this.saleMode === 'flexible') {
+    if (this.saleMode === "custom" || this.saleMode === "flexible") {
       return (this.sellingPrices[purchaseOptionIndex] || 0) * cartQuantity;
     }
 
@@ -392,7 +414,9 @@ export class Product {
     return new Date() > this.discount.discountEndDate;
   }
 
-  getDiscountAmount(params: { cartQuantity?: number; purchaseOptionStr?: string } = {}): number {
+  getDiscountAmount(
+    params: { cartQuantity?: number; purchaseOptionStr?: string } = {}
+  ): number {
     const cartQuantity = params.cartQuantity ?? this.cartItemCount;
 
     if (!this.discount || this.isDiscountExpired() || !this.discount.active) {
@@ -421,33 +445,42 @@ export class Product {
 
   getDiscountName(): string {
     if (!this.discount || this.discount.name == null) {
-      return '';
+      return "";
     }
-    return this.discount.name ?? '';
+    return this.discount.name ?? "";
   }
 
-  getCostPrice(cartQuantity: number = 0, purchaseOptionStr: string = ''): number {
+  getCostPrice(
+    cartQuantity: number = 0,
+    purchaseOptionStr: string = ""
+  ): number {
     // Use instance values if parameters are not provided
     const quantity = cartQuantity === 0 ? this.cartItemCount : cartQuantity;
-    const option = purchaseOptionStr === '' ? this.cartPurchaseOptionStr : purchaseOptionStr;
+    const option =
+      purchaseOptionStr === "" ? this.cartPurchaseOptionStr : purchaseOptionStr;
 
     let purchaseOptionIndex = 0;
-    if (option !== '') {
+    if (option !== "") {
       purchaseOptionIndex = this.sellingDisplayOptions.findIndex(
-        item => item === this.cartPurchaseOptionStr
+        (item) => item === this.cartPurchaseOptionStr
       );
     }
 
-    if (this.saleMode === 'SALE_MODE_RANGE') {
+    if (this.saleMode === "SALE_MODE_RANGE") {
       return this.costPrice * quantity;
-    } else if (this.saleMode === 'SALE_MODE_CUSTOM' || this.saleMode === 'SALE_MODE_FLEXIBLE') {
+    } else if (
+      this.saleMode === "SALE_MODE_CUSTOM" ||
+      this.saleMode === "SALE_MODE_FLEXIBLE"
+    ) {
       return this.costPrices[purchaseOptionIndex] * quantity;
     }
 
     return 0;
   }
 
-  getPriceWithDiscount(params: { cartQuantity?: number; purchaseOptionStr?: string } = {}): number {
+  getPriceWithDiscount(
+    params: { cartQuantity?: number; purchaseOptionStr?: string } = {}
+  ): number {
     const price = this.getPrice(params);
     const discount = this.getDiscountAmount(params);
     return price - discount;
@@ -489,13 +522,13 @@ export class Product {
     let shouldApplyTax = false;
 
     switch (taxGroup.condition) {
-      case 'less_than_or_equal_to':
+      case "less_than_or_equal_to":
         shouldApplyTax = singleItemAmount <= taxGroup.conditionPrice1;
         break;
-      case 'more_than_or_equal_to':
+      case "more_than_or_equal_to":
         shouldApplyTax = singleItemAmount >= taxGroup.conditionPrice1;
         break;
-      case 'in_between':
+      case "in_between":
         shouldApplyTax =
           singleItemAmount >= taxGroup.conditionPrice1 &&
           singleItemAmount <= taxGroup.conditionPrice2;
@@ -509,19 +542,23 @@ export class Product {
     return this.tags;
   }
 
-
-  getBasePriceInCart(options: { cartQuantity?: number; purchaseOptionStr?: string } = {}): number {
-    const { cartQuantity = 0, purchaseOptionStr = '' } = options;
+  getBasePriceInCart(
+    options: { cartQuantity?: number; purchaseOptionStr?: string } = {}
+  ): number {
+    const { cartQuantity = 0, purchaseOptionStr = "" } = options;
 
     const price = this.getPrice({ cartQuantity, purchaseOptionStr });
-    const discount = this.getPriceWithDiscount({ cartQuantity, purchaseOptionStr: '' });
+    const discount = this.getPriceWithDiscount({
+      cartQuantity,
+      purchaseOptionStr: "",
+    });
 
     if (this.taxType === INCLUSIVE_TAX) {
       return price + this.getTaxAmountInCart(discount, cartQuantity);
     }
 
     return price;
-  };
+  }
 
   getTaxAmountInCart(amount: number, cartQuantity: number): number {
     let taxAmount = 0.0;
@@ -535,16 +572,21 @@ export class Product {
     }
 
     return taxAmount;
-  };
+  }
 
   getDiscountPriceInCart(options: { quantity?: number } = {}): number {
     const { quantity = 0 } = options;
-    const price = this.getPrice({ cartQuantity: quantity, purchaseOptionStr: '' });
+    const price = this.getPrice({
+      cartQuantity: quantity,
+      purchaseOptionStr: "",
+    });
     const discount = this.getDiscountAmountInCart({ quantity, price });
     const discountedPrice = price - discount;
 
     if (this.taxType === this.INCLUSIVE_TAX) {
-      return discountedPrice + this.getTaxAmountInCart(discountedPrice, quantity);
+      return (
+        discountedPrice + this.getTaxAmountInCart(discountedPrice, quantity)
+      );
     }
     return discountedPrice;
   }
@@ -553,11 +595,18 @@ export class Product {
     return this.discount != null;
   }
 
-  getDiscountAmountInCart(options: { quantity?: number; price: number }): number {
+  getDiscountAmountInCart(options: {
+    quantity?: number;
+    price: number;
+  }): number {
     const { quantity = 0, price } = options;
     const actualQuantity = quantity === 0 ? this.cartItemCount : quantity;
 
-    if (!this.isDiscount() || this.isDiscountExpired() || !this.isDiscountActive()) {
+    if (
+      !this.isDiscount() ||
+      this.isDiscountExpired() ||
+      !this.isDiscountActive()
+    ) {
       return 0;
     }
 
@@ -569,18 +618,18 @@ export class Product {
     }
     return actualQuantity * discount;
   }
-   isDiscountNotExpired():boolean {
-    const userPhoneNumber =  '8861821698';
+  isDiscountNotExpired(): boolean {
+    const userPhoneNumber = "8861821698";
     if (this.discount == null) return false;
     const isExcluded =
-        this.discount?.isDiscountExcludedToPhoneNumber(userPhoneNumber);
+      this.discount?.isDiscountExcludedToPhoneNumber(userPhoneNumber);
     const isActive = this.discount?.active;
     const isNotExpired = TrackDiscount.getItemDiscountExpireSec(this.id) > 0;
     const isNotDone = !DoneDiscount.ids.includes(this.id);
 
     return !isExcluded! && isActive! && isNotExpired && isNotDone;
   }
-  getDiscountPercentage():boolean {
+  getDiscountPercentage(): boolean {
     if (this.discount == null || this.discount?.isDiscountPercent == null) {
       return false;
     }
@@ -589,7 +638,7 @@ export class Product {
 
   getDiscountStartDate(): string {
     if (!this.discount || !this.discount.discountStartDate) {
-      return '';
+      return "";
     }
     return this.discount.discountStartDate.toISOString();
   }
@@ -597,18 +646,19 @@ export class Product {
   // Convert Dart's getDiscountEndDate()
   getDiscountEndDate(): string {
     if (!this.discount || !this.discount.discountEndDate) {
-      return '';
+      return "";
     }
     return this.discount.discountEndDate.toISOString();
   }
 
-  getBasePrice(options: { cartQuantity?: number; purchaseOptionStr?: string } = {}): number {
-    const { cartQuantity = 1, purchaseOptionStr = '' } = options;
+  getBasePrice(
+    options: { cartQuantity?: number; purchaseOptionStr?: string } = {}
+  ): number {
+    const { cartQuantity = 1, purchaseOptionStr = "" } = options;
     return this.getPrice({ cartQuantity, purchaseOptionStr });
   }
 
-   isDiscountExcluded( phoneNumber:string):boolean {
+  isDiscountExcluded(phoneNumber: string): boolean {
     return this.discount?.isDiscountExcludedToPhoneNumber(phoneNumber) ?? false;
   }
-
 }

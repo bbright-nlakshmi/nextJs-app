@@ -8,19 +8,7 @@ const Loader = (props) => {
       setIsLoading(false);
     }, 1000);
   }, []);
-  return (
-    <Fragment>
-      {isLoading ? (
-        <div className="loader-wrapper">
-          <div>
-            <img src="/images/loader.gif" alt="loader"/>
-          </div>
-        </div>
-      ) : (
-        props.children
-      )}
-    </Fragment>
-  );
+  return <Fragment>{props.children}</Fragment>;
 };
 
 export default Loader;

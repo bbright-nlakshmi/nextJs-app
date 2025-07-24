@@ -16,10 +16,9 @@ interface BusinessDetails {
   // Add other properties as needed based on your BusinessDetails model
 }
 
-
-
 const AboutPage: NextPage = () => {
-  const [businessDetails, setBusinessDetails] = useState<BusinessDetails | null>(null);
+  const [businessDetails, setBusinessDetails] =
+    useState<BusinessDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,8 +29,8 @@ const AboutPage: NextPage = () => {
         const details = await API.getBusinessDetails();
         setBusinessDetails(details);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error('Error fetching business details:', err);
+        setError(err instanceof Error ? err.message : "An error occurred");
+        console.error("Error fetching business details:", err);
       } finally {
         setLoading(false);
       }
@@ -44,7 +43,10 @@ const AboutPage: NextPage = () => {
     return (
       <div className="bg-light">
         <Breadcrumb title="About-us" parent="home" />
-        <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: "400px" }}
+        >
           <div className="spinner-border" role="status">
             <span className="sr-only">Loading...</span>
           </div>
@@ -56,8 +58,11 @@ const AboutPage: NextPage = () => {
   if (error) {
     return (
       <div className="bg-light">
-        <Breadcrumb title="About-us" parent="home" />
-        <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
+        <Breadcrumb title="About us" parent="home" />
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: "400px" }}
+        >
           <div className="alert alert-danger" role="alert">
             Error loading business details: {error}
           </div>
@@ -68,10 +73,9 @@ const AboutPage: NextPage = () => {
 
   return (
     <div className="bg-light">
-      <Breadcrumb title="About-us" parent="home" />
-      
+      <Breadcrumb title="About Us" parent="home" />
+
       {/* Testimonial section */}
-      
 
       {/* Business Details section */}
       {businessDetails && (
@@ -82,7 +86,7 @@ const AboutPage: NextPage = () => {
                 <h2>About Our Business</h2>
                 <div className="business-info p-4 border rounded shadow-sm">
                   <h3 className="mb-3">{businessDetails.name}</h3>
-                  
+
                   {businessDetails.aboutUs && (
                     <div className="mb-2">
                       <strong>About Us: </strong>
@@ -113,8 +117,6 @@ const AboutPage: NextPage = () => {
           </Container>
         </section>
       )}
-
-      
     </div>
   );
 };

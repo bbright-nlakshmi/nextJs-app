@@ -20,10 +20,6 @@ export * from "@/app/models/models";
 // PROVIDERS
 export * from "@/app/providers/all_providers";
 
-export { userService } from "@/app/services/user.service";
-
-// export * from '@/app/providers/providers';
-
 // SERVICES
 
 export * from "@/app/services/global.services";

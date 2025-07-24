@@ -33,12 +33,22 @@ const CollectionBanner: NextPage<Props> = ({
     router.push(`/product-details/${id}`);
   };
 
+  console.log(categories);
+
   if (categories.length) {
     return (
       <>
         <section className="w-full rts-category-area section-pt-space">
           <div className="custom-container title-area-between">
-            <h2 className="title-left">Featured Categories</h2>
+            <h2 className="title-left">
+              Featured Categories
+              <span
+                className="view-all_link"
+                onClick={() => router.push("/pages/categories?type=featured")}
+              >
+                View All
+              </span>
+            </h2>
             <div className="next-prev-swiper-wrapper">
               <div className="swiper-button-prev">
                 <i className="fa-regular fa-chevron-left"></i>

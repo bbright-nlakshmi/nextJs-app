@@ -38,6 +38,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type TabProductProps = {
   effect?: any;
@@ -49,6 +51,7 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
   const [activeTab, setActiveTab] = useState(0);
+  const router = useRouter();
 
   const getPrice = (productId: string) => {
     const price = searchController.getDetails(productId, "getPrice");
@@ -58,10 +61,9 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
 
   // Function to handle adding item to cart with price included
   const handleAddToCart = (item: any, qty = 1) => {
-    const price = searchController.getDetails(item.productId, "getPrice");
     const cartItem = {
       ...item,
-      price: price,
+      price: getPrice(item.productId),
       id: item.productId,
     };
     addToCart(cartItem, qty);
@@ -72,7 +74,15 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
       <>
         <section className="section-pt-space">
           <div className="custom-container title-area-between">
-            <h2 className="title-left">All Categories</h2>
+            <h2 className="title-left">
+              All Categories
+              <span
+                className="view-all_link"
+                onClick={() => router.push(`/pages/categories?type=all`)}
+              >
+                View All
+              </span>
+            </h2>
           </div>
           <div className="tab-product-main row">
             <div className="tab-prodcut-contain col-lg-12">

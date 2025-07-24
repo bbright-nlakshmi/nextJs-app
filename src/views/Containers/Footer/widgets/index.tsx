@@ -1,3 +1,4 @@
+// FooterSection.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import { Row, Col, Container, Media, Input } from "reactstrap";
@@ -5,32 +6,42 @@ import { API } from "@/app/services/api.service";
 import { useRouter } from "next/navigation";
 import { BusinessDetails } from "@/app/globalProvider";
 
-const FooterSection: React.FC = () => {
+type FooterProps = {
+  layoutLogo: string;
+};
+const FooterSection: React.FC<FooterProps> = ({ layoutLogo }) => {
   const router = useRouter();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [business, setBusiness] = useState<BusinessDetails | null>(null);
+  const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const logoRes = await API.getAppLogo();
-        if (logoRes?.appLogo) {
-          setLogoUrl(logoRes.appLogo);
-        }
+        if (logoRes?.appLogo) setLogoUrl(logoRes.appLogo);
         const businessRes = await API.getBusinessDetails();
         setBusiness(businessRes);
       } catch (err) {
         console.error("Error fetching logo:", err);
       }
     };
-
     fetchData();
   }, []);
+
+  const toggleAccordion = (section: string) => {
+    if (window.innerWidth < 768) {
+      setActiveAccordion((prev) => (prev === section ? null : section));
+    }
+  };
+
+  const isMobile = () =>
+    typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
     <footer className="footer-2">
       <Container>
-        <Row className="row">
+        <Row>
           <Col xs="12">
             <div className="footer-main-contian">
               <Row>
@@ -44,14 +55,15 @@ const FooterSection: React.FC = () => {
                       )}
                     </div>
                     <div className="footer-detail">
-                      {/* <p>
-                        Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old.
-                      </p> */}
-                      <ul className="paymant-bottom">
+                      <ul className="paymant-bottom d-flex justify-content-center align-items-center gap-2 list-unstyled m-0">
                         {[1, 2, 3, 4, 5].map((num) => (
                           <li key={num}>
                             <a href="#">
-                              <Media src={`/images/layout-1/pay/${num}.png`} className="img-fluid" alt={`pay-${num}`} />
+                              <Media
+                                src={`/images/layout-1/pay/${num}.png`}
+                                className="img-fluid"
+                                alt={`pay-${num}`}
+                              />
                             </a>
                           </li>
                         ))}
@@ -63,104 +75,116 @@ const FooterSection: React.FC = () => {
                 <Col lg="8" md="12">
                   <div className="footer-right">
                     <Row>
-                      {/* <Col md="12">
-                        <div className="subscribe-section">
-                          <Row>
-                            <Col md="5">
-                              <div className="subscribe-block">
-                                <div className="subscrib-contant">
-                                  <h4>subscribe to newsletter</h4>
-                                </div>
-                              </div>
-                            </Col>
-                            <Col md="7">
-                              <div className="subscribe-block">
-                                <div className="subscrib-contant">
-                                  <div className="input-group">
-                                    <div className="input-group-prepend">
-                                      <span className="input-group-text">
-                                        <i className="fa fa-envelope-o"></i>
-                                      </span>
-                                    </div>
-                                    <Input type="text" className="form-control" placeholder="your email" />
-                                    <div className="input-group-prepend">
-                                      <span className="input-group-text telly">
-                                        <i className="fa fa-telegram"></i>
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </Col>
-                          </Row>
-                        </div>
-                      </Col> */}
-
                       <Col md="12">
                         <div className="account-right">
                           <Row>
-                            <Col md="4">
-                              <div className="footer-box">
-                                <div className="footer-title">
-                                  <h5>my account</h5>
-                                </div>
-                                <div className="footer-contant">
-                                  <ul>
-                                    <li><a onClick={() => router.push("/pages/about-us")} style={{ cursor: "pointer" }}>About Us</a></li>                                                                        
-                                    <li><a onClick={() => router.push("/pages/ContactUs")} style={{ cursor: "pointer" }}>contact us</a></li>
-                                    <li><a onClick={() => router.push("/pages/terms")} style={{ cursor: "pointer" }}>terms & conditions</a></li>
-                                    <li><a onClick={() => router.push("/pages/privacy")} style={{ cursor: "pointer" }}>privacy Policy</a></li>
-                                    {/* <li><a href="#">returns & exchanges</a></li>
-                                    <li><a href="#">shipping & delivery</a></li> */}
-                                  </ul>
-                                </div>
-                              </div>
-                            </Col>
-
-                            <Col md="3">
-                              <div className="footer-box">
-                                <div className="footer-title">
-                                  <h5>quick link</h5>
-                                </div>
-                                <div className="footer-contant">
-                                  <ul>
-                                    <li><a onClick={() => router.push("/pages/store")} style={{ cursor: "pointer" }}>Store Location</a></li>                                                                        
-                                    <li><a onClick={() => router.push("/pages/account/profile")} style={{ cursor: "pointer" }}>my account</a></li>
-                                    <li><a href="#">orders tracking</a></li>
-                                    {/* <li><a href="#">size guide</a></li> */}
-                                    <li><a href="#">FAQ</a></li>
-                                  </ul>
-                                </div>
-                              </div>
-                            </Col>
-
-                            <Col md="5">
-                              <div className="footer-box footer-contact-box">
-                                <div className="footer-title">
-                                  <h5>contact us</h5>
-                                </div>
-                                <div className="footer-contant">
+                            {[
+                              {
+                                id: "my-account",
+                                title: "my account",
+                                links: [
+                                  ["About Us", "/pages/about-us"],
+                                  ["contact us", "/pages/ContactUs"],
+                                  ["terms & conditions", "/pages/terms"],
+                                  ["privacy Policy", "/pages/privacy"],
+                                ],
+                              },
+                              {
+                                id: "quick-link",
+                                title: "quick link",
+                                links: [
+                                  ["Store Location", "/pages/store"],
+                                  ["my account", "/pages/account/profile"],
+                                  ["orders tracking", "#"],
+                                  ["FAQ", "#"],
+                                ],
+                              },
+                              {
+                                id: "contact-us",
+                                title: "contact us",
+                                content: (
                                   <ul className="contact-list">
                                     <li>
                                       <i className="fa fa-map-marker"></i>
-                                      <span>{business?.address || "Loading address..."}<br />
+                                      <span>
+                                        {business?.address ||
+                                          "Loading address..."}
+                                        <br />
                                         <span>India</span>
                                       </span>
                                     </li>
                                     <li>
                                       <i className="fa fa-phone"></i>
-                                      <span>call us: {business?.phone || "Loading..."}</span>
-                                    </li>
-                                    <li><i className="fa fa-envelope-o"></i>
                                       <span>
-                                        email us: {business?.email || "Loading..."}
+                                        call us:{" "}
+                                        {business?.phone || "Loading..."}
                                       </span>
                                     </li>
-                                    {/* <li><i className="fa fa-fax"></i><span>fax 123456</span></li> */}
+                                    <li>
+                                      <i className="fa fa-envelope-o"></i>
+                                      <span>
+                                        email us:{" "}
+                                        {business?.email || "Loading..."}
+                                      </span>
+                                    </li>
                                   </ul>
+                                ),
+                              },
+                            ].map((section, i) => (
+                              <Col
+                                md={i === 2 ? "5" : i === 1 ? "3" : "4"}
+                                key={section.id}
+                              >
+                                <div className="footer-box ">
+                                  <div
+                                    className="footer-title mt-0 mb-0"
+                                    onClick={() => toggleAccordion(section.id)}
+                                    style={{
+                                      cursor: isMobile()
+                                        ? "pointer"
+                                        : "default",
+                                    }}
+                                  >
+                                    <h5>
+                                      {section.title}{" "}
+                                      {isMobile() && (
+                                        <span className="arrow-icon me-2">
+                                          {activeAccordion === section.id
+                                            ? "▲"
+                                            : "▼"}
+                                        </span>
+                                      )}
+                                    </h5>
+                                  </div>
+                                  <div
+                                    className={`footer-contant ${
+                                      isMobile()
+                                        ? activeAccordion === section.id
+                                          ? "open"
+                                          : "closed"
+                                        : "open"
+                                    }`}
+                                  >
+                                    {section.links ? (
+                                      <ul>
+                                        {section.links.map(([text, path]) => (
+                                          <li key={text}>
+                                            <a
+                                              onClick={() => router.push(path)}
+                                              style={{ cursor: "pointer" }}
+                                            >
+                                              {text}
+                                            </a>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      section.content
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            </Col>
+                              </Col>
+                            ))}
                           </Row>
                         </div>
                       </Col>
@@ -172,42 +196,14 @@ const FooterSection: React.FC = () => {
           </Col>
         </Row>
       </Container>
-
-      {/* <div className="app-link-block bg-transparent">
-        <Container>
-          <Row>
-            <div className="app-link-bloc-contain app-link-bloc-contain-1">
-              <div className="app-item-group">
-                <div className="app-item">
-                  <Media src="/images/layout-1/app/1.png" className="img-fluid" alt="app-banner" />
-                </div>
-                <div className="app-item">
-                  <Media src="/images/layout-1/app/2.png" className="img-fluid" alt="app-banner" />
-                </div>
-              </div>
-              <div className="app-item-group">
-                <div className="social-block">
-                  <h6>follow us</h6>
-                  <ul className="social">
-                    <li><a href="#"><i className="fa fa-facebook"></i></a></li>
-                    <li><a href="#"><i className="fa fa-google-plus"></i></a></li>
-                    <li><a href="#"><i className="fa fa-twitter"></i></a></li>
-                    <li><a href="#"><i className="fa fa-instagram"></i></a></li>
-                    <li><a href="#"><i className="fa fa-rss"></i></a></li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </Row>
-        </Container>
-      </div> */}
-
       <div className="sub-footer">
         <Container>
           <Row>
             <Col xs="12">
               <div className="sub-footer-contain">
-                <p><span>2025 </span>Copyright @rupeecom</p>
+                <p>
+                  <span>2025 </span>Copyright @rupeecom
+                </p>
               </div>
             </Col>
           </Row>

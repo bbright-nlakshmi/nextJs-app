@@ -13,7 +13,7 @@ const Breadcrumb: NextPage<breadcrumb> = ({ title, parent }) => {
         <Container>
           <Row>
             <Col>
-              <div className="breadcrumb-contain">
+              <div className="breadcrumb-container">
                 <div>
                   <h2>{title}</h2>
                   <ul>

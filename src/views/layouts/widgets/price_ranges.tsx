@@ -36,8 +36,9 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
 
   const ranges = priceRanges?.price_ranges || [];
 
-  const getPrice = (item: ProductItem): number =>
-    (item as any).sellingPrice || 0;
+  const getPrice = (item: ProductItem) => {
+    return searchController.getDetails(item.id, "getPrice") || 0;
+  };
 
   const getName = (item: ProductItem): string => {
     const itemAny = item as any;

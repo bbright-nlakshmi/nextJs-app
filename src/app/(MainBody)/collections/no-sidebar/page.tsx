@@ -32,7 +32,7 @@ const NoSidebar: NextPage = () => {
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Add refs to track if data has been loaded to prevent unnecessary reloads
   const isInitialLoadDone = useRef(false);
   const currentCategoryId = useRef<string | null>(null);
@@ -40,29 +40,28 @@ const NoSidebar: NextPage = () => {
   const toggleMobileFilter = () => setIsMobileFilterOpen((prev) => !prev);
 
   // Function to update price range from products
-  const updatePriceRangeFromFilteredProducts = useCallback((
-    products: CategoryProducts[]
-  ) => {
-    const prices: number[] = products
-      .map((prod: any) => {
-        const id = categoryType === "discount" ? prod.id : prod.productId;
-        return searchController.getDetails(id, "getPrice");
-      })
-      .filter((p): p is number => typeof p === "number" && !isNaN(p));
+  const updatePriceRangeFromFilteredProducts = useCallback(
+    (products: CategoryProducts[]) => {
+      const prices: number[] = products
+        .map((prod: any) => {
+          const id = categoryType === "discount" ? prod.id : prod.productId;
+          return searchController.getDetails(id, "getPrice");
+        })
+        .filter((p): p is number => typeof p === "number" && !isNaN(p));
 
-    if (prices.length > 0) {
-      setMinPrice(Math.min(...prices));
-      setMaxPrice(Math.max(...prices));
-    } else {
-      setMinPrice(0);
-      setMaxPrice(150);
-    }
-  }, [categoryType]);
+      if (prices.length > 0) {
+        setMinPrice(Math.min(...prices));
+        setMaxPrice(Math.max(...prices));
+      } else {
+        setMinPrice(0);
+        setMaxPrice(150);
+      }
+    },
+    [categoryType]
+  );
 
   // Function to load category data based on current URL parameters
   const loadCategoryData = useCallback(() => {
-    console.log('Loading category data for:', categoryId, categoryType);
-    
     if (!categoryId) {
       setSelectedCategories([]);
       setselectedCatgeoryProducts([]);
@@ -76,22 +75,20 @@ const NoSidebar: NextPage = () => {
 
     // Get the latest categories from objCache
     const currentCategories = objCache.allCategories || [];
-    console.log('Available categories:', currentCategories.map(c => ({ id: c.id, name: c.name })));
-    
-    const targetCategory = currentCategories.find(cat => cat.id === categoryId);
-    console.log('Found target category:', targetCategory?.name, targetCategory?.id);
+
+    const targetCategory = currentCategories.find(
+      (cat) => cat.id === categoryId
+    );
 
     if (targetCategory) {
       setSelectedCategories([targetCategory]);
       const products = targetCategory.category_products || [];
-      console.log('Category products:', products.length);
-      
+
       setselectedCatgeoryProducts(products);
       setFilteredProducts(products);
       updatePriceRangeFromFilteredProducts(products);
       currentCategoryId.current = categoryId;
     } else {
-      console.log('Category not found, clearing data');
       setSelectedCategories([]);
       setselectedCatgeoryProducts([]);
       setFilteredProducts([]);
@@ -99,18 +96,16 @@ const NoSidebar: NextPage = () => {
       setMaxPrice(150);
       currentCategoryId.current = null;
     }
-    
+
     setIsLoading(false);
     isInitialLoadDone.current = true;
   }, [categoryId, categoryType, updatePriceRangeFromFilteredProducts]);
 
   // Initial setup and objCache listener
   useEffect(() => {
-    console.log('Setting up objCache listener');
-    
     // Set initial categories
     setAllCategories(objCache.allCategories || []);
-    
+
     // Load initial data only if not already loaded
     if (!isInitialLoadDone.current) {
       loadCategoryData();
@@ -118,33 +113,29 @@ const NoSidebar: NextPage = () => {
 
     // Listen for category updates - but don't reload if we're already showing a category
     const handleCategoriesUpdate = (data: Category[]) => {
-      console.log('Categories updated:', data.length);
       setAllCategories(data);
-      
+
       // Only reload if we don't have a current category selected or if the categories were empty before
       if (!currentCategoryId.current || allCategories.length === 0) {
         setTimeout(() => loadCategoryData(), 100);
       } else {
         // Just update the categories list without reloading the current selection
-        console.log('Categories updated but maintaining current selection');
       }
     };
 
-    objCache.on('updateAllCategories', handleCategoriesUpdate);
+    objCache.on("updateAllCategories", handleCategoriesUpdate);
 
     // Cleanup
     return () => {
       // If objCache has an off method, use it
       if (objCache.off) {
-        objCache.off('updateAllCategories', handleCategoriesUpdate);
+        objCache.off("updateAllCategories", handleCategoriesUpdate);
       }
     };
   }, []); // Empty dependency array for setup only
 
   // Handle URL parameter changes - only reload when URL actually changes
   useEffect(() => {
-    console.log('URL parameters changed:', { categoryId, categoryType });
-    
     // Only reload if the category ID actually changed
     if (currentCategoryId.current !== categoryId) {
       setIsLoading(true);
@@ -174,7 +165,7 @@ const NoSidebar: NextPage = () => {
     if (!isNaN(val)) setMinPrice(val);
   };
 
-  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputInput>) => {
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     if (!isNaN(val)) setMaxPrice(val);
   };
@@ -191,7 +182,7 @@ const NoSidebar: NextPage = () => {
     setselectedCatgeoryProducts(updatedProducts);
     setFilteredProducts(updatedProducts);
     updatePriceRangeFromFilteredProducts(updatedProducts);
-    
+
     // Update current category tracking
     if (updatedCategories.length > 0) {
       currentCategoryId.current = updatedCategories[0].id;
@@ -339,7 +330,10 @@ const NoSidebar: NextPage = () => {
                     ) : (
                       <div className="col-12 text-center py-5">
                         <h4>No products found for this category</h4>
-                        <p>Please select a different category or check back later.</p>
+                        <p>
+                          Please select a different category or check back
+                          later.
+                        </p>
                       </div>
                     )}
                   </Row>

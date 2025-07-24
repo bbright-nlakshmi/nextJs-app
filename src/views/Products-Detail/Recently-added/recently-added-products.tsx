@@ -19,12 +19,18 @@ const RecentlyAddedProducts: React.FC = () => {
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
+
+  const getPrice = (productId: string) => {
+    const price = searchController.getDetails(productId, "getPrice");
+
+    return price;
+  };
+
   // Function to handle adding item to cart with price included
   const handleAddToCart = (item: any, qty = 1) => {
-    const price = searchController.getDetails(item.productId, "getPrice");
     const cartItem = {
       ...item,
-      price: price,
+      price: item.getPrice(),
       id: item.id,
     };
     addToCart(cartItem, qty);
@@ -33,6 +39,7 @@ const RecentlyAddedProducts: React.FC = () => {
   useEffect(() => {
     // Get recently added products
     const products = objCache.getRecentlyAddedProducts(8);
+    console.log("Recently added products:", products);
     setRecentProducts(products);
     setLoading(false);
 
@@ -94,13 +101,13 @@ const RecentlyAddedProducts: React.FC = () => {
                 breakpoints={appConfig.mediaQueries}
                 modules={[Navigation, Autoplay]}
               >
-                {recentProducts.map((product) => (
+                {recentProducts.map((product: Product) => (
                   <SwiperSlide key={product.id}>
                     <ProductBox
                       id={Number(product.id)}
                       name={product.name}
                       img={product.img}
-                      price={product.sellingPrice}
+                      price={product.getPrice()}
                       hoverEffect={"icon-inline"}
                       discount={product.discount?.discount || 0}
                       rating={product.rating?.calculateRating() || 0}
