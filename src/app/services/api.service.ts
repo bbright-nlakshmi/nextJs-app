@@ -36,8 +36,9 @@ import {
 import { useEffect } from "react";
 
 // Configuration
-const API_BASE_URL = appConfig.apiBaseUrl;
-//const API_BASE_URL = "https://devqarupeecomservice.rupeecom.in/v1";
+//const API_BASE_URL = appConfig.apiBaseUrl;
+
+const API_BASE_URL = "https://devqarupeecomservice.rupeecom.in/v1";
 
 const DEV_API_BASE_URL = API_BASE_URL;
 const TENANT_SERVICE_URL = appConfig.tenantServiceUrl;
@@ -50,6 +51,11 @@ const storeId = appConfig.defaultStoreId; // Default store ID if not set
 export class APIService {
   private static instance: APIService;
   private axiosInstance = axios.create();
+  private tenantId: string | undefined;
+  private storeId: string | undefined;
+  private businessId: string | null = null;
+  baseURL: string | undefined;
+  appName: string | undefined;
 
   private constructor() {
     // Initialize axios instance with default config
@@ -62,6 +68,26 @@ export class APIService {
     );
 
     NotificationService.initialize();
+  }
+
+private async ensureBusinessId(): Promise<string> {
+  if (!this.businessId) {
+    const details = await this.getBusinessDetails();
+    this.businessId = details.id;
+  }
+  return this.businessId;
+}
+
+  public setCurrentStore(storeId: string): void {
+    this.storeId = storeId;
+    ClientStorage.setItem("currentStoreId", storeId);
+  }
+  
+  public getCurrentStoreId(): string {
+    return (
+      (this.storeId ? this.storeId : ClientStorage.getItem("currentStoreId")) ||
+      appConfig.defaultStoreId
+    );
   }
 
   public static getInstance(): APIService {
@@ -471,6 +497,7 @@ export class APIService {
         }
       );
 
+      // return response.data;
       const allProducts = new Map<CategoryRender, Product[]>();
       for (const element of response.data) {
         try {
@@ -752,8 +779,8 @@ export class APIService {
       const payload = {
         tenant_id: tenantId,
         doc: {
-          business_id: AppBootStrap.getBusinessDetails().id,
-          store_id: storeId,
+          business_id: await this.ensureBusinessId(),
+          store_id: this.storeId,
           log_code: code,
           log_count: 0, // You might want to track this properly
           log_message: message,
@@ -983,8 +1010,8 @@ export class APIService {
       const response = await this.get<{ data: any[] }>(
         `${DEV_API_BASE_URL}/get-app-credits`,
         {
-          tenant_id: tenantId,
-          business_id: AppBootStrap.getBusinessDetails().id,
+          tenant_id: this.tenantId,
+          business_id: await this.ensureBusinessId(),
         }
       );
 
@@ -1004,8 +1031,8 @@ export class APIService {
       const response = await this.get<{ data: any[] }>(
         `${DEV_API_BASE_URL}/get-returns-refund`,
         {
-          tenant_id: tenantId,
-          business_id: AppBootStrap.businessDetails.id,
+          tenant_id: this.tenantId,
+          business_id: await this.ensureBusinessId(),
         }
       );
 
@@ -1025,8 +1052,8 @@ export class APIService {
       const response = await this.get<{ data: any[] }>(
         `${DEV_API_BASE_URL}/get-privacy`,
         {
-          tenant_id: tenantId,
-          business_id: "wnysgv7k67z",
+          tenant_id: this.tenantId,
+          business_id: await this.ensureBusinessId(),
         }
       );
 
@@ -1046,8 +1073,8 @@ export class APIService {
       const response = await this.get<{ data: any[] }>(
         `${DEV_API_BASE_URL}/get-termsAndConditions`,
         {
-          tenant_id: tenantId,
-          business_id: "wnysgv7k67z",
+          tenant_id: this.tenantId,
+          business_id: await this.ensureBusinessId(),
         }
       );
 
@@ -1142,8 +1169,8 @@ export class APIService {
       const response = await this.get<{ data: any[] }>(
         `${DEV_API_BASE_URL}/get-razorpay`,
         {
-          tenant_id: tenantId,
-          business_id: AppBootStrap.businessDetails.id,
+          tenant_id: this.tenantId,
+          business_id: await this.ensureBusinessId(),
         }
       );
 
@@ -1167,15 +1194,15 @@ export class APIService {
       throw error;
     }
   }
-
+  
   // Users
   async getUserData(): Promise<UserModel[]> {
     try {
       const response = await this.get<{ data: any[] }>(
         `${DEV_API_BASE_URL}/get-users`,
         {
-          tenant_id: tenantId,
-          business_id: AppBootStrap.getBusinessDetails().id,
+          tenant_id: this.tenantId,
+          business_id: await this.ensureBusinessId(),
         }
       );
 
@@ -1229,7 +1256,7 @@ export class APIService {
         {
           tenant_id: tenantId,
           order_distance: distance,
-          delivery_setup_id: AppBootStrap.getStoreBaseDetails().deliverySetupId,
+          delivery_setup_id: await this.ensureBusinessId(),
         }
       );
 

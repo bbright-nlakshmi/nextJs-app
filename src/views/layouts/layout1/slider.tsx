@@ -3,9 +3,7 @@ import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import Slider from "react-slick";
 import { Col, Media, Row } from "reactstrap";
-import { API, BannerModel, ObjCache } from '@/app/globalProvider'
-
-
+import { API, BannerModel, ObjCache } from "@/app/globalProvider";
 
 interface ButtonProps {
   id: number;
@@ -22,11 +20,14 @@ const SliderButtons: React.FC<{ buttons: ButtonProps[] }> = ({ buttons }) => {
   ));
 };
 
-
-
-
 // Swiper components, modules and styles
-import { Autoplay, Navigation, Pagination, Mousewheel, Keyboard } from "swiper/modules";
+import {
+  Autoplay,
+  Navigation,
+  Pagination,
+  Mousewheel,
+  Keyboard,
+} from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -55,7 +56,7 @@ interface SliderProps {
 }
 
 const SliderBanner: NextPage<SliderProps> = ({ banners }) => {
-  if (banners)
+  if (banners?.length)
     return (
       <div className="background-light-gray-color ptb--30 bg_light-1 pt_sm--20">
         {/* rts banner area start */}
@@ -64,7 +65,6 @@ const SliderBanner: NextPage<SliderProps> = ({ banners }) => {
             <div className="row">
               <div className="col-lg-12">
                 <div className="category-area-main-wrapper-one">
-
                   <Swiper
                     modules={[Navigation, Autoplay]}
                     spaceBetween={1}
@@ -75,8 +75,8 @@ const SliderBanner: NextPage<SliderProps> = ({ banners }) => {
                       delay: 4000,
                     }}
                     navigation={{
-                      nextEl: '.swiper-button-next',
-                      prevEl: '.swiper-button-prev',
+                      nextEl: ".swiper-button-next",
+                      prevEl: ".swiper-button-prev",
                     }}
                     breakpoints={{
                       0: { slidesPerView: 1, spaceBetween: 0 },
@@ -89,9 +89,11 @@ const SliderBanner: NextPage<SliderProps> = ({ banners }) => {
                   >
                     {banners.map((item) => (
                       <SwiperSlide>
-
-                        <Media src={item.img[0]} className="bg-img  img-fluid" alt={item.name} />
-
+                        <Media
+                          src={item.img[0]}
+                          className="bg-img  img-fluid"
+                          alt={item.name}
+                        />
                       </SwiperSlide>
                     ))}
                   </Swiper>
@@ -110,6 +112,4 @@ const SliderBanner: NextPage<SliderProps> = ({ banners }) => {
     );
 };
 
-
 export default SliderBanner;
-

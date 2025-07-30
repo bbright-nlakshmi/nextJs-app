@@ -63,44 +63,22 @@ const Home = () => {
     <>
       {/* <NewsLatter /> */}
       <Layouts>
-       
-          <SliderBanner banners={banners} />
-          <CollectionBanner categories={categories} categoryProducts={categoryProducts}/>
-          <TabProduct effect="icon-inline" categories={allCategories} />
-          {/* <CategoryProducts effect="icon-inline" categories={allCategories} /> */}
-          {/* <DiscountBanner /> */}
- 
-          {/* <CollectionBannerTwo /> */}
-          <DiscountProducts products={products} />
- 
-          <RecentlyAddedProducts/>
- 
-          <Kits kits={kits} />
- 
-          {/* <DiscountBanner /> */}
- 
-          {/* <CollectionBannerTwo />
-            <section className="deal-banner">
-              <DealBanner />
-            </section>
-            <section className="rounded-category">
-              <Category_View />
-            </section> */}
-          <section className="box-category section-py-space" >
-            <PriceRanges priceRanges={priceRanges} />
-          </section>
-          {/* <RatioSquare />
-            <CollectionBannerThree />
-            <HotDeal />
-            <section className="testimonial testimonial-inverse">
-              <Testimonial />
-            </section>
-            <SpecialProduct hoverEffect="icon-inline" />
-            <section className="instagram">
-              <InstagramSection />
-            </section>
-            <ContactBanner /> */}
-     
+        <SliderBanner banners={banners} />
+        <CollectionBanner
+          categories={categories}
+          categoryProducts={categoryProducts}
+        />
+        <TabProduct effect="icon-inline" categories={allCategories} />
+
+        <DiscountProducts products={products} />
+
+        <RecentlyAddedProducts />
+
+        <Kits kits={kits} />
+
+        <section className="box-category section-py-space">
+          <PriceRanges priceRanges={priceRanges} />
+        </section>
       </Layouts>
     </>
   );
