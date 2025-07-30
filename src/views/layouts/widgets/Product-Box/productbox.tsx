@@ -173,7 +173,7 @@ const ProductBox: NextPage<productType> = ({
               </div> */}
             <div className="detail-right">
               <div className="price">
-                <div className="price">
+                <div className="theme-color">
                   {selectedCurr.symbol}
                   {(price * selectedCurr.value).toFixed(2)}
                 </div>
