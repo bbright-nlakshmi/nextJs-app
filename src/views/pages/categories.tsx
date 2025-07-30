@@ -1,23 +1,13 @@
+// your imports...
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import { NextPage } from "next";
 import { Media, Row, Col, Container } from "reactstrap";
 import Breadcrumb from "@/views/Containers/Breadcrumb";
-// Update this import path
 import { Category, objCache } from "@/app/globalProvider";
 import { useRouter, useSearchParams } from "next/navigation";
 import PostLoader from "@/common/postLoader";
 import { FilterContext } from "@/helpers/filter/filter.context";
 
-// Define interfaces for type safety
-interface BusinessDetails {
-  id: string;
-  name: string;
-  description?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  // Add other properties as needed based on your BusinessDetails model
-}
 const cols = "col-xl-2 col-md-4 col-6 col-grid-box";
 const CategoryPage: NextPage = () => {
   const [loading, setLoading] = useState(true);
@@ -27,6 +17,8 @@ const CategoryPage: NextPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categoryType = searchParams.get("type") || "all";
+  const [isSorting, setIsSorting] = useState(false);
+  const [visibleItems, setVisibleItems] = useState<Category[]>([]);
 
   const { setLeftSidebarOpen, leftSidebarOpen } = useContext(FilterContext);
 
@@ -55,15 +47,13 @@ const CategoryPage: NextPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [categoryType]); // Changed from [query] to [categoryType] since that's what you're using
+  }, [categoryType]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
+    setQuery(e.target.value);
     setCurrentPage(1);
   };
 
-  // Use useMemo to avoid recalculating filtered categories on every render
   const filteredCategories = useMemo(() => {
     return query.trim()
       ? Categories.filter((item) =>
@@ -74,7 +64,7 @@ const CategoryPage: NextPage = () => {
 
   const totalPages = Math.ceil(filteredCategories.length / pageLimit);
 
-  const sortProducts = (products: any[], sortOption: string) => {
+  const sortProducts = (products: Category[], sortOption: string) => {
     const sorted = [...products];
     switch (sortOption) {
       case "NEWEST":
@@ -91,7 +81,6 @@ const CategoryPage: NextPage = () => {
     }
   };
 
-  // Apply sorting and pagination
   const sortedItems = useMemo(() => {
     return sortProducts(filteredCategories, sortBy);
   }, [filteredCategories, sortBy]);
@@ -101,7 +90,25 @@ const CategoryPage: NextPage = () => {
       (currentPage - 1) * pageLimit,
       currentPage * pageLimit
     );
-  }, [filteredCategories, currentPage, pageLimit]);
+  }, [sortedItems, currentPage, pageLimit]);
+
+  // Update visible items after sorting completes
+  useEffect(() => {
+    if (isSorting) {
+      setVisibleItems([]);
+      const timer = setTimeout(() => {
+        setVisibleItems(paginatedItems);
+        setIsSorting(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isSorting, paginatedItems]);
+
+  useEffect(() => {
+    if (!isSorting) {
+      setVisibleItems(paginatedItems);
+    }
+  }, [paginatedItems]);
 
   if (loading) {
     return (
@@ -157,7 +164,7 @@ const CategoryPage: NextPage = () => {
             <div className="product-filter-content">
               <div className="search-count">
                 <h5>
-                  {Categories
+                  {Categories.length > 0
                     ? `Showing Products 1-${Math.min(
                         pageLimit,
                         filteredCategories.length
@@ -217,47 +224,31 @@ const CategoryPage: NextPage = () => {
               <div className="product-page-per-view">
                 <select
                   name="pagination"
+                  value={pageLimit}
                   onChange={(e) => setPageLimit(parseInt(e.target.value))}
                 >
-                  <option value="10" selected={pageLimit === 10}>
-                    10 Products per Page
-                  </option>
-
-                  <option value="20" selected={pageLimit === 20}>
-                    20 Products per Page
-                  </option>
-                  <option value="50" selected={pageLimit === 50}>
-                    50 Products per Page
-                  </option>
-                  <option value="100" selected={pageLimit === 100}>
-                    100 Products per Page
-                  </option>
-                  <option
-                    value={filteredCategories.length}
-                    selected={pageLimit === filteredCategories.length}
-                  >
-                    Show All
-                  </option>
+                  <option value={10}>10 Products per Page</option>
+                  <option value={20}>20 Products per Page</option>
+                  <option value={50}>50 Products per Page</option>
+                  <option value={100}>100 Products per Page</option>
+                  <option value={filteredCategories.length}>Show All</option>
                 </select>
               </div>
 
               <div className="product-page-filter">
                 <select
                   name="filter"
+                  value={sortBy}
                   onChange={(e) => {
-                    setSortBy(e.target.value);
+                    const selectedSort = e.target.value;
+                    setIsSorting(true);
+                    setSortBy(selectedSort);
                   }}
                 >
                   <option value="">Sorting items</option>
-                  <option value="NEWEST" selected={sortBy === "NEWEST"}>
-                    Newest
-                  </option>
-                  <option value="ASC_ORDER" selected={sortBy === "ASC_ORDER"}>
-                    Asc Order
-                  </option>
-                  <option value="DESC_ORDER" selected={sortBy === "DESC_ORDER"}>
-                    Desc Order
-                  </option>
+                  <option value="NEWEST">Newest</option>
+                  <option value="ASC_ORDER">Asc Order</option>
+                  <option value="DESC_ORDER">Desc Order</option>
                 </select>
               </div>
             </div>
@@ -265,39 +256,50 @@ const CategoryPage: NextPage = () => {
         </Row>
       </div>
 
-      <div className="bg-light">
-        {/* Categories section */}
+      <div className="bg-light position-relative">
+        {/* 🌀 Custom Fullscreen Loader */}
+        {isSorting && (
+          <div
+            className="d-flex flex-column justify-content-center align-items-center position-fixed top-0 start-0 w-100 h-100 bg-white bg-opacity-75"
+            style={{ zIndex: 9999, backdropFilter: "blur(4px)" }}
+          >
+            <div className="loader mb-3"></div>
+            <div className="fs-5 text-muted">Fetching updated products...</div>
+          </div>
+        )}
+
         <div className={`product-wrapper-grid ${layout}`}>
           <Row>
             {loading && <PostLoader count={20} />}
-            {paginatedItems.map((category) => (
-              <div className={grid} key={category.id}>
-                <div
-                  className="category-item mb-4 p-3 border rounded shadow-sm"
-                  onClick={() =>
-                    router.push(
-                      `/collections/no-sidebar?id=${category.id}&type=category`
-                    )
-                  }
-                >
-                  {category.img.length > 0 && (
-                    <Media
-                      body
-                      src={category.img[0] || "/placeholder.jpg"}
-                      alt={category.name}
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                        objectFit: "cover",
-                        borderRadius: "8px",
-                        marginRight: "10px",
-                      }}
-                    ></Media>
-                  )}
-                  <h5>{category.name}</h5>
+            {!isSorting &&
+              visibleItems.map((category) => (
+                <div className={grid} key={category.id}>
+                  <div
+                    className="category-item mb-4 p-3 border rounded shadow-sm"
+                    onClick={() =>
+                      router.push(
+                        `/collections/no-sidebar?id=${category.id}&type=category`
+                      )
+                    }
+                  >
+                    {category.img.length > 0 && (
+                      <Media
+                        body
+                        src={category.img[0] || "/placeholder.jpg"}
+                        alt={category.name}
+                        style={{
+                          width: "100%",
+                          height: "200px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          marginRight: "10px",
+                        }}
+                      ></Media>
+                    )}
+                    <h5>{category.name}</h5>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </Row>
         </div>
       </div>
