@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 import React, { useContext, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Modal, ModalHeader, ModalBody, Input } from "reactstrap";
 import ImageGroup from "./common/ImageGroup";
 import CountDownComponent from "@/views/layouts/widgets/CountDownComponent";
@@ -28,6 +29,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   const [stock, setStock] = useState("InStock");
   const [activesize, setSize] = useState("");
   const { addToWish } = React.useContext(WishlistContext);
+  const router = useRouter();
 
   const { addToCart } = useContext(CartContext);
 
@@ -83,6 +85,22 @@ const ProductDetail: React.FC<ProductRightProps> = ({
 
     // Add to cart with the selected quantity
     addToCart(item, qty);
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    // Check stock before proceeding
+    if (item.stock && qty > item.stock) {
+      setStock("Out of Stock !");
+      return;
+    }
+
+    // Add to cart first (this will add to existing cart items)
+    addToCart(item, qty);
+    
+    // Then navigate to checkout
+    router.push("/pages/account/checkout");
   };
 
   // const { id } = router.query;
@@ -244,7 +262,11 @@ const ProductDetail: React.FC<ProductRightProps> = ({
           >
             add to cart
           </a>
-          <a href="/pages/account/checkout" className="btn btn-normal">
+          <a 
+            href="#" 
+            className="btn btn-normal"
+            onClick={handleBuyNow}
+          >
             buy now
           </a>
         </div>

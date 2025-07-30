@@ -15,19 +15,35 @@ const OrderSuccessPage: NextPage = () => {
   // Retrieve order data from sessionStorage
   const orderData = JSON.parse(sessionStorage.getItem("order-success-data") || "{}");
 
-  // Destructure order data
+  // Destructure order data with proper fallbacks
   const {
     orderId = `ORD-${Date.now()}`,
-    items = [],
+    items: rawItems = [],
     total = 0,
     subtotal = 0,
     tax = 0,
     couponDiscount = 0,
     appliedCoupon = null,
     billingAddress = {},
+    billingDetails = {}, // From checkout page structure
     paymentMethod = "cod",
     orderDate = new Date().toISOString(),
+    totals = {} // From checkout page structure
   } = orderData;
+
+  // Ensure items is always an array - handle different data structures
+  const items = React.useMemo(() => {
+    // If rawItems is already an array, use it
+    if (Array.isArray(rawItems)) {
+      return rawItems;
+    }
+    // If rawItems is an object (like from the checkout page), convert to array
+    if (rawItems && typeof rawItems === 'object') {
+      return Object.values(rawItems);
+    }
+    // Fallback to empty array
+    return [];
+  }, [rawItems]);
 
   // Enhanced price extraction function - same logic as your working PriceRanges component
   const getPrice = (item: any): number => {
@@ -111,182 +127,257 @@ const OrderSuccessPage: NextPage = () => {
     return 0;
   };
 
-  // Format billing address
+  // Get item quantity - handle different data structures
+  const getItemQuantity = (item: any): number => {
+    return item.qty || item.cartItemCount || item.quantity || 1;
+  };
+
+  // Get item name - handle different data structures
+  const getItemName = (item: any): string => {
+    return item.name || item.title || item.productName || item.product?.name || item.product?.title || "Unknown Product";
+  };
+
+  // Format billing address - handle both billingAddress and billingDetails structures
   const formatAddress = () => {
-    const { firstName, lastName, address, city, state, country, pincode, phone } = billingAddress;
+    const addressData = Object.keys(billingDetails).length > 0 ? billingDetails : billingAddress;
+    const { firstName, lastName, address, city, state, country, pincode, pinCode, phone, phoneNumber } = addressData;
+    
     return {
       name: `${firstName || ""} ${lastName || ""}`.trim(),
       addressLine: address || "",
       cityState: `${city || ""}, ${state || ""}`.trim(),
       country: country || "",
-      postalCode: pincode || "",
-      phone: phone || "",
+      postalCode: pincode || pinCode || "",
+      phone: phone || phoneNumber || "",
     };
   };
 
   const address = formatAddress();
 
-  // Recalculate totals with proper pricing
-  const recalculatedSubtotal = items.reduce((sum: number, item: any) => {
-    const price = getPrice(item);
-    return sum + (price * (item.qty || 1));
-  }, 0);
+  // Use totals from checkout page if available, otherwise calculate from items
+  const calculations = React.useMemo(() => {
+    // If we have totals from checkout page, use them
+    if (totals && Object.keys(totals).length > 0) {
+      return {
+        subtotal: totals.cartAmount || 0,
+        tax: totals.taxAmount || 0,
+        couponDiscount: totals.discountAmount || 0,
+        total: totals.finalTotal || 0,
+        deliveryCharges: totals.deliveryCharges || 0,
+        packageCost: totals.packageCost || 0,
+        totalSavings: totals.totalSavings || 0
+      };
+    }
 
-  const displaySubtotal = subtotal > 0 ? subtotal : recalculatedSubtotal;
-  const displayTotal = total > 0 ? total : (recalculatedSubtotal + tax - couponDiscount);
+    // Fallback to calculating from items if totals not available
+    const recalculatedSubtotal = items.reduce((sum: number, item: any) => {
+      const price = getPrice(item);
+      const quantity = getItemQuantity(item);
+      return sum + (price * quantity);
+    }, 0);
+
+    return {
+      subtotal: subtotal > 0 ? subtotal : recalculatedSubtotal,
+      tax: tax || 0,
+      couponDiscount: couponDiscount || 0,
+      total: total > 0 ? total : (recalculatedSubtotal + tax - couponDiscount),
+      deliveryCharges: 0,
+      packageCost: 0,
+      totalSavings: 0
+    };
+  }, [items, totals, subtotal, tax, couponDiscount, total]);
+
+  // Get tax rate for display
+  const taxRate = orderData.taxRate || (calculations.tax > 0 && calculations.subtotal > 0 ? (calculations.tax / calculations.subtotal) : 0.1);
 
   return (
-    <Fragment>
-      <Breadcrumb title="order-success" parent="home" />
-      <section className="section-big-py-space mt--5 bg-light">
-        <div className="custom-container">
-          {items.length > 0 ? (
-            <Row>
-              <Col lg="6">
-                <div className="product-order">
-                  <h3>Your Order Details</h3>
-                  <Row className="product-order-detail g-3">
-                    {/* Headers */}
-                    <Col xs="4" className="order_detail_header">
-                      <h4>Product Name</h4>
-                    </Col>
-                    <Col xs="4" className="order_detail_header">
-                      <h4>Quantity</h4>
-                    </Col>
-                    <Col xs="4" className="order_detail_header">
-                      <h4>Price</h4>
-                    </Col>
-                    
-                    {/* Product Items */}
-                    {items.map((item: any, i: number) => {
-                      const price = getPrice(item);
-                      const itemName = item.name || item.title || item.productName || item.product?.name || item.product?.title || "Unknown Product";
+    <div className="order-success-page">
+      <Fragment>
+        <Breadcrumb title="order-success" parent="home" />
+        <section className="section-big-py-space mt--5 bg-light">
+          <div className="custom-container">
+            {items.length > 0 ? (
+              <Row>
+                <Col lg="6">
+                  <div className="product-order">
+                    <h3>Your Order Details</h3>
+                    <Row className="product-order-detail g-3">
+                      {/* Headers */}
+                      <Col xs="4" className="order_detail_header">
+                        <h4>Product Name</h4>
+                      </Col>
+                      <Col xs="4" className="order_detail_header">
+                        <h4>Quantity</h4>
+                      </Col>
+                      <Col xs="4" className="order_detail_header">
+                        <h4>Price</h4>
+                      </Col>
                       
-                      return (
-                        <Fragment key={i}>
-                          <Col xs="4" className="order_detail">
-                            <h5>{itemName}</h5>
-                          </Col>
-                          <Col xs="4" className="order_detail">
-                            <h5>{item.qty || 1}</h5>
-                          </Col>
-                          <Col xs="4" className="order_detail">
-                            <h5>
-                              {symbol}
-                              {(price * value).toFixed(2)}
-                            </h5>
-                          </Col>
-                        </Fragment>
-                      );
-                    })}
-                  </Row>
+                      {/* Product Items */}
+                      {items.map((item: any, i: number) => {
+                        const price = getPrice(item);
+                        const quantity = getItemQuantity(item);
+                        const itemName = getItemName(item);
+                        
+                        return (
+                          <Fragment key={i}>
+                            <Col xs="4" className="order_detail">
+                              <h5>{itemName}</h5>
+                            </Col>
+                            <Col xs="4" className="order_detail">
+                              <h5>{quantity}</h5>
+                            </Col>
+                            <Col xs="4" className="order_detail">
+                              <h5>
+                                {symbol}
+                                {(price * value).toFixed(2)}
+                              </h5>
+                            </Col>
+                          </Fragment>
+                        );
+                      })}
+                    </Row>
 
-                  <div className="total-sec">
-                    <ul>
-                      <li>
-                        Subtotal ({items.length} items)
-                        <span>
-                          {symbol}
-                          {(displaySubtotal * value).toFixed(2)}
-                        </span>
-                      </li>
-                      {couponDiscount > 0 && appliedCoupon && (
+                    <div className="total-sec">
+                      <ul>
                         <li>
-                          Coupon Discount ({appliedCoupon.code})
-                          <span className="text-success">
-                            -{symbol}
-                            {(couponDiscount * value).toFixed(2)}
+                          Subtotal ({items.length} items)
+                          <span>
+                            {symbol}
+                            {(calculations.subtotal * value).toFixed(2)}
                           </span>
                         </li>
-                      )}
-                      <li>
-                        Tax ({(orderData.taxRate * 100 || 10).toFixed(0)}%)
+                        {calculations.couponDiscount > 0 && (
+                          <li>
+                            Discount {appliedCoupon ? `(${appliedCoupon.code})` : ''}
+                            <span className="text-success">
+                              -{symbol}
+                              {(calculations.couponDiscount * value).toFixed(2)}
+                            </span>
+                          </li>
+                        )}
+                        {calculations.packageCost > 0 && (
+                          <li>
+                            Package Cost
+                            <span>
+                              {symbol}
+                              {(calculations.packageCost * value).toFixed(2)}
+                            </span>
+                          </li>
+                        )}
+                        {calculations.deliveryCharges > 0 && (
+                          <li>
+                            Delivery Charges
+                            <span>
+                              {symbol}
+                              {(calculations.deliveryCharges * value).toFixed(2)}
+                            </span>
+                          </li>
+                        )}
+                        <li>
+                          Tax ({(taxRate * 100).toFixed(0)}%)
+                          <span>
+                            {symbol}
+                            {(calculations.tax * value).toFixed(2)}
+                          </span>
+                        </li>
+                        {calculations.totalSavings > 0 && (
+                          <li className="text-success">
+                            Total Savings
+                            <span>
+                              -{symbol}
+                              {(calculations.totalSavings * value).toFixed(2)}
+                            </span>
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="final-total">
+                      <h3>
+                        Total
                         <span>
                           {symbol}
-                          {(tax * value).toFixed(2)}
+                          {(calculations.total * value).toFixed(2)}
                         </span>
-                      </li>
-                    </ul>
+                      </h3>
+                    </div>
                   </div>
-                  <div className="final-total">
-                    <h3>
-                      Total
-                      <span>
-                        {symbol}
-                        {(displayTotal * value).toFixed(2)}
-                      </span>
-                    </h3>
+                </Col>
+                <Col lg="6">
+                  <div className="row order-success-sec">
+                    <div className="col-sm-6">
+                      <h4>Summary</h4>
+                      <ul className="order-detail">
+                        <li>Order ID: {orderId}</li>
+                        <li>Order Date: {dayjs(orderDate).format("DD MMM YYYY")}</li>
+                        <li>
+                          Order Total: {symbol}
+                          {(calculations.total * value).toFixed(2)}
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="col-sm-6">
+                      <h4>Shipping Address</h4>
+                      <ul className="order-detail">
+                        <li>{address.name || "N/A"}</li>
+                        <li>{address.addressLine || "N/A"}</li>
+                        <li>
+                          {address.cityState}
+                          {address.postalCode ? `, ${address.postalCode}` : ""}
+                        </li>
+                        <li>{address.country || "N/A"}</li>
+                        <li>Contact No. {address.phone || "N/A"}</li>
+                      </ul>
+                    </div>
+                    <div className="col-sm-12 payment-mode">
+                      <h4>Payment Method</h4>
+                      <p>
+                        {paymentMethod === "COD" || paymentMethod === "cod"
+                          ? "Cash on Delivery (COD)"
+                          : paymentMethod === "PICK_AT_STORE"
+                          ? "Pick at Store"
+                          : paymentMethod === "PHONEPE"
+                          ? "PhonePe Payment"
+                          : paymentMethod === "RAZORPAY"
+                          ? "Razorpay Payment"
+                          : paymentMethod === "paypal"
+                          ? "PayPal Payment"
+                          : "Credit/Debit Card"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Col>
-              <Col lg="6">
-                <div className="row order-success-sec">
-                  <div className="col-sm-6">
-                    <h4>Summary</h4>
-                    <ul className="order-detail">
-                      <li>Order ID: {orderId}</li>
-                      <li>Order Date: {dayjs(orderDate).format("DD MMM YYYY")}</li>
-                      <li>
-                        Order Total: {symbol}
-                        {(displayTotal * value).toFixed(2)}
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="col-sm-6">
-                    <h4>Shipping Address</h4>
-                    <ul className="order-detail">
-                      <li>{address.name || "N/A"}</li>
-                      <li>{address.addressLine || "N/A"}</li>
-                      <li>
-                        {address.cityState}
-                        {address.postalCode ? `, ${address.postalCode}` : ""}
-                      </li>
-                      <li>{address.country || "N/A"}</li>
-                      <li>Contact No. {address.phone || "N/A"}</li>
-                    </ul>
-                  </div>
-                  <div className="col-sm-12 payment-mode">
-                    <h4>Payment Method</h4>
-                    <p>
-                      {paymentMethod === "cod"
-                        ? "Cash on Delivery (COD)"
-                        : paymentMethod === "paypal"
-                        ? "PayPal Payment"
-                        : "Credit/Debit Card"}
-                    </p>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-          ) : (
-            <div className="col-sm-12">
-              <div className="empty-cart-cls text-center">
-                <img src="/static/images/icon-empty-cart.png" className="img-fluid mb-4" alt="Empty Cart" />
-                <h3 className="mb-3">
-                  <strong>No Order Found</strong>
-                </h3>
-                <div className="row cart-buttons">
-                  <div className="col-12">
-                    <button
-                      onClick={() => router.push("/")}
-                      className="btn btn-normal"
-                    >
-                      Continue Shopping
-                    </button>
-                    <button
-                      onClick={() => router.push("/pages/account/checkout")}
-                      className="btn btn-normal ms-3"
-                    >
-                      Check Out
-                    </button>
+                </Col>
+              </Row>
+            ) : (
+              <div className="col-sm-12">
+                <div className="empty-cart-cls text-center">
+                  <img src="/static/images/icon-empty-cart.png" className="img-fluid mb-4" alt="Empty Cart" />
+                  <h3 className="mb-3">
+                    <strong>No Order Found</strong>
+                  </h3>
+                  <div className="row cart-buttons">
+                    <div className="col-12">
+                      <button
+                        onClick={() => router.push("/")}
+                        className="btn btn-normal"
+                      >
+                        Continue Shopping
+                      </button>
+                      <button
+                        onClick={() => router.push("/pages/account/checkout")}
+                        className="btn btn-normal ms-3"
+                      >
+                        Check Out
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </section>
-    </Fragment>
+            )}
+          </div>
+        </section>
+      </Fragment>
+    </div>
   );
 };
 

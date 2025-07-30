@@ -52,7 +52,7 @@ const UserProfile: NextPage = () => {
           type: "link"
         },
         {
-          path: "/pages/account/profile",
+          path: "/pages/account/dashboard",
           title: "profile",
           type: "link"
         },
@@ -200,28 +200,21 @@ const UserProfile: NextPage = () => {
   const renderMenuItem = (item: MenuItem, index: number) => {
     if (item.type === "sub") {
       return (
-        <div key={index} className="menu-item">
+        <div key={index} className="user-profile-menu-item">
           <div 
-            className="menu-header d-flex justify-content-between align-items-center"
+            className="user-profile-menu-header d-flex justify-content-between align-items-center"
             onClick={() => handleMenuClick(item)}
-            style={{ cursor: "pointer", padding: "10px 0" }}
           >
             <span className="text-capitalize">{item.title}</span>
             <i className={`fa ${expandedMenu === item.title ? 'fa-angle-up' : 'fa-angle-down'}`}></i>
           </div>
           {expandedMenu === item.title && item.children && (
-            <div className="submenu" style={{ paddingLeft: "15px" }}>
+            <div className="user-profile-submenu">
               {item.children.map((child, childIndex) => (
                 <div 
                   key={childIndex}
-                  className="submenu-item"
+                  className="user-profile-submenu-item"
                   onClick={() => handleMenuClick(child)}
-                  style={{ 
-                    cursor: "pointer", 
-                    padding: "8px 0", 
-                    borderBottom: "1px solid #f0f0f0",
-                    textTransform: "capitalize"
-                  }}
                 >
                   {child.title}
                 </div>
@@ -234,14 +227,8 @@ const UserProfile: NextPage = () => {
       return (
         <div 
           key={index}
-          className="menu-item"
+          className="user-profile-menu-item"
           onClick={() => handleMenuClick(item)}
-          style={{ 
-            cursor: "pointer", 
-            padding: "10px 0", 
-            borderBottom: "1px solid #f0f0f0",
-            textTransform: "capitalize"
-          }}
         >
           {item.title}
         </div>
@@ -264,7 +251,7 @@ const UserProfile: NextPage = () => {
             <h3>
               {user && userName ? (
                 <div className="d-flex flex-column align-items-center text-center">
-                  <div className="profile-icon-large mb-2">
+                  <div className="user-profile-icon-large mb-2">
                     {getProfileIcon(userName)}
                   </div>
                   <div>
@@ -284,8 +271,8 @@ const UserProfile: NextPage = () => {
           </div>
 
           {user ? (
-            <div className="user-menu">
-              <div className="menu-section">
+            <div className="user-profile-menu">
+              <div className="user-profile-menu-section">
                 {menuItems.map((item, index) => renderMenuItem(item, index))}
               </div>
               
@@ -329,7 +316,7 @@ const UserProfile: NextPage = () => {
               {otpSent && (
                 <>
                   <Label className="form-label">Enter OTP</Label>
-                    <div className="d-flex justify-content-center mb-3 otp-inputs" style={{ gap: "8px" }}>
+                    <div className="d-flex justify-content-center mb-3 user-profile-otp-inputs">
                       {otpArray.map((val, i) => (
                         <input
                           key={i}
@@ -343,7 +330,7 @@ const UserProfile: NextPage = () => {
                           value={val}
                           onChange={(e) => onOtpChange(e.target.value, i)}
                           onKeyDown={(e) => handleOtpKeyDown(e, i)}
-                          className="otp-box text-center"
+                          className="user-profile-otp-box text-center"
                           autoComplete="off"
                         />
                       ))}
@@ -352,7 +339,7 @@ const UserProfile: NextPage = () => {
                     <button
                       type="button"
                       onClick={handleVerifyOtp}
-                      className="btn btn-primary w-50 me-2"
+                      className="btn user-profile-btn-primary w-50 me-2"
                       disabled={otpArray.some((d) => d === "")}
                     >
                       Verify OTP
@@ -360,7 +347,7 @@ const UserProfile: NextPage = () => {
                     <button
                       type="button"
                       onClick={handleResendOtp}
-                      className="btn btn-outline-secondary w-50"
+                      className="btn user-profile-btn-outline-secondary w-50"
                     >
                       Resend OTP
                     </button>
@@ -373,7 +360,7 @@ const UserProfile: NextPage = () => {
                   <button
                     type="button"
                     onClick={handleSendOtp}
-                    className="btn btn-primary w-100 mt-3"
+                    className="btn user-profile-btn-primary w-100 mt-3"
                     disabled={!name.trim() || !/^[0-9]{10}$/.test(phoneNumber)}
                   >
                     Send OTP
@@ -384,74 +371,6 @@ const UserProfile: NextPage = () => {
           )}
         </div>
       </div>
-
-      <style jsx>{`
-        .otp-box {
-          width: 45px;
-          height: 50px;
-          font-size: 20px;
-          border-radius: 6px;
-          border: 1px solid #ccc;
-        }
-
-        .profile-icon-large {
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: 24px;
-          margin: 0 auto;
-        }
-
-        .user-menu {
-          max-height: calc(100vh - 200px);
-          overflow-y: auto;
-        }
-
-        .menu-section {
-          border-bottom: 1px solid #e9ecef;
-          padding-bottom: 15px;
-          margin-bottom: 15px;
-        }
-
-        .menu-item:hover,
-        .submenu-item:hover {
-          background-color: #f8f9fa;
-          color: #007bff;
-        }
-
-        .menu-header {
-          font-weight: 600;
-          color: #333;
-        }
-
-        .submenu-item {
-          color: #666;
-          font-size: 14px;
-        }
-
-        .submenu-item:last-child {
-          border-bottom: none;
-        }
-
-        .cart-inner {
-          max-height: 100vh;
-          overflow-y: auto;
-        }
-
-        @media (max-width: 768px) {
-          .profile-icon-large {
-            width: 50px;
-            height: 50px;
-            font-size: 20px;
-          }
-        }
-      `}</style>
     </>
   );
 };

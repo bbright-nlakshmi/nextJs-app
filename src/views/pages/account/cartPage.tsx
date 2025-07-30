@@ -312,7 +312,7 @@ const CartPage: NextPage = () => {
                           Total Price:
                         </td>
                         <td style={{ padding: '20px' }}>
-                          <h2 style={{ color: '#28a745', fontWeight: '700', margin: 0 }}>
+                          <h2 style={{ color: '#00baf2', fontWeight: '700', margin: 0 }}>
                             {symbol}{getSubtotal().toFixed(2)}
                           </h2>
                         </td>

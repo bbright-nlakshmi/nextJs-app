@@ -97,7 +97,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                         <User />
                         <WishList />
                         <MobileSearch onOpen={onOpenMobileSearch} />
-                        <MobileSetting />
+                        {/* <MobileSetting /> */}
                       </ul>
                     </div>
                      <ShoppingCart layout="layout2" />
@@ -137,7 +137,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                     <ul>
                       <MobileSearch onOpen={onOpenMobileSearch} />
                       <User />
-                       <MobileSetting />
+                       {/* <MobileSetting /> */}
                       <WishList />
                       
                      

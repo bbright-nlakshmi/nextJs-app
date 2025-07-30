@@ -25,31 +25,68 @@ const OrderHistoryPage: NextPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
 
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
 
-  const phoneNumber = "7671985191";
+  // Simplified function to get phone number from localStorage (same as profile component)
+  const getPhoneNumber = (): string => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("Login") || "";
+    }
+    return "";
+  };
+
+  // Function to get user name from localStorage
+  const getUserName = (): string => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("UserName") || "";
+    }
+    return "";
+  };
 
   useEffect(() => {
+    // Get phone number and user name when component mounts
+    const userPhone = getPhoneNumber();
+    const storedUserName = getUserName();
+    
+    if (!userPhone) {
+      setError("Please log in to view your order history.");
+      setLoading(false);
+      return;
+    }
+    
+    setPhoneNumber(userPhone);
+    setUserName(storedUserName);
+  }, []);
+
+  useEffect(() => {
+    if (!phoneNumber) return;
+
     const fetchOrders = async () => {
       try {
         setLoading(true);
         setError(null);
+        console.log("Fetching orders for phone:", phoneNumber);
         const fetchedOrders = await API.getOrders(phoneNumber);
+        console.log("Fetched orders:", fetchedOrders);
+        
+        // Sort orders by creation time (newest first)
         fetchedOrders.sort((a, b) => new Date(b.creationTime).getTime() - new Date(a.creationTime).getTime());
         setOrders(fetchedOrders);
         setFilteredOrders(fetchedOrders);
       } catch (err) {
         console.error("❌ Error fetching orders:", err);
-        setError("Could not load your orders.");
+        setError("Could not load your orders. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, []);
+  }, [phoneNumber]);
 
   const toggleExpand = (orderId: string) => {
     setExpandedOrderId(prev => (prev === orderId ? null : orderId));
@@ -114,6 +151,22 @@ const OrderHistoryPage: NextPage = () => {
     }
   };
 
+  const handleRetry = () => {
+    const userPhone = getPhoneNumber();
+    if (userPhone) {
+      setPhoneNumber(userPhone);
+      setError(null);
+    } else {
+      // Redirect to home page or show login modal
+      window.location.href = '/'; // Adjust path as needed
+    }
+  };
+
+  const handleLogin = () => {
+    // Redirect to home page where user can login via the profile component
+    window.location.href = '/';
+  };
+
   return (
     <div className="order-history-section">
       <Breadcrumb title="Order History" parent="Home" />
@@ -122,50 +175,57 @@ const OrderHistoryPage: NextPage = () => {
         <div className="text-center mb-4">
           <h2 className="page-title">My Orders</h2>
           <p className="text-muted">Track and manage your order history</p>
+          {phoneNumber && userName && (
+            <div className="user-info">
+              <small className="text-muted">Orders for: {userName} ({phoneNumber})</small>
+            </div>
+          )}
         </div>
 
-        {/* Enhanced Filter Section */}
-        <Card className="filter-card">
-          <div className="filter-section">
-            <div className="filter-content">
-              <h3 className="filter-title">Filter Your Orders</h3>
-              <Row className="filter-row">
-                <Col lg="4" md="6">
-                  <FormGroup className="filter-group">
-                    <Label className="filter-label">From Date</Label>
-                    <Input
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                      className="form-control"
-                    />
-                  </FormGroup>
-                </Col>
-                <Col lg="4" md="6">
-                  <FormGroup className="filter-group">
-                    <Label className="filter-label">To Date</Label>
-                    <Input
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                      className="form-control"
-                    />
-                  </FormGroup>
-                </Col>
-                <Col lg="4" md="12">
-                  <div className="button-group">
-                    <Button className="primary-btn" onClick={handleFilter}>
-                      Apply Filter
-                    </Button>
-                    <Button className="secondary-btn" onClick={handleClearFilter}>
-                      Clear Filter
-                    </Button>
-                  </div>
-                </Col>
-              </Row>
+        {/* Enhanced Filter Section - Only show if user is logged in */}
+        {phoneNumber && (
+          <Card className="filter-card">
+            <div className="filter-section">
+              <div className="filter-content">
+                <h3 className="filter-title">Filter Your Orders</h3>
+                <Row className="filter-row">
+                  <Col lg="4" md="6">
+                    <FormGroup className="filter-group">
+                      <Label className="filter-label">From Date</Label>
+                      <Input
+                        type="date"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                        className="form-control"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col lg="4" md="6">
+                    <FormGroup className="filter-group">
+                      <Label className="filter-label">To Date</Label>
+                      <Input
+                        type="date"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                        className="form-control"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col lg="4" md="12">
+                    <div className="button-group">
+                      <Button className="primary-btn" onClick={handleFilter}>
+                        Apply Filter
+                      </Button>
+                      <Button className="secondary-btn" onClick={handleClearFilter}>
+                        Clear Filter
+                      </Button>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Orders Section */}
         <Row>
@@ -179,9 +239,15 @@ const OrderHistoryPage: NextPage = () => {
               <div className="empty-state">
                 <div className="empty-state-icon">⚠️</div>
                 <h5 className="text-danger">{error}</h5>
-                <Button className="primary-btn mt-3" onClick={() => window.location.reload()}>
-                  Try Again
-                </Button>
+                {phoneNumber ? (
+                  <Button className="primary-btn mt-3" onClick={handleRetry}>
+                    Try Again
+                  </Button>
+                ) : (
+                  <Button className="primary-btn mt-3" onClick={handleLogin}>
+                    Login to View Orders
+                  </Button>
+                )}
               </div>
             ) : filteredOrders.length === 0 ? (
               <div className="empty-state">
