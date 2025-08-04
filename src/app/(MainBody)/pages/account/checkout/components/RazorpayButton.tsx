@@ -67,7 +67,7 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
       description: "Order Payment",
       image: "/logo.png",       // Path to your logo image
       // If you wish to incorporate a backend-generated order id, you can include it here
-      order_id: "", 
+      order_id:'',
       handler: async function (response: any) {
         // Attach Razorpay response to your orderData
 
@@ -94,9 +94,9 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
         }
       },
       prefill: {
-        name: `sai yaswanth`,
+        name:'',
         email: 'orderData.billingDetails.email',
-        contact: 'orderData.billingDetails.phone',
+        contact: 'orderData.billingDetails.phone'
       },
       theme: {
         color: "#3399cc",
@@ -115,7 +115,7 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
 
   return (
     <button type="button" className="btn-primary" onClick={triggerPayment}>
-      Pay with Razorpay
+      Pay ₹{finalTotal.toFixed(2)} with Razorpay
     </button>
   );
 };

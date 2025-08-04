@@ -158,13 +158,21 @@ const ProductBox: NextPage<productType> = ({
               <Link href="#">
                 <h6 className="price-title">{data?.name}</h6>
               </Link>
-              <ul className="rating-star">
-                <i className="fa fa-star"></i>
-                <i className="fa fa-star"></i>
-                <i className="fa fa-star"></i>
-                <i className="fa fa-star"></i>
-                <i className="fa fa-star"></i>
-              </ul>
+              <div className="rating-star mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        <i
+                          key={i}
+                          className={`fa fa-star ${
+                            i <
+                            (data.rating
+                              ? data.rating.calculateRating()
+                              : 0)
+                              ? "text-warning"
+                              : "fa-star-o text-warning"
+                          }`}
+                        ></i>
+                      ))}
+                    </div>
             </div>
 
             {/* <div className="check-price">

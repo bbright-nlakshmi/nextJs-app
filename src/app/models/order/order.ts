@@ -1,32 +1,174 @@
-// You will need to implement these classes similarly based on their Dart versions:
+// Fixed Order Models - order.ts
 import { DeliveryAddressModel } from '../delivery_address_model/delivery_address';
-import { OrderItemsModel } from '../order_item_model/order_item_model';
+ 
 export class DeliveryAssign {
   name: string;
   phone: string;
-
-  constructor(name: string, phone: string) {
-    this.name = name;
-    this.phone = phone;
+ 
+  constructor(params: { name: string; phone: string }) {
+    this.name = params.name;
+    this.phone = params.phone;
   }
-
+ 
   toJsonObj() {
     return {
       name: this.name,
       phone: this.phone,
     };
   }
-
+ 
   static fromMap(data: any): DeliveryAssign {
-    return new DeliveryAssign(data.name ?? '', data.phone ?? '');
+    return new DeliveryAssign({
+      name: data.name ?? '',
+      phone: data.phone ?? ''
+    });
   }
 }
-
-
-
-
-
-
+ 
+export class OrderItemsModel {
+  id: string;
+  name: string;
+  baseChoosedPrice: number;
+  choosedPrice: number;
+  collectedTax: number;
+  costPrice: number;
+  saleQuantityStr: string;
+  saleQuantity: number;
+  isProduct: boolean;
+  isReturnable: boolean;
+  url: string;
+  rating: number;
+  categoryName: string;
+  categoryID: string;
+  cartItemCount: number;
+  orderKitItems: any[];
+  selfDocRef?: any;
+  active: boolean;
+  taxType: string;
+  taxAmount: number;
+  status: {
+    process: string | null;
+    deliver: string | null;
+    confirm: string | null;
+    package: string | null;
+    cancel: string | null;
+    transit: string | null;
+  };
+ 
+  selectedSubscription: {};
+ 
+  constructor(params: {
+    id: string;
+    name: string;
+    baseChoosedPrice: number;
+    choosedPrice: number;
+    collectedTax: number;
+    costPrice: number;
+    saleQuantityStr: string;
+    saleQuantity: number;
+    isProduct: boolean;
+    isReturnable: boolean;
+    url: string;
+    rating: number;
+    categoryName: string;
+    categoryID: string;
+    cartItemCount: number;
+    orderKitItems: any[];
+    selfDocRef?: any;
+    active?: boolean;
+    taxType?: string;
+    taxAmount?: number;
+  }) {
+    this.id = params.id;
+    this.name = params.name;
+    this.baseChoosedPrice = params.baseChoosedPrice;
+    this.choosedPrice = params.choosedPrice;
+    this.collectedTax = params.collectedTax;
+    this.costPrice = params.costPrice;
+    this.saleQuantityStr = params.saleQuantityStr;
+    this.saleQuantity = params.saleQuantity;
+    this.isProduct = params.isProduct;
+    this.isReturnable = params.isReturnable;
+    this.url = params.url;
+    this.rating = params.rating;
+    this.categoryName = params.categoryName;
+    this.categoryID = params.categoryID;
+    this.cartItemCount = params.cartItemCount;
+    this.orderKitItems = params.orderKitItems;
+    this.selfDocRef = params.selfDocRef;
+    this.active = params.active ?? true;
+    this.taxType = params.taxType ?? "EXCLUSIVE";
+    this.taxAmount = params.taxAmount ?? 0;
+ 
+    // Initialize status
+    this.status = {
+      process: null,
+      deliver: null,
+      confirm: null,
+      package: null,
+      cancel: null,
+      transit: null,
+    };
+ 
+    // Initialize subscription
+    this.selectedSubscription = {
+     
+    };
+  }
+ 
+  static fromMap(data: any): OrderItemsModel {
+    return new OrderItemsModel({
+      id: data.id,
+      name: data.name,
+      baseChoosedPrice: data.base_choosed_price ?? 0,
+      choosedPrice: data.choosed_price ?? 0,
+      collectedTax: data.collected_tax ?? 0,
+      costPrice: data.cost_price ?? 0,
+      saleQuantityStr: data.sale_quantity_str ?? '',
+      saleQuantity: data.sale_quantity ?? 0,
+      isProduct: data.is_product ?? true,
+      isReturnable: data.is_returnable ?? false,
+      url: data.url ?? '',
+      rating: data.rating ?? 0,
+      categoryName: data.category_name ?? '',
+      categoryID: data.category_id ?? '',
+      cartItemCount: data.cart_item_count ?? 0,
+      orderKitItems: data.order_kit_items ?? [],
+      selfDocRef: data.self_doc_ref,
+      active: data.active ?? true,
+      taxType: data.tax_type ?? "EXCLUSIVE",
+      taxAmount: data.tax_amount ?? 0,
+    });
+  }
+ 
+  toJsonObj(): any {
+    return {
+      id: this.id,
+      name: this.name,
+      base_choosed_price: this.baseChoosedPrice,
+      choosed_price: this.choosedPrice,
+      collected_tax: this.collectedTax,
+      cost_price: this.costPrice,
+      sale_quantity_str: this.saleQuantityStr,
+      sale_quantity: this.saleQuantity,
+      is_product: this.isProduct,
+      is_returnable: this.isReturnable,
+      url: this.url,
+      rating: this.rating,
+      category_name: this.categoryName,
+      category_id: this.categoryID,
+      cart_item_count: this.cartItemCount,
+      order_kit_items: this.orderKitItems,
+      self_doc_ref: this.selfDocRef,
+      active: this.active,
+      tax_type: this.taxType,
+      tax_amount: this.taxAmount,
+      status: this.status,
+      selected_subscription: this.selectedSubscription,
+    };
+  }
+}
+ 
 export class OrderModel {
   id: string;
   deliveryAddress: DeliveryAddressModel;
@@ -49,7 +191,7 @@ export class OrderModel {
   totalSavings: number;
   taxTotal: number;
   taxGroup: Record<string, number>;
-  orderItems: Record<string, OrderItemsModel>;
+  orderItems: OrderItemsModel[];
   txnDetails?: Record<string, number>;
   deliveryNotificationSent: boolean;
   img: string[];
@@ -58,7 +200,7 @@ export class OrderModel {
   userNotificationSent: boolean;
   orderAcceptStatus: string;
   orderGst?: string;
-
+ 
   constructor(params: {
     id: string;
     deliveryAddress: DeliveryAddressModel;
@@ -80,7 +222,7 @@ export class OrderModel {
     totalSavings: number;
     taxTotal: number;
     taxGroup: Record<string, number>;
-    orderItems: Record<string, OrderItemsModel>;
+    orderItems: OrderItemsModel[];
     img: string[];
     assignedDelivery: DeliveryAssign;
     orderComplete: boolean;
@@ -122,14 +264,15 @@ export class OrderModel {
     this.userNotificationSent = params.userNotificationSent ?? false;
     this.orderGst = params.orderGst;
   }
-
+ 
   static fromMap(data: any): OrderModel {
-    const orderItems: Record<string, OrderItemsModel> = {};
-    (data.order_items ?? []).forEach((item: any) => {
-      const key = `${item.id}_${item.sale_quantity_str}`;
-      orderItems[key] = OrderItemsModel.fromMap(item);
-    });
-
+    const orderItems: OrderItemsModel[] = [];
+    if (Array.isArray(data.order_items)) {
+      data.order_items.forEach((item: any) => {
+        orderItems.push(OrderItemsModel.fromMap(item));
+      });
+    }
+ 
     return new OrderModel({
       id: data.id,
       deliveryAddress: DeliveryAddressModel.fromMap(data.delivery_address),
@@ -163,7 +306,7 @@ export class OrderModel {
       orderGst: data.order_gst,
     });
   }
-
+ 
   toJsonObj(): any {
     return {
       id: this.id,
@@ -187,7 +330,7 @@ export class OrderModel {
       total_savings: this.totalSavings,
       tax_total: this.taxTotal,
       tax_group: this.taxGroup,
-      order_items: Object.values(this.orderItems).map(item => item.toJsonObj()),
+      order_items: this.orderItems.map(item => item.toJsonObj()),
       txn_details: this.txnDetails,
       delivery_notification_sent: this.deliveryNotificationSent,
       img: this.img,
@@ -198,14 +341,14 @@ export class OrderModel {
       order_gst: this.orderGst,
     };
   }
-
+ 
   getDeliveryAssignName(): string {
     return this.assignedDelivery.name;
   }
-
+ 
   getItemsCount(): number {
     let count = 0;
-    Object.values(this.orderItems).forEach(orderItem => {
+    this.orderItems.forEach(orderItem => {
       if (orderItem.isProduct) {
         count += orderItem.cartItemCount;
       } else {
@@ -214,12 +357,13 @@ export class OrderModel {
     });
     return count;
   }
-
+ 
   getOrderAmountWithOutDelivery(): number {
     return this.finalOrderTotalWithOutDelivery;
   }
-
+ 
   getAssignedDeliveryName(): string {
     return this.assignedDelivery.name;
   }
 }
+ 

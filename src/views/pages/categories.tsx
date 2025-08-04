@@ -1,4 +1,3 @@
-// your imports...
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import { NextPage } from "next";
 import { Media, Row, Col, Container } from "reactstrap";
@@ -28,8 +27,8 @@ const CategoryPage: NextPage = () => {
   const [sortBy, setSortBy] = useState("ASC_ORDER");
 
   useEffect(() => {
+    setLoading(true);
     try {
-      setLoading(true);
       if (categoryType === "featured") {
         setCategories(objCache.categories);
         objCache.on("updateCategories", (data: Category[]) => {
@@ -61,8 +60,6 @@ const CategoryPage: NextPage = () => {
         )
       : Categories;
   }, [query, Categories]);
-
-  const totalPages = Math.ceil(filteredCategories.length / pageLimit);
 
   const sortProducts = (products: Category[], sortOption: string) => {
     const sorted = [...products];
@@ -97,7 +94,7 @@ const CategoryPage: NextPage = () => {
     if (isSorting) {
       setVisibleItems([]);
       const timer = setTimeout(() => {
-        setVisibleItems(paginatedItems);
+        setVisibleItems(paginatedItems); 
         setIsSorting(false);
       }, 500);
       return () => clearTimeout(timer);
@@ -256,15 +253,13 @@ const CategoryPage: NextPage = () => {
         </Row>
       </div>
 
-      <div className="bg-light position-relative">
+      <div className="bg-light">
         {/* 🌀 Custom Fullscreen Loader */}
         {isSorting && (
-          <div
-            className="d-flex flex-column justify-content-center align-items-center position-fixed top-0 start-0 w-100 h-100 bg-white bg-opacity-75"
-            style={{ zIndex: 9999, backdropFilter: "blur(4px)" }}
-          >
-            <div className="loader mb-3"></div>
-            <div className="fs-5 text-muted">Fetching updated products...</div>
+          <div className="d-flex justify-content-center align-items-center my-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="sr-only">Sorting...</span>
+            </div>
           </div>
         )}
 

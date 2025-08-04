@@ -7,12 +7,14 @@ import { CartContext } from "@/helpers/cart/cart.context";
 import { useRouter } from "next/navigation";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { toast } from "react-toastify";
-import { useCart } from "@/app/models/useCart/useCart";
-import { API } from "@/app/services/api.service";
-import { appConfig } from "../../../app/config/index"; 
+import { useCart } from "@/app/providers/cart_controller/cartController";
+import { appConfig } from "../../../app/config/";
+import { DeliveryAddressModel } from "@/app/models/delivery_address_model/delivery_address";
+import { DeliveryAssign, OrderItemsModel, OrderModel } from "@/app/models/order/order";
+import { API } from "@/app/globalProvider";
 import  RazorpayButton  from "@/app/(MainBody)/pages/account/checkout/components/RazorpayButton";
 
-export interface formType {
+interface formType {
   firstName: string;
   lastName: string;
   phone: string;
@@ -23,7 +25,57 @@ export interface formType {
   city: string;
   pincode: string;
 }
-
+ 
+// Debug component to show all current values (keeping from first code)
+const DebugPanel: React.FC<{
+  cartItems: any[],
+  calculations: any,
+  formData: any,
+  selectedPaymentMode: string,
+  deliveryAddressModel: any,
+  storeDetails: any
+}> = ({ cartItems, calculations, formData, selectedPaymentMode, deliveryAddressModel, storeDetails }) => {
+  const [showDebug, setShowDebug] = useState(false);
+ 
+  if (process.env.NODE_ENV === 'production') return null;
+ 
+  return (
+    <div className="debug-panel" style={{
+      position: 'fixed',
+      top: '10px',
+      right: '10px',
+      background: '#f8f9fa',
+      border: '1px solid #ddd',
+      padding: '10px',
+      borderRadius: '5px',
+      zIndex: 9999,
+      maxWidth: '300px',
+      fontSize: '12px'
+    }}>
+      <button
+        type="button"
+        onClick={() => setShowDebug(!showDebug)}
+        style={{ marginBottom: '10px', fontSize: '10px' }}
+      >
+        {showDebug ? 'Hide' : 'Show'} Debug Info
+      </button>
+     
+      {showDebug && (
+        <div>
+          <h6>Debug Information</h6>
+          <div><strong>Cart Items:</strong> {cartItems?.length || 0}</div>
+          <div><strong>Cart Amount:</strong> {calculations?.cartAmount || 0}</div>
+          <div><strong>Final Total:</strong> {calculations?.finalTotal || 0}</div>
+          <div><strong>Payment Mode:</strong> {selectedPaymentMode || 'None'}</div>
+          <div><strong>Store ID:</strong> {storeDetails?.id || 'None'}</div>
+          <div><strong>Delivery Address:</strong> {deliveryAddressModel ? 'Set' : 'None'}</div>
+          <div><strong>Form Valid:</strong> {formData ? 'Yes' : 'No'}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+ 
 const CheckoutPage: React.FC = () => {
   const router = useRouter();
   const currencyContext = useContext(CurrencyContext);
@@ -55,7 +107,6 @@ const CheckoutPage: React.FC = () => {
     totalTaxAmount = () => 0,
     getCartSavings = () => 0,
     finalOrderAmount = () => 0,
-    getOrderItems = () => [],
     setSelectedPaymentMode = () => {},
     setDeliveryAddressModel = () => {},
     setOrderGst = () => {},
@@ -67,20 +118,23 @@ const CheckoutPage: React.FC = () => {
   // Local state
   const [gstNumber, setGstNumber] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [orderPreview, setOrderPreview] = useState<any>(null);
+  const { register, handleSubmit, formState: { errors }, watch, getValues } = useForm<formType>();
  
-  const { register, handleSubmit, formState: { errors } } = useForm<formType>();
+  // Watch all form fields for real-time validation display
+  const watchedFields = watch();
  
   // Get app configuration values
-  const tenantId = appConfig.tenantId;
   const appName = appConfig.appName;
-  const defaultStoreId = appConfig.defaultStoreId; // Default store ID from config
+  const defaultStoreId = appConfig.defaultStoreId;
  
   // Payment modes - dynamic configuration
   const paymentModes = useMemo(() => [
     { value: "COD", label: "Cash on Delivery (COD)" },
     { value: "PICK_AT_STORE", label: "Pick at Store" },
-    { value: "RAZORPAY", label: "Razorpay" },
-    { value: "PHONEPE", label: "PhonePe" }
+    { value: "RAZORPAY", label: "Razorpay" }
+    // { value: "PHONEPE", label: "PhonePe" }
   ], []);
  
   // Countries list - dynamic configuration
@@ -88,14 +142,11 @@ const CheckoutPage: React.FC = () => {
     { value: "", label: "Select Country" },
     { value: "India", label: "India" },
     { value: "United States", label: "United States" },
-    { value: "Canada", label: "Canada" },
-    { value: "United Kingdom", label: "United Kingdom" },
-    { value: "Australia", label: "Australia" }
   ], []);
  
   // Transform cart item function - memoized to prevent re-renders
   const transformCartItem = useCallback((item: any) => ({
-    id: item.productId || item.id || `item_${Math.random().toString(36).substr(2, 9)}`,
+    id: item.productId || item.id,
     name: item.name || "Unknown Product",
     img: item.img || ["/static/images/placeholder.png"],
     cartItemCount: item.qty || 1,
@@ -166,6 +217,79 @@ const CheckoutPage: React.FC = () => {
     }
   }, [cartItems.length, selectedPaymentMode]);
  
+  // Validation function to check all data before order placement
+  const validateOrderData = useCallback(() => {
+    const validationErrors = [];
+    const formData = getValues();
+ 
+    // Check form data
+    if (!formData.firstName?.trim()) validationErrors.push("First name is required");
+    if (!formData.lastName?.trim()) validationErrors.push("Last name is required");
+    if (!formData.phone?.trim()) validationErrors.push("Phone number is required");
+    if (!formData.email?.trim()) validationErrors.push("Email is required");
+    if (!formData.country?.trim()) validationErrors.push("Country is required");
+    if (!formData.state?.trim()) validationErrors.push("State is required");
+    if (!formData.city?.trim()) validationErrors.push("City is required");
+    if (!formData.address?.trim()) validationErrors.push("Address is required");
+    if (!formData.pincode?.trim()) validationErrors.push("PIN code is required");
+ 
+    // Check payment mode
+    if (!selectedPaymentMode) validationErrors.push("Payment method is required");
+ 
+    // Check cart items
+    if (!cartItems || cartItems.length === 0) validationErrors.push("Cart is empty");
+   
+    // Check calculations
+    if (cartCalculations.finalTotal <= 0) validationErrors.push("Invalid order total");
+    if (cartCalculations.cartAmount <= 0) validationErrors.push("Invalid cart amount");
+ 
+    // Check store details
+    if (!storeDetails?.id && !defaultStoreId) validationErrors.push("Store ID is missing");
+ 
+    return validationErrors;
+  }, [cartItems, selectedPaymentMode, cartCalculations, storeDetails, getValues, defaultStoreId]);
+ 
+  // Create order preview for display
+  const createOrderPreview = useCallback(() => {
+    const formData = getValues();
+    const validationErrors = validateOrderData();
+ 
+    return {
+      isValid: validationErrors.length === 0,
+      validationErrors,
+      formData,
+      cartItems: cartItems || [],
+      calculations: cartCalculations,
+      paymentMode: selectedPaymentMode,
+      gstNumber: gstNumber,
+      storeInfo: {
+        name: storeDetails?.name || appName || "Default Store",
+        id: storeDetails?.id || defaultStoreId,
+        active: storeDetails?.active
+      },
+      orderSummary: {
+        itemCount: cartItems?.length || 0,
+        totalAmount: cartCalculations.finalTotal,
+        estimatedDelivery: selectedPaymentMode === 'PICK_AT_STORE' ? 'Pick up at store' : '2-3 business days'
+      },
+      billingDetails: {
+        firstName: formData.firstName || '',
+        lastName: formData.lastName || '',
+        phone: formData.phone || '',
+        email: formData.email || '',
+        country: formData.country || '',
+        state: formData.state || '',
+        city: formData.city || '',
+        address: formData.address || '',
+        pincode: formData.pincode || ''
+      },
+      paymentMethods: paymentModes.map(mode => ({
+        ...mode,
+        selected: mode.value === selectedPaymentMode
+      }))
+    };
+  }, [cartItems, cartCalculations, selectedPaymentMode, storeDetails, getValues, validateOrderData, appName, defaultStoreId, gstNumber, paymentModes]);
+ 
   const handleGstChange = useCallback((gst: string) => {
     setGstNumber(gst);
     setOrderGst(gst);
@@ -173,101 +297,26 @@ const CheckoutPage: React.FC = () => {
  
   // Create delivery address model matching the expected database schema
   const createDeliveryAddressModel = useCallback((formData: formType) => {
-    return {
+    return new DeliveryAddressModel({
+      id: Date.now(),
+      atStore: selectedPaymentMode === 'PICK_AT_STORE' ? 1 : 0,
       firstName: formData.firstName,
       lastName: formData.lastName,
-      address: formData.address,
-      city: formData.city,
       pinCode: formData.pincode,
+      city: formData.city,
+      address: formData.address,
       phoneNumber: formData.phone,
+      isChoosed: null,
       lat: 0,
       lng: 0,
-      atStore: selectedPaymentMode === "PICK_AT_STORE" ? 1 : 0
-    };
+    });
   }, [selectedPaymentMode]);
- 
-  // Create OrderModel class for API compatibility - matching the database schema
-  const createOrderModel = useCallback((orderData: any) => {
-    const deliveryAddressModel = createDeliveryAddressModel(orderData.billingDetails);
-   
-    // Convert order items to proper format
-    const orderItemsArray = Array.isArray(orderData.items) ? orderData.items :
-      (orderData.items && typeof orderData.items === 'object') ? Object.values(orderData.items) : [];
-   
-    // Convert tax_group to proper object format (not Map)
-    const taxGroupObj: { [key: string]: number } = {};
-   
-    // Convert txn_details to proper object format (not Map)  
-    const txnDetailsObj: { [key: string]: number } = {};
-   
-    // Get store ID and store name - prioritize from storeDetails, fallback to config
-    const storeId = storeDetails?.id || defaultStoreId;
-    const storeName = storeDetails?.name || appName || "Default Store";
-   
-    return {
-      toJsonObj: () => ({
-        // Core order fields matching OrderModel
-        id: orderData.id,
-        delivery_address: deliveryAddressModel,
-        order_time: new Date().toISOString(),
-        creation_time: new Date().toISOString(),
-        payment_mode: orderData.paymentMethod,
-        phone_number: orderData.billingDetails.phone,
-        user_name: `${orderData.billingDetails.firstName} ${orderData.billingDetails.lastName}`,
-        store: storeName,
-        store_id: defaultStoreId, // Dynamic store ID from config or storeDetails
-        device_token: undefined,
-       
-        // Financial calculations
-        cart_total: orderData.totals.cartAmount,
-        final_order_total: orderData.totals.finalTotal,
-        final_order_total_without_delivery: orderData.totals.finalTotal - orderData.totals.deliveryCharges,
-        coupon_code: "",
-        coupon_amount: 0,
-        discount_amount: orderData.totals.discountAmount,
-        package_cost: orderData.totals.packageCost,
-        delivery_cost: orderData.totals.deliveryCharges,
-        total_savings: orderData.totals.totalSavings,
-        tax_total: orderData.totals.taxAmount,
-        tax_group: taxGroupObj, // Object instead of Map
-       
-        // Order items - convert to proper format expected by database
-        order_items: Array.isArray(orderItemsArray) ? orderItemsArray : [],
-       
-        // Notification flags
-        delivery_notification_sent: false,
-        user_notification_sent: false,
-       
-        // Additional fields - img should be an array
-        img: [],
-        assigned_delivery: {
-          id: "",
-          deliveryBoyName: "",
-          deliveryBoyPhone: "",
-          status: "pending",
-          assignedTime: "",
-          estimatedDeliveryTime: ""
-        },
-        order_complete: false,
-        invoice_series: "",
-        order_accept_status: "PENDING",
-        order_gst: orderData.gstNumber || "",
-        is_subscription: false,
-        txn_details: txnDetailsObj // Object instead of Map
-      })
-    };
-  }, [createDeliveryAddressModel, storeDetails, defaultStoreId, appName]);
  
   // Generate order ID dynamically
   const generateOrderId = useCallback(() => {
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substr(2, 6).toUpperCase();
     return `ORDER-${timestamp}-${randomSuffix}`;
-  }, []);
- 
-  // Generate database ID (numeric)
-  const generateDatabaseId = useCallback(() => {
-    return Date.now(); // Use timestamp as unique numeric ID
   }, []);
  
   // Get payment method display text
@@ -283,109 +332,184 @@ const CheckoutPage: React.FC = () => {
    
     return paymentTexts[paymentMode] || "Place Order";
   }, []);
+  
   const [razorpayOrderData, setRazorpayOrderData] = useState<any>(null);
   const [razorpayOrderModel, setRazorpayOrderModel] = useState<any>(null);
   const [razorpayDeliveryAddress, setRazorpayDeliveryAddress] = useState<any>(null);
-
-  // Form submission - using saveOrder API function
-  const onSubmit = useCallback(async (data: formType) => {
+  // Create DeliveryAssign using the imported class
+  const createDeliveryAssign = useCallback(() => {
+    return new DeliveryAssign({
+      name: 'Not Assigned',
+      phone: ''
+    });
+  }, []);
+ 
+  // Create OrderItemsModel array using the imported class
+  const createOrderItems = useCallback(() => {
+    const orderItems: OrderItemsModel[] = [];
+   
+    cartItems.forEach(item => {
+      const basePrice = item.price * item.cartItemCount;
+      const discountedPrice = item.discountPrice ?
+        item.discountPrice * item.cartItemCount : basePrice;
+     
+      const orderItemData = {
+        id: item.id,
+        name: item.name,
+        baseChoosedPrice: basePrice,
+        choosedPrice: discountedPrice,
+        collectedTax: item.taxAmount ? item.taxAmount * item.cartItemCount : 0,
+        costPrice: item.price,
+        saleQuantityStr: item.cartPurchaseOptionStr,
+        saleQuantity: item.cartItemCount,
+        isProduct: true,
+        isReturnable: item.isReturnable || false,
+        url: item.img[0] || '',
+        rating: 0,
+        categoryName: item.categoryName || '',
+        categoryID: item.categoryID || '',
+        cartItemCount: item.cartItemCount,
+        orderKitItems: [],
+        selfDocRef: undefined,
+        active: item.active !== undefined ? item.active : true,
+        taxType: item.taxType || "EXCLUSIVE",
+        taxAmount: item.taxAmount || 0,
+        selectedSubscription:{},
+      };
+ 
+      const orderItem = new OrderItemsModel(orderItemData);
+ 
+      // Set status based on payment mode using the model's initialized status
+      orderItem.status.process = selectedPaymentMode === 'PICK_AT_STORE' ? null : new Date().toISOString();
+      orderItem.status.deliver = selectedPaymentMode === 'PICK_AT_STORE' ? new Date().toISOString() : null;
+      orderItem.status.confirm = null;
+      orderItem.status.package = null;
+      orderItem.status.cancel = null;
+      orderItem.status.transit = null;
+ 
+      orderItems.push(orderItem);
+    });
+ 
+    return orderItems;
+  }, [cartItems, selectedPaymentMode]);
+ 
+  // Create complete order model using the imported OrderModel class
+  const createOrderModel = useCallback((formData: formType) => {
+    const orderId = generateOrderId();
+    const currentTime = new Date().toISOString();
+    const deliveryAddress = createDeliveryAddressModel(formData);
+    const orderItems = createOrderItems();
+    const deliveryAssign = createDeliveryAssign();
+ 
+    // Create tax group from order items
+    const taxGroup: Record<string, number> = {};
+    orderItems.forEach(item => {
+      const taxType = item.taxType || 'EXCLUSIVE';
+      taxGroup[taxType] = (taxGroup[taxType] || 0) + item.collectedTax;
+    });
+ 
+    const orderData = {
+      id: orderId,
+      deliveryAddress: deliveryAddress,
+      orderTime: currentTime,
+      creationTime: currentTime,
+      paymentMode: selectedPaymentMode,
+      phoneNumber: formData.phone,
+      userName: `${formData.firstName} ${formData.lastName}`,
+      store: storeDetails?.name || appName || "Default Store",
+      storeId: storeDetails?.id || defaultStoreId,
+      cartTotal: cartCalculations.cartAmount,
+      finalOrderTotal: cartCalculations.finalTotal,
+      finalOrderTotalWithOutDelivery: cartCalculations.finalTotal - cartCalculations.deliveryCharges,
+      couponCode: "",
+      couponAmount: 0,
+      discountAmount: cartCalculations.discountAmount,
+      packageCost: cartCalculations.packageCost,
+      deliveryCost: cartCalculations.deliveryCharges,
+      totalSavings: cartCalculations.totalSavings,
+      taxTotal: cartCalculations.taxAmount,
+      taxGroup: taxGroup,
+      orderItems: orderItems,
+      img: orderItems.map(item => item.url).filter(url => url),
+      assignedDelivery: deliveryAssign,
+      orderComplete: false,
+      orderAcceptStatus: "PENDING",
+      deviceToken: undefined,
+      txnDetails: undefined,
+      deliveryNotificationSent: false,
+      userNotificationSent: false,
+      orderGst: gstNumber || undefined
+    };
+ 
+    return new OrderModel(orderData);
+  }, [generateOrderId, createDeliveryAddressModel, createOrderItems, createDeliveryAssign, selectedPaymentMode, storeDetails, appName, defaultStoreId, cartCalculations, gstNumber]);
+ 
+  // Handle form submission and order placement
+  const onSubmit = useCallback(async (formData: formType) => {
     try {
       setIsProcessing(true);
+      setShowValidationErrors(true);
  
-      if (!selectedPaymentMode) {
-        toast.error("Please select a payment method");
+      // Validate all order data
+      const validationErrors = validateOrderData();
+      if (validationErrors.length > 0) {
+        validationErrors.forEach(error => toast.error(error));
         return;
       }
  
-      // Create delivery address model first
-      const deliveryAddress = createDeliveryAddressModel(data);
+      // Create delivery address model and set it
+      const deliveryAddress = createDeliveryAddressModel(formData);
       setDeliveryAddressModel(deliveryAddress);
       setRazorpayDeliveryAddress(deliveryAddress);
-
-      // Prepare order data with proper structure
-      const orderData = {
-        id: generateDatabaseId(),
-        orderId: generateOrderId(),
-        items: getOrderItems(),
-        billingDetails: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.phone,
-          country: data.country,
-          state: data.state,
-          city: data.city,
-          address: data.address,
-          pincode: data.pincode
-        },
-        paymentMethod: selectedPaymentMode,
-        totals: {
-          cartAmount: cartCalculations.cartAmount,
-          discountAmount: cartCalculations.discountAmount,
-          taxAmount: cartCalculations.taxAmount,
-          packageCost: cartCalculations.packageCost,
-          deliveryCharges: cartCalculations.deliveryCharges,
-          totalSavings: cartCalculations.totalSavings,
-          finalTotal: cartCalculations.finalTotal
-        },
-        gstNumber: gstNumber || undefined,
-        storeDetails: storeDetails,
-        orderDate: new Date().toISOString(),
-        status: "pending"
-      };
- 
-      // Create order model with proper database schema
-      const orderModel = createOrderModel(orderData);
-      
-      setRazorpayOrderData(orderData);
+      // Create complete order model
+      const orderModel = createOrderModel(formData);
+      // setRazorpayOrderData(orderData);
       setRazorpayOrderModel(orderModel);
-
-      console.log("Raw order items from getOrderItems():", getOrderItems());
-      console.log("Store ID being used:", storeDetails?.id || defaultStoreId);
-      console.log("Order payload being sent:", JSON.stringify(orderModel.toJsonObj(), null, 2));
+      await API.saveOrder(orderModel)
+      // Create order preview for confirmation
+      const preview = createOrderPreview();
+      setOrderPreview(preview);
  
-      // Call saveOrder API function using singleton instance
-      await API.saveOrder(orderModel);
- 
-      // Handle successful order creation
-      const orderSuccessData = {
-        ...orderData,
-        deliveryAddress: deliveryAddress, // Include delivery address for success page
-        apiResponse: { success: true }
-      };
- 
-      sessionStorage.setItem("order-success-data", JSON.stringify(orderSuccessData));
+      console.log("Order Model Created:", orderModel.toJsonObj());
      
-      // Clear cart
-      clearCart();
-      emptyCart();
-     
-      toast.success("Order placed successfully!");
-      router.push("/pages/order-success");
+      // Here you would typically send the order to your backend API
+      // For now, we'll simulate the process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+ 
+      // Handle different payment modes
+      switch (selectedPaymentMode) {
+        case 'COD':
+        case 'PICK_AT_STORE':
+          toast.success("Order placed successfully!");
+          clearCart();  
+          emptyCart();
+          break;
+        case 'RAZORPAY':
+          toast.info("Redirecting to payment gateway...");
+        case 'PHONEPE':
+          // Redirect to payment gateway
+          toast.info("Redirecting to payment gateway...");
+          // Here you would integrate with actual payment gateway
+          break;
+        default:
+          toast.error("Invalid payment method selected");
+      }
  
     } catch (error) {
-      console.error("Order submission error:", error);
-      // Error handling is already done in the saveOrder function via NotificationService
-      // Just show a generic toast message
+      console.error("Order placement error:", error);
       toast.error("Failed to place order. Please try again.");
     } finally {
       setIsProcessing(false);
     }
-  }, [
-    selectedPaymentMode,
-    cartCalculations,
-    gstNumber,
-    storeDetails,
-    router,
-    setDeliveryAddressModel,
-    clearCart,
-    emptyCart,
-    getOrderItems,
-    generateOrderId,
-    generateDatabaseId,
-    createOrderModel,
-    createDeliveryAddressModel
-  ]);
+  }, [validateOrderData, createDeliveryAddressModel, setDeliveryAddressModel, createOrderModel, createOrderPreview, selectedPaymentMode, clearCart, emptyCart, router]);
+ 
+  // Update order preview when form changes
+  useEffect(() => {
+    if (Object.keys(watchedFields).length > 0) {
+      const preview = createOrderPreview();
+      setOrderPreview(preview);
+    }
+  }, [watchedFields, createOrderPreview]);
  
   // Early return for empty cart
   if (cartIsEmpty()) {
@@ -411,6 +535,15 @@ const CheckoutPage: React.FC = () => {
  
   return (
     <>
+      <DebugPanel
+        cartItems={cartItems}
+        calculations={cartCalculations}
+        formData={watchedFields}
+        selectedPaymentMode={selectedPaymentMode}
+        deliveryAddressModel={deliveryAddressModel}
+        storeDetails={storeDetails}
+      />
+ 
       <Breadcrumb title="checkout" parent="home" />
       <section className="checkout-container">
         <div className="container">
@@ -464,7 +597,13 @@ const CheckoutPage: React.FC = () => {
                           type="tel"
                           placeholder="Enter phone number"
                           className={`form-control ${errors.phone ? "error_border" : ""}`}
-                          {...register("phone", { required: "Phone number is required" })}
+                          {...register("phone", {
+                            required: "Phone number is required",
+                            pattern: {
+                              value: /^[0-9]{10}$/,
+                              message: "Please enter a valid 10-digit phone number"
+                            }
+                          })}
                         />
                         {errors.phone && (
                           <span className="error-message">{errors.phone.message}</span>
@@ -479,7 +618,13 @@ const CheckoutPage: React.FC = () => {
                           type="email"
                           placeholder="Enter email address"
                           className={`form-control ${errors.email ? "error_border" : ""}`}
-                          {...register("email", { required: "Email is required" })}
+                          {...register("email", {
+                            required: "Email is required",
+                            pattern: {
+                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                              message: "Please enter a valid email address"
+                            }
+                          })}
                         />
                         {errors.email && (
                           <span className="error-message">{errors.email.message}</span>
@@ -558,7 +703,13 @@ const CheckoutPage: React.FC = () => {
                           type="text"
                           placeholder="Enter PIN code"
                           className={`form-control ${errors.pincode ? "error_border" : ""}`}
-                          {...register("pincode", { required: "PIN code is required" })}
+                          {...register("pincode", {
+                            required: "PIN code is required",
+                            pattern: {
+                              value: /^[0-9]{6}$/,
+                              message: "Please enter a valid 6-digit PIN code"
+                            }
+                          })}
                         />
                         {errors.pincode && (
                           <span className="error-message">{errors.pincode.message}</span>
@@ -680,29 +831,79 @@ const CheckoutPage: React.FC = () => {
                       <span>{symbol}{cartCalculations.finalTotal.toFixed(2)}</span>
                     </div>
                   </div>
+ 
+                  {/* Validation Errors */}
+                  {showValidationErrors && orderPreview?.validationErrors?.length > 0 && (
+                    <div className="alert alert-danger">
+                      <h6>Please fix the following errors:</h6>
+                      <ul className="mb-0">
+                        {orderPreview.validationErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                  
-                  {selectedPaymentMode === "RAZORPAY" ? (
-                    <RazorpayButton
-                      orderData={razorpayOrderData}
-                      orderModel={razorpayOrderModel}
-                      deliveryAddress={razorpayDeliveryAddress}
-                      finalTotal={cartCalculations.finalTotal}
-                      onSuccess={() => {
-                        clearCart();
-                        emptyCart();
-                        router.push("/pages/order-success");
-                      }}
-                    />
-                  ) : (
-                    <button
-                      type="submit"
-                      className="btn-primary"
-                      disabled={isProcessing || !selectedPaymentMode}
-                    >
-                      {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
-                    </button>
-                  )}                
+                  {/* <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={isProcessing || !selectedPaymentMode}
+                  >
+                    {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
+                  </button> */}
+                  <div className="checkout-footer mt-4">
+  {selectedPaymentMode === "RAZORPAY" ? (
+    <RazorpayButton
+      orderData={razorpayOrderData}
+      orderModel={razorpayOrderModel}
+      deliveryAddress={razorpayDeliveryAddress}
+      finalTotal={cartCalculations.finalTotal}
+      onSuccess={() => {
+        toast.success("Payment successful, order placed!");
+        clearCart();
+        emptyCart();
+        router.push("/thankyou");
+      }}
+    />
+  ) : (
+    <button
+      type="submit"
+      className="btn btn-solid"
+      disabled={isProcessing}
+    >
+      {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
+    </button>
+  )}
+</div>
+
+                  {/* Order Info */}
+                  <div className="mt-3">
+                    <small className="text-muted">
+                      {selectedPaymentMode === 'PICK_AT_STORE'
+                        ? "You can pick up your order from the store"
+                        : "Estimated delivery: 2-3 business days"
+                      }
+                    </small>
+                  </div>
                 </div>
+ 
+                {/* Order Preview (for debugging/confirmation) */}
+                {/* {orderPreview && process.env.NODE_ENV !== 'production' && (
+                  <div className="card mt-3">
+                    <div className="card-header">
+                      <h6>Order Preview (Debug)</h6>
+                    </div>
+                    <div className="card-body">
+                      <small>
+                        <strong>Valid:</strong> {orderPreview.isValid ? 'Yes' : 'No'}<br />
+                        <strong>Items:</strong> {orderPreview.orderSummary.itemCount}<br />
+                        <strong>Total:</strong> {symbol}{orderPreview.orderSummary.totalAmount.toFixed(2)}<br />
+                        <strong>Payment:</strong> {orderPreview.paymentMode}<br />
+                        <strong>Store:</strong> {orderPreview.storeInfo.name}
+                      </small>
+                    </div>
+                  </div>
+                )} */}
               </Col>
             </Row>
           </Form>
@@ -713,3 +914,4 @@ const CheckoutPage: React.FC = () => {
 };
  
 export default CheckoutPage;
+ 
