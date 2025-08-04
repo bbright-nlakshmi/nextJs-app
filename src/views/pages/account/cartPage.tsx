@@ -162,13 +162,54 @@ const CartPage: NextPage = () => {
                 <div className="col-sm-12">
                   <table className="table cart-table table-responsive-xs">
                     <thead>
-                      <tr className="table-head">
-                        <th>Image</th>
-                        <th>Product Name</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Action</th>
-                        <th>Total</th>
+                      <tr className="table-head" style={{ height: '60px' }}>
+                        <th style={{ 
+                          width: '100px', 
+                          textAlign: 'center', 
+                          padding: '20px 15px',
+                          verticalAlign: 'middle',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}>Image</th>
+                        <th style={{ 
+                          width: '300px', 
+                          padding: '20px 15px',
+                          verticalAlign: 'middle',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}>Product Name</th>
+                        <th style={{ 
+                          width: '120px', 
+                          textAlign: 'center', 
+                          padding: '20px 15px',
+                          verticalAlign: 'middle',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}>Price</th>
+                        <th style={{ 
+                          width: '120px', 
+                          textAlign: 'center', 
+                          padding: '20px 15px',
+                          verticalAlign: 'middle',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}>Quantity</th>
+                        <th style={{ 
+                          width: '100px', 
+                          textAlign: 'center', 
+                          padding: '20px 15px',
+                          verticalAlign: 'middle',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}>Action</th>
+                        <th style={{ 
+                          width: '120px', 
+                          textAlign: 'center', 
+                          padding: '20px 15px',
+                          verticalAlign: 'middle',
+                          fontWeight: '600',
+                          fontSize: '14px'
+                        }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -180,24 +221,36 @@ const CartPage: NextPage = () => {
 
                         return (
                           <tr key={itemKey}>
-                            <td>
+                            <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '15px' }}>
                               <img 
                                 src={item.img?.[0] || "/static/images/placeholder.png"} 
                                 alt="cart" 
-                                style={{ width: 60 }} 
+                                style={{ 
+                                  width: 60, 
+                                  height: 60, 
+                                  objectFit: 'cover',
+                                  borderRadius: '8px',
+                                  border: '1px solid #e0e0e0'
+                                }} 
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
                                   target.src = "/static/images/placeholder.png";
                                 }}
                               />
                             </td>
-                            <td>
+                            <td style={{ verticalAlign: 'middle', padding: '15px' }}>
                               <div>
-                                <span>{item.name || "Unknown Product"}</span>
+                                <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                                  {item.name || "Unknown Product"}
+                                </span>
                               </div>
                             </td>
-                            <td>{symbol}{price.toFixed(2)}</td>
-                            <td>
+                            <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '15px' }}>
+                              <span style={{ fontWeight: '600', color: '#333' }}>
+                                {symbol}{price.toFixed(2)}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '15px' }}>
                               <input
                                 type="number"
                                 min="1"
@@ -205,24 +258,47 @@ const CartPage: NextPage = () => {
                                 onChange={(e) => handleQtyUpdate(item, e.target.value)}
                                 className="form-control input-number"
                                 style={{
-                                  width: "80px",
-                                  borderColor: quantityErrorKey === errorKey ? "red" : undefined,
+                                  width: "70px",
+                                  margin: '0 auto',
+                                  textAlign: 'center',
+                                  borderColor: quantityErrorKey === errorKey ? "red" : "#ddd",
+                                  borderRadius: '6px',
+                                  padding: '8px'
                                 }}
                               />
                             </td>
-                            <td>
-                              <a
-                                href="#"
-                                className="icon"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  removeFromCart(item);
+                            <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '15px' }}>
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => removeFromCart(item)}
+                                style={{
+                                  border: '1px solid #dc3545',
+                                  borderRadius: '6px',
+                                  padding: '6px 10px',
+                                  backgroundColor: 'transparent',
+                                  color: '#dc3545',
+                                  transition: 'all 0.3s ease',
+                                  minWidth: '35px',
+                                  height: '32px'
                                 }}
+                                onMouseOver={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#dc3545';
+                                  e.currentTarget.style.color = 'white';
+                                }}
+                                onMouseOut={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                  e.currentTarget.style.color = '#dc3545';
+                                }}
+                                aria-label="Remove item"
                               >
                                 <i className="ti-close"></i>
-                              </a>
+                              </button>
                             </td>
-                            <td>{symbol}{(price * (item.qty || 1) * value).toFixed(2)}</td>
+                            <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '15px' }}>
+                              <span style={{ fontWeight: '700', color: '#000', fontSize: '16px' }}>
+                                {symbol}{(price * (item.qty || 1) * value).toFixed(2)}
+                              </span>
+                            </td>
                           </tr>
                         );
                       })}
@@ -232,9 +308,13 @@ const CartPage: NextPage = () => {
                   <table className="table cart-table table-responsive-md">
                     <tfoot>
                       <tr>
-                        <td>Total Price:</td>
-                        <td>
-                          <h2>{symbol}{getSubtotal().toFixed(2)}</h2>
+                        <td style={{ textAlign: 'right', padding: '20px', fontSize: '18px', fontWeight: '600' }}>
+                          Total Price:
+                        </td>
+                        <td style={{ padding: '20px' }}>
+                          <h2 style={{ color: '#00baf2', fontWeight: '700', margin: 0 }}>
+                            {symbol}{getSubtotal().toFixed(2)}
+                          </h2>
                         </td>
                       </tr>
                     </tfoot>
