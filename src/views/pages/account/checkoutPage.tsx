@@ -352,7 +352,7 @@ const CheckoutPage: React.FC = () => {
       const basePrice = item.price * item.cartItemCount;
       const discountedPrice = item.discountPrice ?
         item.discountPrice * item.cartItemCount : basePrice;
-     
+      
       const orderItemData = {
         id: item.id,
         name: item.name,
@@ -376,7 +376,7 @@ const CheckoutPage: React.FC = () => {
         taxAmount: item.taxAmount || 0,
         selectedSubscription:{},
       };
- 
+    
       const orderItem = new OrderItemsModel(orderItemData);
  
       // Set status based on payment mode using the model's initialized status
@@ -386,13 +386,13 @@ const CheckoutPage: React.FC = () => {
       orderItem.status.package = null;
       orderItem.status.cancel = null;
       orderItem.status.transit = null;
- 
+    
       orderItems.push(orderItem);
     });
  
     return orderItems;
   }, [cartItems, selectedPaymentMode]);
- 
+  
   // Create complete order model using the imported OrderModel class
   const createOrderModel = useCallback((formData: formType) => {
     const orderId = generateOrderId();
@@ -407,7 +407,7 @@ const CheckoutPage: React.FC = () => {
       const taxType = item.taxType || 'EXCLUSIVE';
       taxGroup[taxType] = (taxGroup[taxType] || 0) + item.collectedTax;
     });
- 
+  
     const orderData = {
       id: orderId,
       deliveryAddress: deliveryAddress,
@@ -486,6 +486,9 @@ const CheckoutPage: React.FC = () => {
           break;
         case 'RAZORPAY':
           toast.info("Redirecting to payment gateway...");
+          clearCart();  
+          emptyCart();
+          break;
         case 'PHONEPE':
           // Redirect to payment gateway
           toast.info("Redirecting to payment gateway...");
@@ -510,7 +513,7 @@ const CheckoutPage: React.FC = () => {
       setOrderPreview(preview);
     }
   }, [watchedFields, createOrderPreview]);
- 
+ console.log("amt",cartCalculations.finalTotal)
   // Early return for empty cart
   if (cartIsEmpty()) {
     return (
@@ -843,7 +846,6 @@ const CheckoutPage: React.FC = () => {
                       </ul>
                     </div>
                   )}
-                 
                   {/* <button
                     type="submit"
                     className="btn-primary"
@@ -852,30 +854,29 @@ const CheckoutPage: React.FC = () => {
                     {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
                   </button> */}
                   <div className="checkout-footer mt-4">
-  {selectedPaymentMode === "RAZORPAY" ? (
-    <RazorpayButton
-      orderData={razorpayOrderData}
-      orderModel={razorpayOrderModel}
-      deliveryAddress={razorpayDeliveryAddress}
-      finalTotal={cartCalculations.finalTotal}
-      onSuccess={() => {
-        toast.success("Payment successful, order placed!");
-        clearCart();
-        emptyCart();
-        router.push("/thankyou");
-      }}
-    />
-  ) : (
-    <button
-      type="submit"
-      className="btn btn-solid"
-      disabled={isProcessing}
-    >
-      {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
-    </button>
-  )}
-</div>
-
+                    {selectedPaymentMode === "RAZORPAY" ? (
+                      <RazorpayButton
+                        orderData={razorpayOrderData}
+                        orderModel={razorpayOrderModel}
+                        deliveryAddress={razorpayDeliveryAddress}
+                        finalTotal={cartCalculations.finalTotal}
+                        onSuccess={() => {
+                          toast.success("Payment successful, order placed!");
+                          clearCart();
+                          emptyCart();
+                          router.push("/pages/order-success");
+                        }}
+                      />  
+                    ) : (
+                  <button
+                    type="submit"
+                    className="btn btn-solid"
+                    disabled={isProcessing}
+                  >
+                  {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
+                    </button>
+                )}
+              </div>
                   {/* Order Info */}
                   <div className="mt-3">
                     <small className="text-muted">

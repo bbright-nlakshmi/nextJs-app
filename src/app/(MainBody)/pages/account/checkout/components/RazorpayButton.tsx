@@ -61,7 +61,7 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
 
     const options = {
       key: key,
-      amount: finalTotal * 100, // Razorpay accepts amount in paise
+      amount: ((finalTotal * 100).toFixed(2)), // Razorpay accepts amount in paise
       currency: "INR",
       name: "RupeEcom", // You can substitute with dynamic name if required
       description: "Order Payment",
@@ -115,7 +115,7 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
 
   return (
     <button type="button" className="btn-primary" onClick={triggerPayment}>
-      Pay ₹{finalTotal.toFixed(2)} with Razorpay
+      Pay ₹{finalTotal} with Razorpay
     </button>
   );
 };
