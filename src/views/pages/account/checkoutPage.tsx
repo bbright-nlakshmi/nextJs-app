@@ -1,34 +1,19 @@
 "use client";
-import React, { useState, useContext, useEffect } from "react";
-import { NextPage } from "next";
+import React, { useState, useContext, useEffect, useCallback, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { Form, Row, Col } from "reactstrap";
-import Breadcrumb from "../../../views/Containers/Breadcrumb";
-import { CartContext } from "../../../helpers/cart/cart.context";
+import Breadcrumb from "@/views/Containers/Breadcrumb";
+import { CartContext } from "@/helpers/cart/cart.context";
 import { useRouter } from "next/navigation";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
-// import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { toast } from "react-toastify";
-import { API } from "@/app/services/api.service";
-import { searchController } from "@/app/globalProvider";
-import { Kit } from "@/app/models/kit/kit";
-import { RazorpayModel } from "@/app/models/razorpay_model/razorpay";
-import Store from "@/app/(MainBody)/pages/store/page";
-import { appConfig } from "@/app/globalProvider";
-// Simple OrderModel wrapper to match your API structure
-class OrderModel {
-  private orderData: any;
-  
-  constructor(data: any) {
-    this.orderData = data;
-  }
-  
-  toJsonObj() {
-    return this.orderData;
-  }
-}
-
-interface formType {
+import { useCart } from "../../../app/providers/useCart/useCart";
+import { appConfig } from "../../../app/config/";
+import { DeliveryAddressModel } from "@/app/models/delivery_address_model/delivery_address";
+import { DeliveryAssign, OrderItemsModel, OrderModel } from "@/app/models/order/order";
+import { API } from "@/app/globalProvider"; 
+ 
+interface FormType {
   firstName: string;
   lastName: string;
   phone: string;
@@ -40,930 +25,890 @@ interface formType {
   pincode: string;
 }
 
-interface KitRaw {
-  id: string;
-  [key: string]: any;
-}
-
-// PayPal configuration
-// const paypalOptions = {
-//   clientId: "AZ4S98zFa01vym7NVeo_qthZyOnBhtNvQDsjhaZSMH-2_Y9IAJFbSD3HPueErYqN8Sa8WYRbjP7wWtd_",
-//   currency: "USD",
-//   intent: "capture"
-// };
-// declare const Razorpay: any;
-
-
-  
-// Static order data template
-const createStaticOrderData = (formData: formType, paymentMethod: string, cartItems: any[], totals: any) => {
-  const currentTime = new Date().toISOString();
-  const orderNumber = Math.floor(Math.random() * 1000000);
-  
-  return {
-    "id": `STEAKSSTAY-E${orderNumber}`,
-    "img": [],
-    "store": "store",
-    "store_id": appConfig.defaultStoreId,
-    "order_gst": "",
-    "tax_group": {},
-    "tax_total": totals.tax,
-    "user_name": `${formData.firstName} ${formData.lastName}`,
-    "cart_total": totals.subtotal,
-    "order_time": currentTime,
-    "coupon_code": "",
-    "order_items": cartItems.map((item, index) => ({
-      "id": item.productId || `product-${index}`,
-      "url": item.img?.[0] || "",
-      "name": item.name || "Product",
-      "rating": 0,
-      "status": {
-        "cancel": null,
-        "confirm": null,
-        "deliver": null,
-        "package": null,
-        "process": currentTime,
-        "transit": null
-      },
-      "cost_price": totals.itemPrice || 10,
-      "is_product": true,
-      "category_id": "default-category-id",
-      "category_name": item.category || "General",
-      "choosed_price": totals.itemPrice * (item.qty || 1),
-      "collected_tax": 0,
-      "is_returnable": false,
-      "sale_quantity": (item.qty || 1).toString(),
-      "cart_item_count": item.qty || 1,
-      "order_kit_items": [],
-      "sale_quantity_str": `${item.qty || 1}kg`,
-      "base_choosed_price": totals.itemPrice * (item.qty || 1),
-      "selected_subscription": null
-    })),
-    "txn_details": {},
-    "device_token": "",
-    "package_cost": 5,
-    "payment_mode": paymentMethod === "cod" ? "Cash On Delivery" : paymentMethod === "razorpay" ? "Razorpay" : "razorpay",
-    "phone_number": formData.phone,
-    "coupon_amount": 0,
-    "creation_time": currentTime,
-    "delivery_cost": 0,
-    "order_pick_up": false,
-    "total_savings": 0,
-    "updation_time": currentTime,
-    "invoice_series": "ONL_64",
-    "order_complete": false,
-    "discount_amount": 0,
-    "delivery_address": {
-      "lat": 23.339261179986867,
-      "lng": 77.82606313073967,
-      "city": formData.city,
-      "address": formData.address,
-      "at_store": false,
-      "pin_code": formData.pincode,
-      "last_name": formData.lastName,
-      "first_name": formData.firstName,
-      "phone_number": formData.phone
-    },
-    "assigned_delivery": {
-      "name": "Not Assigned",
-      "phone": ""
-    },
-    "final_order_total": totals.final,
-    "order_accept_status": "PENDING",
-    "user_notification_sent": false,
-    "delivery_notification_sent": false,
-    "final_order_total_without_delivery": totals.final - 5
-  };
-};
-
-const CheckoutPageContent: React.FC = () => {
+const CheckoutPage: React.FC = () => {
   const router = useRouter();
-  const { selectedCurr } = useContext(CurrencyContext);
-  const { symbol, value } = selectedCurr;
-  const { cartItems, emptyCart } = useContext(CartContext);  
-  const [payment, setPayment] = useState("cod");
-  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
-  const [razorpayKey, setRazorpayKey] = useState<string | null>(null);
- useEffect(() => {
-  const loadRazorpayScript = async () => {
-    try {
-      // 1. First fetch the Razorpay key
-      const apidata = await API.getRazorPayDetails();
-      console.log("API response for Razorpay config:", apidata);
-      
-      if (apidata.length > 0) {
-        setRazorpayKey(apidata[0].keyId);
-        
-        // 2. Now load the Razorpay script
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        script.onerror = () => {
-          toast.error("Failed to load Razorpay script");
-        };
-        document.body.appendChild(script);
-      } else {
-        toast.error("No Razorpay config found");
-      }
-    } catch (err) {
-      console.error("Failed to load Razorpay config", err);
-      toast.error("Failed to load payment gateway config");
-    }
-  };
-
-  loadRazorpayScript();
-}, []);
-
+  const currencyContext = useContext(CurrencyContext);
+  const cartContext = useContext(CartContext);
+ 
+  const symbol = currencyContext?.selectedCurr?.symbol || '$';
+  const contextCartItems = cartContext?.cartItems || [];
+  const emptyCart = cartContext?.emptyCart || (() => {});
+ 
+  const initializationRef = useRef({
+    cartInitialized: false,
+    contextItemsLength: 0
+  });
+ 
+  const cartHook = useCart();
+ 
   const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    getValues
-  } = useForm<formType>();
-   
-  // Price function from cart page - exact implementation
-  const getProductById = (productId: string): any => {
-    if (!productId) return null;
-
-    try {
-      if (searchController?.allProducts instanceof Map) {
-        for (const products of searchController.allProducts.values()) {
-          if (Array.isArray(products)) {
-            const product = products.find((p: any) => p?.id === productId);
-            if (product) return product;
-          }
-        }
-      }
-
-      if (searchController?.kits && Array.isArray(searchController.kits)) {
-        const kitRaw = searchController.kits.find((k: KitRaw) => k?.id === productId);
-        if (kitRaw) {
-          const kit = new Kit();
-          if (kit.fromMap && typeof kit.fromMap === "function") {
-            kit.fromMap(kitRaw);
-            return kit;
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error finding product:", error);
-    }
-
-    return null;
-  };
-
-  const getPrice = (item: any): number => {
+    cartItems = [],
+    selectedPaymentMode,
+    deliveryAddressModel,
+    storeDetails,
+    calcCartAmount = () => 0,
+    getCartDiscount = () => 0,
+    getPackageCost = () => 0,
+    getDeliveryCost = () => 0,
+    totalTaxAmount = () => 0,
+    getCartSavings = () => 0,
+    finalOrderAmount = () => 0,
+    setSelectedPaymentMode = () => {},
+    setDeliveryAddressModel = () => {},
+    setOrderGst = () => {},
+    clearCart = () => {},
+    addItemToCart = () => {},
+    cartIsEmpty = () => true
+  } = cartHook || {};
+ 
+  const [gstNumber, setGstNumber] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+ 
+  const { register, handleSubmit, formState: { errors }, getValues } = useForm<FormType>();
+  
+  const appName = appConfig.appName;
+  const defaultStoreId = appConfig.defaultStoreId;
+ 
+  const paymentModes = useMemo(() => [
+    { value: "COD", label: "Cash on Delivery (COD)" },
+    { value: "PICK_AT_STORE", label: "Pick at Store" },
+    { value: "RAZORPAY", label: "Razorpay" },
+    { value: "PHONEPE", label: "PhonePe" }
+  ], []);
+ 
+  const countries = useMemo(() => [
+    { value: "", label: "Select Country" },
+    { value: "India", label: "India" },
+    { value: "United States", label: "United States" },
+  ], []);
+ 
+  // Enhanced price extraction function
+  const extractPrice = useCallback((item: any): number => {
     if (!item) return 0;
-
+    
     try {
-      const product = getProductById(item.productId);
-      
-      if (product) {
-        if (product instanceof Kit && typeof product.getPrice === "function") {
-          try {
-            const price = product.getPrice({ cartQuantity: item.qty });
-            if (typeof price === 'number' && !isNaN(price) && price > 0) {
-              return price;
-            }
-          } catch (methodError) {
-            console.warn("Kit getPrice method failed:", methodError);
-          }
-        }
-        
-        if (product?.getPrice && typeof product.getPrice === "function") {
-          try {
-            const price = product.getPrice({
-              cartQuantity: item.qty,
-              purchaseOptionStr: item.purchaseOptionStr || "",
-            });
-            if (typeof price === 'number' && !isNaN(price) && price > 0) {
-              return price;
-            }
-          } catch (methodError) {
-            console.warn("Product getPrice method failed:", methodError);
-          }
-        }
-      }
-
-      const extractPriceFromObject = (obj: any): number => {
-        if (!obj || typeof obj !== 'object') return 0;
-
-        const priceFields = ['price', 'kitPrice', 'discountPrice', 'salePrice', 'finalPrice', 'currentPrice', 'sellingPrice'];
-        
-        for (const field of priceFields) {
-          if (field in obj && typeof obj[field] === 'number' && obj[field] > 0) {
-            return obj[field];
-          }
-        }
-
-        const nestedPrice = obj.pricing || obj.priceInfo || obj.cost || obj.priceData;
-        if (typeof nestedPrice === 'number' && nestedPrice > 0) {
-          return nestedPrice;
-        }
-        if (typeof nestedPrice === 'object' && nestedPrice !== null) {
-          const extractedPrice = nestedPrice.amount || nestedPrice.value || nestedPrice.price || nestedPrice.final || nestedPrice.current;
-          if (typeof extractedPrice === 'number' && extractedPrice > 0) {
-            return extractedPrice;
-          }
-        }
-
-        return 0;
-      };
-
-      if (product) {
-        const productPrice = extractPriceFromObject(product);
-        if (productPrice > 0) return productPrice;
-      }
-
-      const itemPrice = extractPriceFromObject(item);
-      if (itemPrice > 0) return itemPrice;
-
+      // Check standard price fields first
       if (typeof item.price === 'number' && item.price > 0) {
         return item.price;
       }
-
-      return 0;
-    } catch (err) {
-      console.error("Price extraction error:", err);
-      return item.price || 0;
-    }
-  };
-
-  // Calculate totals using the proper price function
-  const subtotal = cartItems.reduce((sum: number, item: any) => {
-    const price = getPrice(item);
-    const itemTotal = price * (item.qty || 1) * value;
-    return sum + (isNaN(itemTotal) ? 0 : itemTotal);
-  }, 0);
-
-  const taxAmount = subtotal * 0.1;
-  const packageCost = 5;
-  const finalTotal = subtotal + taxAmount + packageCost;
-
-  // Validate and sanitize order data before submission
-  const validateOrderData = (orderData: any) => {
-    const issues = [];
-    
-    // Check required fields
-    if (!orderData.user_name || orderData.user_name.trim() === '') {
-      issues.push("User name is required");
-    }
-    
-    if (!orderData.phone_number || orderData.phone_number.trim() === '') {
-      issues.push("Phone number is required");
-    }
-    
-    if (!orderData.delivery_address || !orderData.delivery_address.address) {
-      issues.push("Delivery address is required");
-    }
-    
-    if (!orderData.order_items || orderData.order_items.length === 0) {
-      issues.push("Order must contain at least one item");
-    }
-    
-    if (orderData.final_order_total <= 0) {
-      issues.push("Invalid order total");
-    }
-    
-    // Check order items
-    if (orderData.order_items) {
-      orderData.order_items.forEach((item: any, index: number) => {
-        if (!item.name || item.name.trim() === '') {
-          issues.push(`Item ${index + 1} is missing name`);
+      
+      // Check for discount price (prioritize over original price)
+      if (item.discountPrice && typeof item.discountPrice === 'number' && item.discountPrice > 0) {
+        return item.discountPrice;
+      }
+      
+      // Check for sale price
+      if (item.salePrice && typeof item.salePrice === 'number' && item.salePrice > 0) {
+        return item.salePrice;
+      }
+      
+      // Check for finalPrice
+      if (item.finalPrice && typeof item.finalPrice === 'number' && item.finalPrice > 0) {
+        return item.finalPrice;
+      }
+      
+      // Check for currentPrice
+      if (item.currentPrice && typeof item.currentPrice === 'number' && item.currentPrice > 0) {
+        return item.currentPrice;
+      }
+      
+      // Check for sellingPrice
+      if (item.sellingPrice && typeof item.sellingPrice === 'number' && item.sellingPrice > 0) {
+        return item.sellingPrice;
+      }
+      
+      // Check Kit-specific price fields
+      if (item.kitPrice && typeof item.kitPrice === 'number' && item.kitPrice > 0) {
+        return item.kitPrice;
+      }
+      
+      // Try extracting from nested price objects
+      const nestedPrice = item.pricing || item.priceInfo || item.cost || item.priceData;
+      if (typeof nestedPrice === 'number' && nestedPrice > 0) {
+        return nestedPrice;
+      }
+      if (typeof nestedPrice === 'object' && nestedPrice !== null) {
+        const extractedPrice = nestedPrice.amount || nestedPrice.value || nestedPrice.price || nestedPrice.final || nestedPrice.current;
+        if (typeof extractedPrice === 'number' && extractedPrice > 0) {
+          return extractedPrice;
         }
-        if (!item.sale_quantity || item.sale_quantity <= 0) {
-          issues.push(`Item ${index + 1} has invalid quantity`);
+      }
+      
+      // Try extracting from the product data
+      if (item.product) {
+        return extractPrice(item.product);
+      }
+      
+      // Try extracting from nested productData
+      if (item.productData) {
+        return extractPrice(item.productData);
+      }
+      
+      // Check for string prices that need parsing
+      if (typeof item.price === 'string') {
+        const parsed = parseFloat(item.price.replace(/[^\d.-]/g, ''));
+        if (!isNaN(parsed) && parsed > 0) {
+          return parsed;
         }
-        if (!item.choosed_price || item.choosed_price <= 0) {
-          issues.push(`Item ${index + 1} has invalid price`);
-        }
+      }
+      
+    } catch (error) {
+      console.warn("Error extracting price for item:", error);
+    }
+    
+    return 0;
+  }, []);
+
+  const transformCartItem = useCallback((item: any) => {
+    const extractedPrice = extractPrice(item);
+    const extractedDiscountPrice = item.discountPrice ? extractPrice({ price: item.discountPrice }) : undefined;
+    
+    return {
+      id: item.productId || item.id,
+      name: item.name || item.title || item.productName || "Unknown Product",
+      img: item.img || item.image || item.images || ["/static/images/placeholder.png"],
+      cartItemCount: item.qty || item.quantity || item.cartItemCount || 1,
+      cartPurchaseOptionStr: item.purchaseOptionStr || item.variant || "default",
+      price: extractedPrice,
+      discountPrice: extractedDiscountPrice,
+      taxType: item.taxType || "EXCLUSIVE",
+      taxAmount: item.taxAmount || 0,
+      active: true,
+      isReturnable: item.isReturnable || false,
+      categoryName: item.category || item.categoryName || "General",
+      categoryID: item.categoryId || item.categoryID || "default"
+    };
+  }, [extractPrice]);
+ 
+  useEffect(() => {
+    const currentLength = contextCartItems?.length || 0;
+   
+    // Debug logging to help identify the issue
+    if (contextCartItems && contextCartItems.length > 0) {
+      console.log("Context Cart Items:", contextCartItems);
+      contextCartItems.forEach((item, index) => {
+        console.log(`Item ${index}:`, {
+          name: item.name,
+          price: item.price,
+          discountPrice: item.discountPrice,
+          qty: item.qty,
+          fullItem: item
+        });
       });
     }
-    
-    if (issues.length > 0) {
-      throw new Error("Order validation failed: " + issues.join(", "));
+   
+    if (!initializationRef.current.cartInitialized &&
+        currentLength > 0 &&
+        currentLength !== initializationRef.current.contextItemsLength &&
+        addItemToCart) {
+     
+      try {
+        contextCartItems.forEach((item: any) => {
+          const transformedItem = transformCartItem(item);
+          console.log("Transformed item:", transformedItem);
+          addItemToCart(transformedItem);
+        });
+        initializationRef.current.cartInitialized = true;
+        initializationRef.current.contextItemsLength = currentLength;
+      } catch (error) {
+        console.error("Error loading cart items:", error);
+        toast.error("Error loading cart items");
+      }
     }
-    
-    return true;
-  };
-
-  // Enhanced order submission with better error handling
-  const submitOrder = async (orderData: any) => {
+  }, [contextCartItems?.length, addItemToCart, transformCartItem]);
+ 
+  const cartCalculations = useMemo(() => {
     try {
-      console.log("Submitting order data:", orderData);
-      
-      // Check if API service exists
-      if (!API || typeof API.saveOrder !== 'function') {
-        throw new Error("API service not available or saveOrder method not found");
-      }
-
-      // Validate order data
-      validateOrderData(orderData);
-
-      // Create OrderModel instance
-      const orderModel = new OrderModel(orderData);
-
-      // Call the saveOrder method (it returns void, so we'll treat success as no exception)
-      await API.saveOrder(orderModel);
-      console.log("Order submitted successfully");
-      
-      return { success: true, orderId: orderData.id };
-    } catch (error) {
-      console.error("Order submission error details:", error);
-      
-      // More specific error messages
-      if (error.message?.includes("Network Error")) {
-        throw new Error("Network error. Please check your internet connection and try again.");
-      } else if (error.message?.includes("400")) {
-        throw new Error("Invalid order data. Please check your information and try again.");
-      } else if (error.message?.includes("401")) {
-        throw new Error("Authentication failed. Please login and try again.");
-      } else if (error.message?.includes("500")) {
-        throw new Error("Server error. Please try again later.");
-      } else if (error.message?.includes("validation failed")) {
-        throw new Error(error.message);
-      } else {
-        throw new Error(error.message || "An unexpected error occurred. Please try again.");
-      }
-    }
-  };
-
-  // Validate cart items before submission
-  const validateCartItems = () => {
-    if (!cartItems || cartItems.length === 0) {
-      throw new Error("Your cart is empty!");
-    }
-
-    for (const item of cartItems) {
-      if (!item.productId && !item.id) {
-        throw new Error("Invalid product found in cart. Please refresh and try again.");
-      }
-      if (!item.qty || item.qty <= 0) {
-        throw new Error("Invalid quantity for product: " + (item.name || "Unknown"));
-      }
-      const price = getPrice(item);
-      if (price <= 0) {
-        throw new Error("Invalid price for product: " + (item.name || "Unknown"));
-      }
-    }
-  };
-
-  const onSubmit = async (data: formType) => {
-    setIsProcessingOrder(true);
-    
-    try {
-      // Validate cart items
-      validateCartItems();
-      
-      // Validate totals
-      if (subtotal <= 0) {
-        throw new Error("Invalid cart total. Please refresh and try again.");
-      }
-      
-      const totals = {
-        subtotal: subtotal,
-        tax: taxAmount,
-        final: finalTotal,
-        itemPrice: getPrice(cartItems[0]) // For order data structure
+      const cartAmount = calcCartAmount();
+      const packageCost = getPackageCost(cartAmount);
+      const deliveryCharges = getDeliveryCost(cartAmount);
+      const discountAmount = getCartDiscount();
+      const taxAmount = totalTaxAmount();
+      const totalSavings = getCartSavings();
+      const finalTotal = finalOrderAmount();
+     
+      return {
+        cartAmount,
+        packageCost,
+        deliveryCharges,
+        discountAmount,
+        taxAmount,
+        totalSavings,
+        finalTotal
       };
-      
-      const orderData = createStaticOrderData(data, payment, cartItems, totals);
-      
-      // Submit order
-      const response = await submitOrder(orderData);
-      
-      // Store order data for success page
-      const orderSuccessData = {
-        orderId: orderData.id,
-        items: cartItems,
-        total: finalTotal,
-        subtotal: subtotal,
-        tax: taxAmount,
-        packageCost: packageCost,
-        billingAddress: data,
-        paymentMethod: payment,
-        orderDate: new Date().toISOString(),
-        status: "pending",
-        apiResponse: response
-      };
-
-      sessionStorage.setItem("order-success-data", JSON.stringify(orderSuccessData));
-      
-      emptyCart();
-      toast.success("Order placed successfully!");
-      router.push("/pages/order-success");
-      
     } catch (error) {
-      console.error("Order processing error:", error);
-      toast.error(
-        typeof error === "object" && error !== null && "message" in error
-          ? (error as { message?: string }).message || "Error processing order. Please try again."
-          : "Error processing order. Please try again."
-      );
-    } finally {
-      setIsProcessingOrder(false);
+      return {
+        cartAmount: 0,
+        packageCost: 0,
+        deliveryCharges: 0,
+        discountAmount: 0,
+        taxAmount: 0,
+        totalSavings: 0,
+        finalTotal: 0
+      };
     }
-  };
+  }, [cartItems.length, selectedPaymentMode]);
 
-  // const onPayPalSuccess = (data: any, actions: any) =>
-  //   actions.order.capture().then(async (paymentDetails: any) => {
-  //     setIsProcessingOrder(true);
-      
-  //     try {
-  //       // Validate cart items
-  //       validateCartItems();
-        
-  //       const formData = getValues();
-  //       const totals = {
-  //         subtotal: subtotal,
-  //         tax: taxAmount,
-  //         final: finalTotal,
-  //         itemPrice: getPrice(cartItems[0])
-  //       };
-        
-  //       const orderData = createStaticOrderData(formData, "paypal", cartItems, totals);
-        
-  //       // Add PayPal transaction details
-        // orderData.txn_details = {
-  //         paypal_payment_id: data.id,
-  //         paypal_order_id: data.id,
-  //         payment_details: paymentDetails
-  //       };
-        
-        // const response = await submitOrder(orderData);
-        
-  //       const orderSuccessData = {
-  //         orderId: orderData.id,
-  //         items: cartItems,
-  //         total: finalTotal,
-  //         paymentMethod: "paypal",
-  //         paymentId: data.id,
-  //         orderDate: new Date().toISOString(),
-  //         status: "completed",
-  //         apiResponse: response
-  //       };
-        
-  //       sessionStorage.setItem("order-success-data", JSON.stringify(orderSuccessData));
-        
-  //       emptyCart();
-  //       toast.success("Payment successful!");
-  //       router.push("/pages/order-success");
-        
-  //     } catch (error) {
-  //       console.error("PayPal order processing error:", error);
-  //       toast.error(error.message || "Error processing order. Please try again.");
-  //     } finally {
-  //       setIsProcessingOrder(false);
-  //     }
-  //   });
-  const initiateRazorpayPayment = async () => {
-  if (!razorpayKey) {
-    toast.error("Payment gateway not ready");
-    return;
-  }
-  
-  setIsProcessingOrder(true);
-
-  try {
-    // 1. Validate everything first
+  const validateOrderData = useCallback(() => {
+    const validationErrors = [];
     const formData = getValues();
-    validateCartItems();
+
+    if (!formData.firstName?.trim()) validationErrors.push("First name is required");
+    if (!formData.lastName?.trim()) validationErrors.push("Last name is required");
+    if (!formData.phone?.trim()) validationErrors.push("Phone number is required");
+    if (!formData.email?.trim()) validationErrors.push("Email is required");
+    if (!formData.country?.trim()) validationErrors.push("Country is required");
+    if (!formData.state?.trim()) validationErrors.push("State is required");
+    if (!formData.city?.trim()) validationErrors.push("City is required");
+    if (!formData.address?.trim()) validationErrors.push("Address is required");
+    if (!formData.pincode?.trim()) validationErrors.push("PIN code is required");
+
+    if (!selectedPaymentMode) validationErrors.push("Payment method is required");
+    if (!cartItems || cartItems.length === 0) validationErrors.push("Cart is empty");
     
-    if (finalTotal <= 0) {
-      throw new Error("Invalid order total");
+    // Check if cart items have valid prices
+    const hasValidPrices = cartItems.some(item => {
+      const effectivePrice = item.discountPrice && item.discountPrice > 0 ? item.discountPrice : item.price;
+      return effectivePrice > 0;
+    });
+    
+    if (!hasValidPrices) {
+      validationErrors.push("Cart items must have valid prices");
     }
-
-    // 2. Prepare order data
-    const totals = {
-      subtotal,
-      tax: taxAmount,
-      final: finalTotal,
-      itemPrice: getPrice(cartItems[0])
-    };
     
-    const orderData = createStaticOrderData(formData, "razorpay", cartItems, totals);
+    // Only validate cart amount if we have valid prices
+    if (hasValidPrices && cartCalculations.cartAmount <= 0) {
+      validationErrors.push("Invalid cart amount");
+    }
+    
+    if (cartCalculations.finalTotal <= 0) validationErrors.push("Invalid order total");
+    if (!storeDetails?.id && !defaultStoreId) validationErrors.push("Store ID is missing");
 
-    // 3. Create Razorpay order details
-    const razorpayOrder = {
-      id: orderData.id,
-      currency: "INR",
-      amount: finalTotal * 100, // Razorpay expects amount in paise
-      receipt: `receipt_${Date.now()}`
+    return validationErrors;
+  }, [cartItems, selectedPaymentMode, cartCalculations, storeDetails, getValues, defaultStoreId]);
+
+  const handleGstChange = useCallback((gst: string) => {
+    setGstNumber(gst);
+    setOrderGst(gst);
+  }, [setOrderGst]);
+ 
+  const createDeliveryAddressModel = useCallback((formData: FormType) => {
+    return new DeliveryAddressModel({
+      id: Date.now(),
+      atStore: selectedPaymentMode === 'PICK_AT_STORE' ? 1 : 0,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      pinCode: formData.pincode,
+      city: formData.city,
+      address: formData.address,
+      phoneNumber: formData.phone,
+      isChoosed: null,
+      lat: 0,
+      lng: 0,
+    });
+  }, [selectedPaymentMode]);
+ 
+  const generateOrderId = useCallback(() => {
+    // Generate a unique 10-digit number
+    const timestamp = Date.now().toString();
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const combined = timestamp + randomNum;
+    
+    // Take last 10 digits and add # prefix
+    return `${combined.slice(-10)}`;
+  }, []);
+
+  const getPaymentMethodDisplayText = useCallback((paymentMode: string, isProcessing: boolean) => {
+    if (isProcessing) return "Processing...";
+   
+    const paymentTexts: { [key: string]: string } = {
+      "COD": "Place Order (COD)",
+      "PICK_AT_STORE": "Place Order (Pick at Store)",
+      "PHONEPE": "Pay with PhonePe",
+      "RAZORPAY": "Pay with Razorpay"
     };
+   
+    return paymentTexts[paymentMode] || "Place Order";
+  }, []);
 
-    // 4. Create complete Razorpay config with handler
-    const razorpayConfig = {
-      key: razorpayKey,
-      amount: razorpayOrder.amount,
-      currency: "INR",
-      name: "Your Store Name",
-      description: "Order Payment",
-      order_id: razorpayOrder.id,
-      handler: function (response: any) {
-        try {
-          // Save payment details
-          orderData.txn_details = {
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature,
-            verification: true
-          };
-          
-          submitOrder(orderData).then(() => {
-            const orderSuccessData = {
-              orderId: orderData.id,
-              items: cartItems,
-              total: finalTotal,
-              subtotal,
-              tax: taxAmount,
-              paymentMethod: "razorpay",
-              paymentId: response.razorpay_payment_id,
-              orderDate: new Date().toISOString(),
-              status: "completed"
-            };
+  const createDeliveryAssign = useCallback(() => {
+    return new DeliveryAssign({
+      name: 'Not Assigned',
+      phone: ''
+    });
+  }, []);
 
-            sessionStorage.setItem("order-success-data", JSON.stringify(orderSuccessData));
-            emptyCart();
-            router.push("/pages/order-success");
-          });
-        } catch (error) {
-          console.error("Payment processing error:", error);
-          toast.error(error.message || "Payment processing failed");
-        }
-      },
-      prefill: {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        contact: formData.phone
-      },
-      notes: {
-        address: formData.address,
-        merchant_order_id: `order_${Date.now()}`
-      },
-      theme: {
-        color: "#3399cc"
-      },
-      modal: {
-        ondismiss: () => {
-          toast.info("Payment window closed");
-        }
-      }
-    };
+  const createOrderItems = useCallback(() => {
+    const orderItems: OrderItemsModel[] = [];
+   
+    cartItems.forEach(item => {
+      const basePrice = item.price * item.cartItemCount;
+      const discountedPrice = item.discountPrice ?
+        item.discountPrice * item.cartItemCount : basePrice;
+     
+      const orderItemData = {
+        id: item.id,
+        name: item.name,
+        baseChoosedPrice: basePrice,
+        choosedPrice: discountedPrice,
+        collectedTax: item.taxAmount ? item.taxAmount * item.cartItemCount : 0,
+        costPrice: item.price,
+        saleQuantityStr: item.cartPurchaseOptionStr,
+        saleQuantity: item.cartItemCount,
+        isProduct: true,
+        isReturnable: item.isReturnable || false,
+        url: item.img[0] || '',
+        rating: 0,
+        categoryName: item.categoryName || '',
+        categoryID: item.categoryID || '',
+        cartItemCount: item.cartItemCount,
+        orderKitItems: [],
+        selfDocRef: undefined,
+        active: item.active !== undefined ? item.active : true,
+        taxType: item.taxType || "EXCLUSIVE",
+        taxAmount: item.taxAmount || 0,
+        selectedSubscription:{},
+      };
 
-    // 5. Initialize Razorpay
-    const rzp = new window.Razorpay(razorpayConfig);
+      const orderItem = new OrderItemsModel(orderItemData);
 
-    // 6. Handle failed payment
-    rzp.on('payment.failed', (response: any) => {
-      toast.error(`Payment failed: ${response.error.description}`);
-      console.error("Payment failed:", response);
+      orderItem.status.process = selectedPaymentMode === 'PICK_AT_STORE' ? null : new Date().toISOString();
+      orderItem.status.deliver = selectedPaymentMode === 'PICK_AT_STORE' ? new Date().toISOString() : null;
+      orderItem.status.confirm = null;
+      orderItem.status.package = null;
+      orderItem.status.cancel = null;
+      orderItem.status.transit = null;
+
+      orderItems.push(orderItem);
     });
 
-    // Open payment modal
-    rzp.open();
-    
-  } catch (error) {
-    console.error("Razorpay initialization error:", error);
-    toast.error(error.message || "Payment initialization failed");
-  } finally {
-    setIsProcessingOrder(false);
-  }
-};
+    return orderItems;
+  }, [cartItems, selectedPaymentMode]);
 
-  // Helper function to get unique identifier for item
-  const getItemKey = (item: any): string => {
-    return item.cartItemId || item.key || item.id || item.productId || Math.random().toString();
-  };
+  const createOrderModel = useCallback((formData: FormType) => {
+    const orderId = generateOrderId();
+    const currentTime = new Date().toISOString();
+    const deliveryAddress = createDeliveryAddressModel(formData);
+    const orderItems = createOrderItems();
+    const deliveryAssign = createDeliveryAssign();
+
+    const taxGroup: Record<string, number> = {};
+    orderItems.forEach(item => {
+      const taxType = item.taxType || 'EXCLUSIVE';
+      taxGroup[taxType] = (taxGroup[taxType] || 0) + item.collectedTax;
+    });
+
+    const orderData = {
+      id: orderId,
+      deliveryAddress: deliveryAddress,
+      orderTime: currentTime,
+      creationTime: currentTime,
+      paymentMode: selectedPaymentMode,
+      phoneNumber: formData.phone,
+      userName: `${formData.firstName} ${formData.lastName}`,
+      store: storeDetails?.name || appName || "Default Store",
+      storeId: storeDetails?.id || defaultStoreId,
+      cartTotal: cartCalculations.cartAmount,
+      finalOrderTotal: cartCalculations.finalTotal,
+      finalOrderTotalWithOutDelivery: cartCalculations.finalTotal - cartCalculations.deliveryCharges,
+      couponCode: "",
+      couponAmount: 0,
+      discountAmount: cartCalculations.discountAmount,
+      packageCost: cartCalculations.packageCost,
+      deliveryCost: cartCalculations.deliveryCharges,
+      totalSavings: cartCalculations.totalSavings,
+      taxTotal: cartCalculations.taxAmount,
+      taxGroup: taxGroup,
+      orderItems: orderItems,
+      img: orderItems.map(item => item.url).filter(url => url),
+      assignedDelivery: deliveryAssign,
+      orderComplete: false,
+      orderAcceptStatus: "PENDING",
+      deviceToken: undefined,
+      txnDetails: undefined,
+      deliveryNotificationSent: false,
+      userNotificationSent: false,
+      orderGst: gstNumber || undefined
+    };
+
+    return new OrderModel(orderData);
+  }, [generateOrderId, createDeliveryAddressModel, createOrderItems, createDeliveryAssign, selectedPaymentMode, storeDetails, appName, defaultStoreId, cartCalculations, gstNumber]);
+
+  const storeOrderSuccessData = useCallback((formData: FormType, orderModel: any) => {
+    try {
+      const orderSuccessData = {
+        orderId: orderModel.id,
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          img: item.img,
+          cartItemCount: item.cartItemCount,
+          price: item.price,
+          discountPrice: item.discountPrice,
+          taxAmount: item.taxAmount,
+          categoryName: item.categoryName
+        })),
+        cartTotal: cartCalculations.cartAmount,
+        finalTotal: cartCalculations.finalTotal,
+        discountAmount: cartCalculations.discountAmount,
+        packageCost: cartCalculations.packageCost,
+        deliveryCost: cartCalculations.deliveryCharges,
+        taxTotal: cartCalculations.taxAmount,
+        totalSavings: cartCalculations.totalSavings,
+        billingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          email: formData.email,
+          country: formData.country,
+          state: formData.state,
+          city: formData.city,
+          address: formData.address,
+          pincode: formData.pincode
+        },
+        paymentMethod: selectedPaymentMode,
+        orderDate: new Date().toISOString(),
+        storeDetails: storeDetails,
+        gstNumber: gstNumber
+      };
+
+      // Store in sessionStorage for immediate use
+      sessionStorage.setItem("order-success-data", JSON.stringify(orderSuccessData));
+      
+      // Also store in localStorage as backup with order ID
+      localStorage.setItem(`order-${orderModel.id}`, JSON.stringify(orderSuccessData));
+      
+      // Set expiry for localStorage (30 days)
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 30);
+      localStorage.setItem(`order-${orderModel.id}-expiry`, expiryDate.toISOString());
+      
+    } catch (error) {
+      console.error("Error storing order success data:", error);
+      // Don't throw error to prevent order placement failure
+    }
+  }, [cartItems, cartCalculations, selectedPaymentMode, storeDetails, gstNumber]);
+
+  const onSubmit = useCallback(async (formData: FormType) => {
+    try {
+      setIsProcessing(true);
+      setShowValidationErrors(true);
+
+      const validationErrors = validateOrderData();
+      if (validationErrors.length > 0) {
+        validationErrors.forEach(error => toast.error(error));
+        return;
+      }
+
+      const deliveryAddress = createDeliveryAddressModel(formData);
+      setDeliveryAddressModel(deliveryAddress);
+
+      const orderModel = createOrderModel(formData);
+      
+      // Store order success data before API call
+      storeOrderSuccessData(formData, orderModel);
+      
+      await API.saveOrder(orderModel);
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      switch (selectedPaymentMode) {
+        case 'COD':
+        case 'PICK_AT_STORE':
+          toast.success("Order placed successfully!");
+          clearCart();
+          emptyCart();
+          // Redirect to order success page with order ID
+          router.push(`/pages/order-success?orderId=${orderModel.id}`);
+          break;
+        case 'RAZORPAY':
+        case 'PHONEPE':
+          toast.info("Redirecting to payment gateway...");
+          // Store the order ID for payment gateway callback
+          sessionStorage.setItem("pending-payment-order-id", orderModel.id);
+          // After successful payment, you would also redirect to success page
+          // This would typically be handled in the payment gateway callback
+          // For now, redirect to success page (you can modify this based on your payment flow)
+          router.push(`/pages/order-success?orderId=${orderModel.id}`);
+          break;
+        default:
+          toast.error("Invalid payment method selected");
+      }
+
+    } catch (error) {
+      console.error("Order placement error:", error);
+      toast.error("Failed to place order. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [validateOrderData, createDeliveryAddressModel, setDeliveryAddressModel, createOrderModel, storeOrderSuccessData, selectedPaymentMode, clearCart, emptyCart, router]);
+
+  if (cartIsEmpty()) {
+    return (
+      <>
+        <Breadcrumb title="checkout" parent="home" />
+        <section className="checkout-container">
+          <div className="container">
+            <div className="empty-cart">
+              <h3>Your cart is empty</h3>
+              <button
+                className="btn-primary"
+                onClick={() => router.push("/")}
+              >
+                Go to Home
+              </button>
+            </div>
+          </div>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>
       <Breadcrumb title="checkout" parent="home" />
-      
       <section className="checkout-container">
         <div className="container">
-          {cartItems.length === 0 ? (
-            <div className="empty-cart">
-              <h3>Your cart is empty</h3>
-              <button 
-                className="btn-primary" 
-                onClick={() => router.push("/shop")}
-              >
-                Continue Shopping
-              </button>
+          {!storeDetails?.active && (
+            <div className="alert alert-warning">
+              <strong>Notice:</strong> Store is currently inactive. Orders may be delayed.
             </div>
-          ) : (
-            <Form onSubmit={handleSubmit(onSubmit)}>
-              <Row>
-                <Col lg="7">
-                  <div className="checkout-form">
-                    <h3 className="checkout-title">Billing Details</h3>
-                    
-                    <Row>
-                      <Col md="6">
-                        <div className="form-group">
-                          <label className="field-label">First Name *</label>
-                          <input
-                            type="text"
-                            placeholder="Enter first name"
-                            className={`form-control ${errors.firstName ? "error_border" : ""}`}
-                            {...register("firstName", { required: "First name is required" })}
-                          />
-                          {errors.firstName && (
-                            <span className="error-message">{errors.firstName.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                      
-                      <Col md="6">
-                        <div className="form-group">
-                          <label className="field-label">Last Name *</label>
-                          <input
-                            type="text"
-                            placeholder="Enter last name"
-                            className={`form-control ${errors.lastName ? "error_border" : ""}`}
-                            {...register("lastName", { required: "Last name is required" })}
-                          />
-                          {errors.lastName && (
-                            <span className="error-message">{errors.lastName.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                      
-                      <Col md="6">
-                        <div className="form-group">
-                          <label className="field-label">Phone *</label>
-                          <input
-                            type="tel"
-                            placeholder="Enter phone number"
-                            className={`form-control ${errors.phone ? "error_border" : ""}`}
-                            {...register("phone", { required: "Phone number is required" })}
-                          />
-                          {errors.phone && (
-                            <span className="error-message">{errors.phone.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                      
-                      <Col md="6">
-                        <div className="form-group">
-                          <label className="field-label">Email *</label>
-                          <input
-                            type="email"
-                            placeholder="Enter email address"
-                            className={`form-control ${errors.email ? "error_border" : ""}`}
-                            {...register("email", { required: "Email is required" })}
-                          />
-                          {errors.email && (
-                            <span className="error-message">{errors.email.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                      
-                      <Col md="12">
-                        <div className="form-group">
-                          <label className="field-label">Country *</label>
-                          <select
-                            className={`form-control ${errors.country ? "error_border" : ""}`}
-                            {...register("country", { required: "Country is required" })}
-                          >
-                            <option value="">Select Country</option>
-                            <option value="India">India</option>
-                            <option value="United States">United States</option>
-                            <option value="Canada">Canada</option>
-                          </select>
-                          {errors.country && (
-                            <span className="error-message">{errors.country.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                      
-                      <Col md="6">
-                        <div className="form-group">
-                          <label className="field-label">State *</label>
-                          <input
-                            type="text"
-                            placeholder="Enter state"
-                            className={`form-control ${errors.state ? "error_border" : ""}`}
-                            {...register("state", { required: "State is required" })}
-                          />
-                          {errors.state && (
-                            <span className="error-message">{errors.state.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                      
-                      <Col md="6">
-                        <div className="form-group">
-                          <label className="field-label">City *</label>
-                          <input
-                            type="text"
-                            placeholder="Enter city"
-                            className={`form-control ${errors.city ? "error_border" : ""}`}
-                            {...register("city", { required: "City is required" })}
-                          />
-                          {errors.city && (
-                            <span className="error-message">{errors.city.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                      
-                      <Col md="12">
-                        <div className="form-group">
-                          <label className="field-label">Address *</label>
-                          <textarea
-                            placeholder="Enter full address"
-                            className={`form-control ${errors.address ? "error_border" : ""}`}
-                            rows={3}
-                            {...register("address", { required: "Address is required" })}
-                          />
-                          {errors.address && (
-                            <span className="error-message">{errors.address.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                      
-                      <Col md="6">
-                        <div className="form-group">
-                          <label className="field-label">PIN Code *</label>
-                          <input
-                            type="text"
-                            placeholder="Enter PIN code"
-                            className={`form-control ${errors.pincode ? "error_border" : ""}`}
-                            {...register("pincode", { required: "PIN code is required" })}
-                          />
-                          {errors.pincode && (
-                            <span className="error-message">{errors.pincode.message}</span>
-                          )}
-                        </div>
-                      </Col>
-                    </Row>
-                    
-                    <h3 className="checkout-title">Payment Method</h3>
-                    <div className="payment-methods">
-                      <div 
-                        className={`payment-option ${payment === 'cod' ? 'selected' : ''}`}
-                        onClick={() => setPayment('cod')}
-                      >
+          )}
+
+          <Form onSubmit={handleSubmit(onSubmit)}>
+            <Row>
+              <Col lg="7">
+                <div className="checkout-form">
+                  <h3 className="checkout-title">Billing Details</h3>
+                 
+                  <Row>
+                    <Col md="6">
+                      <div className="form-group">
+                        <label className="field-label">First Name *</label>
                         <input
-                          type="radio"
-                          name="payment"
-                          value="cod"
-                          checked={payment === 'cod'}
-                          onChange={(e) => setPayment(e.target.value)}
+                          type="text"
+                          placeholder="Enter first name"
+                          className={`form-control ${errors.firstName ? "error_border" : ""}`}
+                          {...register("firstName", { required: "First name is required" })}
                         />
-                        <label>Cash on Delivery (COD)</label>
+                        {errors.firstName && (
+                          <span className="error-message">{errors.firstName.message}</span>
+                        )}
                       </div>
-                      
-                      {/* <div 
-                        className={`payment-option ${payment === 'paypal' ? 'selected' : ''}`}
-                        onClick={() => setPayment('paypal')}
-                      >
+                    </Col>
+                   
+                    <Col md="6">
+                      <div className="form-group">
+                        <label className="field-label">Last Name *</label>
                         <input
-                          type="radio"
-                          name="payment"
-                          value="paypal"
-                          checked={payment === 'paypal'}
-                          onChange={(e) => setPayment(e.target.value)}
+                          type="text"
+                          placeholder="Enter last name"
+                          className={`form-control ${errors.lastName ? "error_border" : ""}`}
+                          {...register("lastName", { required: "Last name is required" })}
                         />
-                        <label>Online Payment</label>
-                      </div> */}
-                      <div 
-                        className={`payment-option ${payment === 'razorpay' ? 'selected' : ''}`}
-                        onClick={() => setPayment('razorpay')}
-                      >
+                        {errors.lastName && (
+                          <span className="error-message">{errors.lastName.message}</span>
+                        )}
+                      </div>
+                    </Col>
+                   
+                    <Col md="6">
+                      <div className="form-group">
+                        <label className="field-label">Phone *</label>
                         <input
-                          type="radio"
-                          name="payment"
-                          value="razorpay"
-                          checked={payment === 'razorpay'}
-                          onChange={(e) => setPayment(e.target.value)}
+                          type="tel"
+                          placeholder="Enter phone number"
+                          className={`form-control ${errors.phone ? "error_border" : ""}`}
+                          {...register("phone", {
+                            required: "Phone number is required",
+                            pattern: {
+                              value: /^[0-9]{10}$/,
+                              message: "Please enter a valid 10-digit phone number"
+                            }
+                          })}
                         />
-                        <label>Razorpay Payment</label>
-                      </div>                    
-                    </div>
-                  </div>
-                </Col>
-                
-                <Col lg="5">
-                  <div className="order-summary">
-                    <h3 className="checkout-title">Order Summary</h3>
-                    
-                    <div className="cart-items">
-                      {cartItems.map((item: any, index: number) => {
-                        const price = getPrice(item);
-                        const itemKey = getItemKey(item);
-                        
-                        return (
-                          <div key={itemKey} className="cart-item">
-                            <img 
-                              src={item.img?.[0] || "/static/images/placeholder.png"} 
-                              alt="product" 
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = "/static/images/placeholder.png";
-                              }}
-                            />
-                            <div className="item-details">
-                              <div className="item-name">{item.name || "Unknown Product"}</div>
-                              <div className="item-price">
-                                Qty: {item.qty || 1} × {symbol}{price.toFixed(2)}
-                              </div>
-                            </div>
-                            <div className="item-total">
-                              {symbol}{(price * (item.qty || 1) * value).toFixed(2)}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    <div className="order-totals">
-                      <div className="total-row">
-                        <span>Subtotal</span>
-                        <span>{symbol}{subtotal.toFixed(2)}</span>
+                        {errors.phone && (
+                          <span className="error-message">{errors.phone.message}</span>
+                        )}
                       </div>
-                      <div className="total-row">
-                        <span>Tax (10%)</span>
-                        <span>{symbol}{taxAmount.toFixed(2)}</span>
+                    </Col>
+                   
+                    <Col md="6">
+                      <div className="form-group">
+                        <label className="field-label">Email *</label>
+                        <input
+                          type="email"
+                          placeholder="Enter email address"
+                          className={`form-control ${errors.email ? "error_border" : ""}`}
+                          {...register("email", {
+                            required: "Email is required",
+                            pattern: {
+                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                              message: "Please enter a valid email address"
+                            }
+                          })}
+                        />
+                        {errors.email && (
+                          <span className="error-message">{errors.email.message}</span>
+                        )}
                       </div>
-                      <div className="total-row">
-                        <span>Package Cost</span>
-                        <span>{symbol}{packageCost.toFixed(2)}</span>
-                      </div>
-                      <div className="total-row final">
-                        <span>Total</span>
-                        <span>{symbol}{finalTotal.toFixed(2)}</span>
-                      </div>
-                    </div>
-                    
-                    {payment === "cod" ? (
-                      <button
-                        type="submit"
-                        className="btn-primary"
-                        disabled={isProcessingOrder}
-                      >
-                        {isProcessingOrder ? "Processing..." : "Place Order"}
-                      </button>
-                    ) : (
-                      // <div className="paypal-container">
-                      //   <PayPalButtons
-                      //     createOrder={(data, actions) => {
-                      //       return actions.order.create({
-                      //         purchase_units: [{
-                      //           amount: {
-                      //             value: finalTotal.toFixed(2),
-                      //             currency_code: "USD"
-                      //           }
-                      //         }],
-                      //         intent: "CAPTURE"
-                      //       });
-                      //     }}
-                      //     onApprove={onPayPalSuccess}
-                      //     onCancel={() => toast.error("Payment cancelled")}
-                      //     onError={(err) => {
-                      //       console.error("PayPal error:", err);
-                      //       toast.error("Payment error occurred");
-                      //     }}
-                      //   />
-                      <div className="razorpay-button-container">
-                        <button
-                          type="button" 
-                          className="btn-primary"
-                          onClick={initiateRazorpayPayment}
-                          disabled={isProcessingOrder}
+                    </Col>
+                   
+                    <Col md="12">
+                      <div className="form-group">
+                        <label className="field-label">Country *</label>
+                        <select
+                          className={`form-control ${errors.country ? "error_border" : ""}`}
+                          {...register("country", { required: "Country is required" })}
                         >
-                          {isProcessingOrder ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm me-2"></span>
-                              Processing...
-                            </>
-                          ) : (
-                            <span>
-                              Pay with Razorpay ({symbol}{finalTotal.toFixed(2)})
-                            </span>
-                          )}
-                        </button>
+                          {countries.map((country) => (
+                            <option key={country.value} value={country.value}>
+                              {country.label}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.country && (
+                          <span className="error-message">{errors.country.message}</span>
+                        )}
+                      </div>
+                    </Col>
+                   
+                    <Col md="6">
+                      <div className="form-group">
+                        <label className="field-label">State *</label>
+                        <input
+                          type="text"
+                          placeholder="Enter state"
+                          className={`form-control ${errors.state ? "error_border" : ""}`}
+                          {...register("state", { required: "State is required" })}
+                        />
+                        {errors.state && (
+                          <span className="error-message">{errors.state.message}</span>
+                        )}
+                      </div>
+                    </Col>
+                   
+                    <Col md="6">
+                      <div className="form-group">
+                        <label className="field-label">City *</label>
+                        <input
+                          type="text"
+                          placeholder="Enter city"
+                          className={`form-control ${errors.city ? "error_border" : ""}`}
+                          {...register("city", { required: "City is required" })}
+                        />
+                        {errors.city && (
+                          <span className="error-message">{errors.city.message}</span>
+                        )}
+                      </div>
+                    </Col>
+                   
+                    <Col md="12">
+                      <div className="form-group">
+                        <label className="field-label">Address *</label>
+                        <textarea
+                          placeholder="Enter full address"
+                          className={`form-control ${errors.address ? "error_border" : ""}`}
+                          rows={3}
+                          {...register("address", { required: "Address is required" })}
+                        />
+                        {errors.address && (
+                          <span className="error-message">{errors.address.message}</span>
+                        )}
+                      </div>
+                    </Col>
+                   
+                    <Col md="6">
+                      <div className="form-group">
+                        <label className="field-label">PIN Code *</label>
+                        <input
+                          type="text"
+                          placeholder="Enter PIN code"
+                          className={`form-control ${errors.pincode ? "error_border" : ""}`}
+                          {...register("pincode", {
+                            required: "PIN code is required",
+                            pattern: {
+                              value: /^[0-9]{6}$/,
+                              message: "Please enter a valid 6-digit PIN code"
+                            }
+                          })}
+                        />
+                        {errors.pincode && (
+                          <span className="error-message">{errors.pincode.message}</span>
+                        )}
+                      </div>
+                    </Col>
+                   
+                    <Col md="6">
+                      <div className="form-group">
+                        <label className="field-label">GST Number (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="Enter GST number"
+                          className="form-control"
+                          value={gstNumber}
+                          onChange={(e) => handleGstChange(e.target.value)}
+                        />
+                      </div>
+                    </Col>
+                  </Row>
+                 
+                  <h3 className="checkout-title">Payment Method</h3>
+                  <div className="payment-methods">
+                    {paymentModes.map((mode) => (
+                      <div
+                        key={mode.value}
+                        className={`payment-option ${selectedPaymentMode === mode.value ? 'selected' : ''}`}
+                        onClick={() => setSelectedPaymentMode(mode.value)}
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          value={mode.value}
+                          checked={selectedPaymentMode === mode.value}
+                          onChange={(e) => setSelectedPaymentMode(e.target.value)}
+                        />
+                        <label>{mode.label}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Col>
+             
+              <Col lg="5">
+                <div className="order-summary">
+                  <h3 className="checkout-title">Order Summary</h3>
+                 
+                  <div className="cart-items">
+                    {cartItems.map((item, index) => {
+                      const effectivePrice = item.discountPrice && item.discountPrice > 0 ? item.discountPrice : item.price;
+                      const itemTotal = effectivePrice * item.cartItemCount;
+                      
+                      return (
+                        <div key={`${item.id}_${item.cartPurchaseOptionStr}_${index}`} className="cart-item">
+                          <img
+                            src={Array.isArray(item.img) ? item.img[0] : item.img || "/static/images/placeholder.png"}
+                            alt={item.name}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/static/images/placeholder.png";
+                            }}
+                          />
+                          <div className="item-details">
+                            <div className="item-name">{item.name}</div>
+                            <div className="item-price">
+                              Qty: {item.cartItemCount} × {symbol}{effectivePrice.toFixed(2)}
+                            </div>
+                            {item.discountPrice && item.discountPrice > 0 && item.discountPrice < item.price && (
+                              <div className="item-discount">
+                                <small className="text-muted text-decoration-line-through">
+                                  Original: {symbol}{item.price.toFixed(2)}
+                                </small>
+                                <br />
+                                <small className="text-success">
+                                  Discount: {symbol}{((item.price - item.discountPrice) * item.cartItemCount).toFixed(2)}
+                                </small>
+                              </div>
+                            )}
+                          </div>
+                          <div className="item-total">
+                            <strong>{symbol}{itemTotal.toFixed(2)}</strong>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                 
+                  <div className="order-totals">
+                    <div className="total-row">
+                      <span>Cart Total</span>
+                      <span>{symbol}{cartCalculations.cartAmount.toFixed(2)}</span>
+                    </div>
+                   
+                    {cartCalculations.discountAmount > 0 && (
+                      <div className="total-row discount">
+                        <span>Item Discount</span>
+                        <span>-{symbol}{cartCalculations.discountAmount.toFixed(2)}</span>
                       </div>
                     )}
+                   
+                    {cartCalculations.taxAmount > 0 && (
+                      <div className="total-row">
+                        <span>Tax</span>
+                        <span>{symbol}{cartCalculations.taxAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                   
+                    {cartCalculations.packageCost > 0 && (
+                      <div className="total-row">
+                        <span>Package Cost</span>
+                        <span>{symbol}{cartCalculations.packageCost.toFixed(2)}</span>
+                      </div>
+                    )}
+                   
+                    {cartCalculations.deliveryCharges > 0 && (
+                      <div className="total-row">
+                        <span>Delivery Charges</span>
+                        <span>{symbol}{cartCalculations.deliveryCharges.toFixed(2)}</span>
+                      </div>
+                    )}
+                   
+                    {cartCalculations.totalSavings > 0 && (
+                      <div className="total-row savings">
+                        <span>Total Savings</span>
+                        <span>{symbol}{cartCalculations.totalSavings.toFixed(2)}</span>
+                      </div>
+                    )}
+                   
+                    <div className="total-row final">
+                      <span>Final Total</span>
+                      <span>{symbol}{cartCalculations.finalTotal.toFixed(2)}</span>
+                    </div>
                   </div>
-                </Col>
-              </Row>
-            </Form>
-          )}
+
+                  {showValidationErrors && (() => {
+                    const validationErrors = validateOrderData();
+                    return validationErrors.length > 0 && (
+                      <div className="alert alert-danger">
+                        <h6>Please fix the following errors:</h6>
+                        <ul className="mb-0">
+                          {validationErrors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
+                 
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={isProcessing || !selectedPaymentMode}
+                  >
+                    {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
+                  </button>
+
+                  <div className="mt-3">
+                    <small className="text-muted">
+                      {selectedPaymentMode === 'PICK_AT_STORE' && 
+                        "You can collect your order from our store location."
+                      }
+                      {selectedPaymentMode === 'COD' && 
+                        "Pay cash when your order is delivered to your address."
+                      }
+                      {(selectedPaymentMode === 'RAZORPAY' || selectedPaymentMode === 'PHONEPE') && 
+                        "You will be redirected to the payment gateway to complete your payment."
+                      }
+                    </small>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Form>
         </div>
       </section>
     </>
   );
-};
-// const CheckoutPage: NextPage = () => {
-//   return (
-//     <PayPalScriptProvider options={paypalOptions}>
-//       <CheckoutPageContent />
-//     </PayPalScriptProvider>
-//   );
-// };
-const CheckoutPage: NextPage = () => {
-  return <CheckoutPageContent />;
 };
 
 export default CheckoutPage;
