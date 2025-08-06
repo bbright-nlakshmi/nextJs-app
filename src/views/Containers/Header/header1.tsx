@@ -4,7 +4,7 @@ import TopBar from "./widgets/TopBar";
 import Search from "./widgets/search";
 import ShoppingCart from "./widgets/shopping-cart";
 import Category from "./widgets/by-category";
-import dynamic from "next/dynamic";
+import User from "./widgets/user-profile";
 import WishList from "./widgets/whishlist";
 import ContactUs from "./widgets/contact-us";
 import Gift from "./widgets/gift";
@@ -24,9 +24,6 @@ interface HeaderProps {
   appLogo: string;
 
 }
-const UserProfile = dynamic(() => import('@/views/Containers/Header/widgets/user-profile.client'), {
-  ssr: false,
-});
 
 const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, layoutLogo, appLogo }) => {
   const { setLeftMenu, leftMenu } = useContext(MenuContext);
