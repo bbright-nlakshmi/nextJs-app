@@ -85,7 +85,6 @@ const CheckoutPage: React.FC = () => {
   const symbol = currencyContext?.selectedCurr?.symbol || '$';
   const contextCartItems = cartContext?.cartItems || [];
   const emptyCart = cartContext?.emptyCart || (() => {});
- 
   const initializationRef = useRef({
     cartInitialized: false,
     contextItemsLength: 0
@@ -121,7 +120,10 @@ const CheckoutPage: React.FC = () => {
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [orderPreview, setOrderPreview] = useState<any>(null);
   const { register, handleSubmit, formState: { errors }, watch, getValues } = useForm<formType>();
- 
+  const [razorpayOrderData, setRazorpayOrderData] = useState<any>(null);
+  const [razorpayOrderModel, setRazorpayOrderModel] = useState<any>(null);
+  const [razorpayDeliveryAddress, setRazorpayDeliveryAddress] = useState<any>(null);
+
   // Watch all form fields for real-time validation display
   const watchedFields = watch();
  
@@ -332,10 +334,7 @@ const CheckoutPage: React.FC = () => {
    
     return paymentTexts[paymentMode] || "Place Order";
   }, []);
-  
-  const [razorpayOrderData, setRazorpayOrderData] = useState<any>(null);
-  const [razorpayOrderModel, setRazorpayOrderModel] = useState<any>(null);
-  const [razorpayDeliveryAddress, setRazorpayDeliveryAddress] = useState<any>(null);
+
   // Create DeliveryAssign using the imported class
   const createDeliveryAssign = useCallback(() => {
     return new DeliveryAssign({
@@ -407,7 +406,7 @@ const CheckoutPage: React.FC = () => {
       const taxType = item.taxType || 'EXCLUSIVE';
       taxGroup[taxType] = (taxGroup[taxType] || 0) + item.collectedTax;
     });
-  
+   
     const orderData = {
       id: orderId,
       deliveryAddress: deliveryAddress,
@@ -435,7 +434,7 @@ const CheckoutPage: React.FC = () => {
       orderComplete: false,
       orderAcceptStatus: "PENDING",
       deviceToken: undefined,
-      txnDetails: undefined,
+      txnDetails: {},
       deliveryNotificationSent: false,
       userNotificationSent: false,
       orderGst: gstNumber || undefined
@@ -443,13 +442,54 @@ const CheckoutPage: React.FC = () => {
  
     return new OrderModel(orderData);
   }, [generateOrderId, createDeliveryAddressModel, createOrderItems, createDeliveryAssign, selectedPaymentMode, storeDetails, appName, defaultStoreId, cartCalculations, gstNumber]);
- 
+ // Add this new function to your CheckoutPage component
+const prepareOrderData = useCallback((formData: formType) => {
+  // Validate all order data
+  const validationErrors = validateOrderData();
+  if (validationErrors.length > 0) {
+    validationErrors.forEach(error => toast.error(error));
+    return null;
+  }
+
+  // Create delivery address model
+  const deliveryAddress = createDeliveryAddressModel(formData);
+  
+  // Create complete order model
+  const orderModel = createOrderModel(formData);
+  
+  const orderData = {
+    billingDetails: {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      city: formData.city,
+      state: formData.state,
+      country: formData.country,
+      pincode: formData.pincode
+    },
+    amount: cartCalculations.finalTotal,
+    currency: 'INR',
+    orderId: orderModel.id
+  };
+
+  return { orderData, orderModel, deliveryAddress };
+}, [validateOrderData, createDeliveryAddressModel, createOrderModel, cartCalculations]);
+
   // Handle form submission and order placement
   const onSubmit = useCallback(async (formData: formType) => {
     try {
       setIsProcessing(true);
       setShowValidationErrors(true);
- 
+      
+      const preparedData = prepareOrderData(formData);
+    if (!preparedData) return;
+
+    const { orderData, orderModel, deliveryAddress } = preparedData;
+    setRazorpayDeliveryAddress(deliveryAddress);
+    setRazorpayOrderData(orderData);
+    setRazorpayOrderModel(orderModel);
       // Validate all order data
       const validationErrors = validateOrderData();
       if (validationErrors.length > 0) {
@@ -458,14 +498,33 @@ const CheckoutPage: React.FC = () => {
       }
  
       // Create delivery address model and set it
-      const deliveryAddress = createDeliveryAddressModel(formData);
-      setDeliveryAddressModel(deliveryAddress);
-      setRazorpayDeliveryAddress(deliveryAddress);
+      // const deliveryAddress = createDeliveryAddressModel(formData);
+      // setDeliveryAddressModel(deliveryAddress);
+      // setRazorpayDeliveryAddress(deliveryAddress);
       // Create complete order model
-      const orderModel = createOrderModel(formData);
+      // const orderModel = createOrderModel(formData);
       // setRazorpayOrderData(orderData);
-      setRazorpayOrderModel(orderModel);
+    //   const orderData = {
+    //   billingDetails: {
+    //     firstName: formData.firstName,
+    //     lastName: formData.lastName,
+    //     email: formData.email,
+    //     phone: formData.phone,
+    //     address: formData.address,
+    //     city: formData.city,
+    //     state: formData.state,
+    //     country: formData.country,
+    //     pincode: formData.pincode
+    //   },
+    //   amount: cartCalculations.finalTotal,
+    //   currency: 'INR',
+    //   orderId: orderModel.id
+    // };
+    
+    if (selectedPaymentMode !== 'RAZORPAY') {
+    
       await API.saveOrder(orderModel)
+      
       // Create order preview for confirmation
       const preview = createOrderPreview();
       setOrderPreview(preview);
@@ -475,7 +534,10 @@ const CheckoutPage: React.FC = () => {
       // Here you would typically send the order to your backend API
       // For now, we'll simulate the process
       await new Promise(resolve => setTimeout(resolve, 2000));
- 
+    }else{
+      
+
+    }
       // Handle different payment modes
       switch (selectedPaymentMode) {
         case 'COD':
@@ -486,9 +548,6 @@ const CheckoutPage: React.FC = () => {
           break;
         case 'RAZORPAY':
           toast.info("Redirecting to payment gateway...");
-          clearCart();  
-          emptyCart();
-          break;
         case 'PHONEPE':
           // Redirect to payment gateway
           toast.info("Redirecting to payment gateway...");
@@ -504,8 +563,8 @@ const CheckoutPage: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [validateOrderData, createDeliveryAddressModel, setDeliveryAddressModel, createOrderModel, createOrderPreview, selectedPaymentMode, clearCart, emptyCart, router]);
- 
+  }, [prepareOrderData,  createOrderPreview, selectedPaymentMode, clearCart, emptyCart, router]);
+//  validateOrderData, createDeliveryAddressModel, setDeliveryAddressModel, createOrderModel,
   // Update order preview when form changes
   useEffect(() => {
     if (Object.keys(watchedFields).length > 0) {
@@ -513,7 +572,6 @@ const CheckoutPage: React.FC = () => {
       setOrderPreview(preview);
     }
   }, [watchedFields, createOrderPreview]);
- console.log("amt",cartCalculations.finalTotal)
   // Early return for empty cart
   if (cartIsEmpty()) {
     return (
@@ -856,9 +914,11 @@ const CheckoutPage: React.FC = () => {
                   <div className="checkout-footer mt-4">
                     {selectedPaymentMode === "RAZORPAY" ? (
                       <RazorpayButton
-                        orderData={razorpayOrderData}
-                        orderModel={razorpayOrderModel}
-                        deliveryAddress={razorpayDeliveryAddress}
+                        formData={getValues()}
+                        prepareOrderData={prepareOrderData}
+                        // orderData={razorpayOrderData}
+                        // orderModel={razorpayOrderModel}
+                        // deliveryAddress={razorpayDeliveryAddress}
                         finalTotal={cartCalculations.finalTotal}
                         onSuccess={() => {
                           toast.success("Payment successful, order placed!");

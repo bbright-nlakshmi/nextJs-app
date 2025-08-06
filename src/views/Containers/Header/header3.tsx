@@ -1,7 +1,7 @@
 import React, { Fragment, useContext } from "react";
 import { Row, Col, Media } from "reactstrap";
 import TopBar from "./widgets/TopBar";
-import UserProfile from "./widgets/user-profile";
+import dynamic from "next/dynamic";
 import Whishlist from "./widgets/whishlist";
 import ShoppingCart from "./widgets/shopping-cart";
 import ByCategory from "./widgets/by-category";
@@ -17,6 +17,9 @@ type HeaderProps = {
   display: string;
   category: boolean;
 };
+const UserProfile = dynamic(() => import('@/views/Containers/Header/widgets/user-profile.client'), {
+  ssr: false,
+});
 
 const Header: React.FC<HeaderProps> = ({ cartPopupPosition, display, category }) => {
   const menuContext = useContext(MenuContext);
