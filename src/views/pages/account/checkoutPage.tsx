@@ -120,7 +120,7 @@ const CheckoutPage: React.FC = () => {
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [orderPreview, setOrderPreview] = useState<any>(null);
   const { register, handleSubmit, formState: { errors }, watch, getValues } = useForm<formType>();
-  const [razorpayOrderData, setRazorpayOrderData] = useState<any>(null);
+  const [razorayOrderData, setRazorpayOrderData] = useState<any>(null);
   const [razorpayOrderModel, setRazorpayOrderModel] = useState<any>(null);
   const [razorpayDeliveryAddress, setRazorpayDeliveryAddress] = useState<any>(null);
 
@@ -497,42 +497,14 @@ const prepareOrderData = useCallback((formData: formType) => {
         return;
       }
  
-      // Create delivery address model and set it
-      // const deliveryAddress = createDeliveryAddressModel(formData);
-      // setDeliveryAddressModel(deliveryAddress);
-      // setRazorpayDeliveryAddress(deliveryAddress);
-      // Create complete order model
-      // const orderModel = createOrderModel(formData);
-      // setRazorpayOrderData(orderData);
-    //   const orderData = {
-    //   billingDetails: {
-    //     firstName: formData.firstName,
-    //     lastName: formData.lastName,
-    //     email: formData.email,
-    //     phone: formData.phone,
-    //     address: formData.address,
-    //     city: formData.city,
-    //     state: formData.state,
-    //     country: formData.country,
-    //     pincode: formData.pincode
-    //   },
-    //   amount: cartCalculations.finalTotal,
-    //   currency: 'INR',
-    //   orderId: orderModel.id
-    // };
-    
+
     if (selectedPaymentMode !== 'RAZORPAY') {
     
       await API.saveOrder(orderModel)
-      
+      router.push("/pages/order-success");
       // Create order preview for confirmation
       const preview = createOrderPreview();
       setOrderPreview(preview);
- 
-      console.log("Order Model Created:", orderModel.toJsonObj());
-     
-      // Here you would typically send the order to your backend API
-      // For now, we'll simulate the process
       await new Promise(resolve => setTimeout(resolve, 2000));
     }else{
       
@@ -904,21 +876,12 @@ const prepareOrderData = useCallback((formData: formType) => {
                       </ul>
                     </div>
                   )}
-                  {/* <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={isProcessing || !selectedPaymentMode}
-                  >
-                    {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
-                  </button> */}
+
                   <div className="checkout-footer mt-4">
                     {selectedPaymentMode === "RAZORPAY" ? (
                       <RazorpayButton
                         formData={getValues()}
                         prepareOrderData={prepareOrderData}
-                        // orderData={razorpayOrderData}
-                        // orderModel={razorpayOrderModel}
-                        // deliveryAddress={razorpayDeliveryAddress}
                         finalTotal={cartCalculations.finalTotal}
                         onSuccess={() => {
                           toast.success("Payment successful, order placed!");
@@ -947,24 +910,7 @@ const prepareOrderData = useCallback((formData: formType) => {
                     </small>
                   </div>
                 </div>
- 
-                {/* Order Preview (for debugging/confirmation) */}
-                {/* {orderPreview && process.env.NODE_ENV !== 'production' && (
-                  <div className="card mt-3">
-                    <div className="card-header">
-                      <h6>Order Preview (Debug)</h6>
-                    </div>
-                    <div className="card-body">
-                      <small>
-                        <strong>Valid:</strong> {orderPreview.isValid ? 'Yes' : 'No'}<br />
-                        <strong>Items:</strong> {orderPreview.orderSummary.itemCount}<br />
-                        <strong>Total:</strong> {symbol}{orderPreview.orderSummary.totalAmount.toFixed(2)}<br />
-                        <strong>Payment:</strong> {orderPreview.paymentMode}<br />
-                        <strong>Store:</strong> {orderPreview.storeInfo.name}
-                      </small>
-                    </div>
-                  </div>
-                )} */}
+
               </Col>
             </Row>
           </Form>

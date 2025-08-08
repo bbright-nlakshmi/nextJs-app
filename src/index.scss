@@ -29308,12 +29308,12 @@ select {
   margin-right: 1rem;
 }
 .product-thumbnail img {
-  border: 2px solid silver;
-  border-radius: 0.5rem;
-  width: 100px;
-  height: 100px;
-  padding: 5px;
-  object-fit: cover;
+  border: 2px solid silver !important;
+  border-radius: 0.5rem !important;
+  width: 100px !important;
+  height: 100px !important;
+  padding: 5px !important;
+  object-fit: cover !important;
 }
 
 @media only screen and (max-width: 480px) {

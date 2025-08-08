@@ -103,12 +103,12 @@ export class ObjCache extends EventEmitter {
 
   insertObjCachePremiumList(lst: any) {
     //this.premiumList.set(key, lst);
-    this.emit("updatePremiumList", lst);
+    this.emit("updatePremium", lst);
     this.emit("update");
   }
 
   insertObjCacheNonPremiumList(lst: any) {
-    this.emit("updateNonPremiumList", lst);
+    this.emit("updateNonPremium", lst);
     this.emit("update");
   }
 
