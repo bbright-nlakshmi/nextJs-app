@@ -8,6 +8,7 @@ import {
   Category,
   CategoryProducts,
   objCache,
+  Product,
   searchController,
 } from "@/app/globalProvider";
 import { useSearchParams } from "next/navigation";
@@ -34,6 +35,7 @@ const NoSidebar: NextPage = () => {
     []
   );
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
+  const [currentDiscount, setCurrentDiscount] = useState<any>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -107,37 +109,53 @@ const NoSidebar: NextPage = () => {
       return;
     }
 
-    // Get the latest categories from objCache
-    const currentCategories = objCache.allCategories || [];
-
-    const targetCategory = currentCategories.find(
-      (cat) => cat.id === categoryId
-    );
-
-    if (targetCategory) {
-      setSelectedCategories([targetCategory]);
-      const products = targetCategory.category_products || [];
-
-      setselectedCatgeoryProducts(products);
-      
-      // Apply price filter if it was previously applied
-      if (isPriceFilterApplied) {
-        const filtered = applyPriceFilter(products, minPrice, maxPrice);
-        setFilteredProducts(filtered);
-      } else {
-        setFilteredProducts(products);
+    if (categoryType === "discount") {
+      // For discount type, get discount data for display
+      const found = objCache.discountList.find((item: any) => item.id === categoryId);
+      if (found) {
+        setCurrentDiscount(found);
       }
-      
-      updatePriceRangeFromFilteredProducts(products);
-      currentCategoryId.current = categoryId;
-    } else {
       setSelectedCategories([]);
       setselectedCatgeoryProducts([]);
       setFilteredProducts([]);
       setMinPrice(0);
       setMaxPrice(150);
       setIsPriceFilterApplied(false);
-      currentCategoryId.current = null;
+      currentCategoryId.current = categoryId;
+    } else {
+
+      // Get the latest categories from objCache
+      const currentCategories = objCache.allCategories || [];
+
+      const targetCategory = currentCategories.find(
+        (cat) => cat.id === categoryId
+      );
+
+      if (targetCategory) {
+        setSelectedCategories([targetCategory]);
+        const products = targetCategory.category_products || [];
+
+        setselectedCatgeoryProducts(products);
+        
+        // Apply price filter if it was previously applied
+        if (isPriceFilterApplied) {
+          const filtered = applyPriceFilter(products, minPrice, maxPrice);
+          setFilteredProducts(filtered);
+        } else {
+          setFilteredProducts(products);
+        }
+        
+        updatePriceRangeFromFilteredProducts(products);
+        currentCategoryId.current = categoryId;
+      } else {
+        setSelectedCategories([]);
+        setselectedCatgeoryProducts([]);
+        setFilteredProducts([]);
+        setMinPrice(0);
+        setMaxPrice(150);
+        setIsPriceFilterApplied(false);
+        currentCategoryId.current = null;
+      }
     }
 
     setIsLoading(false);
@@ -294,15 +312,15 @@ const NoSidebar: NextPage = () => {
     }
 
     // When price filter is applied, we need to group the filtered products back by category
-    return selectedCategories.map(category => {
-      const categoryFilteredProducts = filteredProducts.filter(product => {
-        // Check if this product belongs to this category
-        return (category.category_products || []).some(catProduct => {
-          const productId1 = categoryType === "discount" ? product.id : product.productId;
-          const productId2 = categoryType === "discount" ? catProduct.id : catProduct.productId;
-          return productId1 === productId2;
+          return selectedCategories.map(category => {
+        const categoryFilteredProducts = filteredProducts.filter(product => {
+          // Check if this product belongs to this category
+          return (category.category_products || []).some(catProduct => {
+            const productId1 = categoryType === "discount" ? (product as any).id : product.productId;
+            const productId2 = categoryType === "discount" ? (catProduct as any).id : catProduct.productId;
+            return productId1 === productId2;
+          });
         });
-      });
 
       return {
         ...category,
@@ -344,7 +362,7 @@ const NoSidebar: NextPage = () => {
 
   // Function to render dynamic rating stars
   const renderRatingStars = (productId: string | number) => {
-    const rating = searchController.getDetails(productId, "getRating") || 0;
+    const rating = searchController.getDetails(String(productId), "getRating") || 0;
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
     
@@ -528,7 +546,26 @@ const NoSidebar: NextPage = () => {
             <div className="col-xl-9 col-lg-12">
               <div className="collection-wrapper">
                 <div className="custom-container section-big-pb-space">
-                  {categoriesToDisplay.length > 0 ? (
+                  {categoryType === "discount" ? (
+                    // For discount type, show Collection component with empty data
+                    <section className="w-full rts-category-area section-pt-space">
+                      <div className="custom-container title-area-between">
+                        <h2 className="title-left">
+                          {currentDiscount?.name || "Discount Products"}
+                          <span className="category-count"> ({currentDiscount?.discountItems?.length || 0} products)</span>
+                        </h2>
+                      </div>
+                      <div className="custom-container">
+                        <Row>
+                          <Collection
+                            categoryProducts={[]}
+                            cols="col-xl-3 col-lg-3 col-sm-4 col-md-4 col-6 col-grid-box"
+                            layoutList=""
+                          />
+                        </Row>
+                      </div>
+                    </section>
+                  ) : categoriesToDisplay.length > 0 ? (
                     <>
                       {categoriesToDisplay.map((category, index) => (
                         <section key={category.id} className="w-full rts-category-area section-pt-space">
@@ -546,7 +583,6 @@ const NoSidebar: NextPage = () => {
                                 categoryProducts={category.category_products || []}
                                 cols="col-xl-3 col-lg-3 col-sm-4 col-md-4 col-6 col-grid-box"
                                 layoutList=""
-                                renderRating={renderRatingStars}
                               />
                             </Row>
                           </div>

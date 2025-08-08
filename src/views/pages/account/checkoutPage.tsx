@@ -870,7 +870,7 @@ const prepareOrderData = useCallback((formData: formType) => {
                     <div className="alert alert-danger">
                       <h6>Please fix the following errors:</h6>
                       <ul className="mb-0">
-                        {orderPreview.validationErrors.map((error, index) => (
+                        {orderPreview.validationErrors.map((error : any, index: any) => (
                           <li key={index}>{error}</li>
                         ))}
                       </ul>
