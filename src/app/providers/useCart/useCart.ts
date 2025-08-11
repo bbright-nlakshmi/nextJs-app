@@ -19,6 +19,7 @@ interface CartItem {
   isReturnable?: boolean;
   categoryName?: string;
   categoryID?: string;
+  
 }
 
 interface CouponModel {
@@ -45,7 +46,7 @@ interface CouponModel {
 //   atStore?: number;
 // }
 
-interface StoreDetails {
+export interface StoreDetails {
   qrPaymentEnabled: any;
   paypalEnabled: any;
   razorpayEnabled: any;

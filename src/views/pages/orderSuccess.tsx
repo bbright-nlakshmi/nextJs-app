@@ -59,25 +59,49 @@ const OrderSuccessPage: NextPage = () => {
 
   useEffect(() => {
     try {
-      // Try to get order data from sessionStorage
-      const storedOrderData = sessionStorage.getItem("order-success-data");
-      
-      if (storedOrderData) {
-        const parsedData = JSON.parse(storedOrderData);
-        setOrderData(parsedData);
-      } else {
-        // If no stored data, try to get from URL params or local storage
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderIdFromUrl = urlParams.get('orderId');
-        
-        if (orderIdFromUrl) {
-          // Try to get order data from localStorage using orderId
-          const orderFromStorage = localStorage.getItem(`order-${orderIdFromUrl}`);
-          if (orderFromStorage) {
-            const parsedData = JSON.parse(orderFromStorage);
-            setOrderData(parsedData);
-          }
-        }
+      // Try to get order data from sessionStorage (key: 'orderDetails')
+      const storedOrderDetails = sessionStorage.getItem("orderDetails");
+      const storedAddressDetails = sessionStorage.getItem("addressDetails");
+
+      if (storedOrderDetails) {
+        const orderDetails = JSON.parse(storedOrderDetails);
+        // Map orderDetails to OrderData format expected by this page
+        const mappedOrderData: OrderData = {
+          orderId: orderDetails.id,
+          items: (orderDetails.orderItems || []).map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            img: item.url ? [item.url] : [],
+            cartItemCount: item.cartItemCount,
+            price: item.costPrice,
+            discountPrice: item.choosedPrice < item.baseChoosedPrice ? item.choosedPrice / item.cartItemCount : undefined,
+            taxAmount: item.taxAmount,
+            categoryName: item.categoryName
+          })),
+          cartTotal: orderDetails.cartTotal,
+          finalTotal: orderDetails.finalOrderTotal,
+          discountAmount: orderDetails.discountAmount,
+          packageCost: orderDetails.packageCost,
+          deliveryCost: orderDetails.deliveryCost,
+          taxTotal: orderDetails.taxTotal,
+          totalSavings: orderDetails.totalSavings,
+          billingAddress: storedAddressDetails ? JSON.parse(storedAddressDetails) : {
+            firstName: "",
+            lastName: "",
+            phone: "",
+            email: "",
+            country: "",
+            state: "",
+            city: "",
+            address: "",
+            pincode: ""
+          },
+          paymentMethod: orderDetails.paymentMode,
+          orderDate: orderDetails.orderTime,
+          storeDetails: orderDetails.store ? { name: orderDetails.store, id: orderDetails.storeId } : undefined,
+          gstNumber: orderDetails.orderGst
+        };
+        setOrderData(mappedOrderData);
       }
     } catch (error) {
       console.error("Error loading order data:", error);
@@ -129,8 +153,8 @@ const OrderSuccessPage: NextPage = () => {
     return (
       <Fragment>
         <Breadcrumb title="order-success" parent="home" />
-        <section className="section-big-py-space mt--5 bg-light">
-          <div className="custom-container">
+        <section className="order-success-page order-success-section-big-py-space mt--5 bg-light">
+          <div className="order-success-custom-container">
             <div className="text-center">
               <div className="spinner-border order-success-spinner" role="status">
                 <span className="sr-only">Loading...</span>
@@ -147,10 +171,10 @@ const OrderSuccessPage: NextPage = () => {
     return (
       <Fragment>
         <Breadcrumb title="order-success" parent="home" />
-        <section className="section-big-py-space mt--5 bg-light">
-          <div className="custom-container">
+        <section className="order-success-page order-success-section-big-py-space mt--5 bg-light">
+          <div className="order-success-custom-container">
             <div className="col-sm-12">
-              <div className="empty-cart-cls text-center">
+              <div className="order-success-empty-cart-cls text-center">
                 <img src="/static/images/icon-empty-cart.png" className="img-fluid mb-4" alt="Empty Cart" />
                 <h3 className="mb-3">
                   <strong>No Order Found</strong>
@@ -190,8 +214,8 @@ const OrderSuccessPage: NextPage = () => {
   return (
     <Fragment>
       <Breadcrumb title="order-success" parent="home" />
-      <section className="section-big-py-space mt--5 bg-light">
-        <div className="custom-container">
+      <section className="order-success-page order-success-section-big-py-space mt--5 bg-light">
+        <div className="order-success-custom-container">
           {/* Success Message */}
           <div className="row mb-4">
             <div className="col-12 text-center">
@@ -205,21 +229,21 @@ const OrderSuccessPage: NextPage = () => {
 
           <Row>
             <Col lg="6">
-              <div className="product-order">
+              <div className="order-success-product-order">
                 <h3 className="order-details-title">Your Order Details</h3>
-                <Row className="product-order-detail g-3">
+                <Row className="order-success-product-order-detail g-3">
                   {/* Headers */}
-                  <Col xs="4" className="order_detail_header">
-                    <h4 className="order-header-text">Product</h4>
+                  <Col xs="4" className="order-success-detail-header">
+                    <h4 className="order-success-header-text">Product</h4>
                   </Col>
-                  <Col xs="3" className="order_detail_header">
-                    <h4 className="order-header-text">Qty</h4>
+                  <Col xs="3" className="order-success-detail-header">
+                    <h4 className="order-success-header-text">Qty</h4>
                   </Col>
-                  <Col xs="2" className="order_detail_header">
-                    <h4 className="order-header-text">Price</h4>
+                  <Col xs="2" className="order-success-detail-header">
+                    <h4 className="order-success-header-text">Price</h4>
                   </Col>
-                  <Col xs="3" className="order_detail_header">
-                    <h4 className="order-header-text">Total</h4>
+                  <Col xs="3" className="order-success-detail-header">
+                    <h4 className="order-success-header-text">Total</h4>
                   </Col>
                   
                   {/* Product Items */}
@@ -229,31 +253,31 @@ const OrderSuccessPage: NextPage = () => {
                     
                     return (
                       <Fragment key={`${item.id}_${i}`}>
-                        <Col xs="4" className="order_detail">
-                          <div className="product-text-info">
-                            <h6 className="mb-0 order-item-name">{item.name}</h6>
+                        <Col xs="4" className="order-success-detail-cell">
+                          <div className="order-success-product-text-info">
+                            <h6 className="mb-0 order-success-item-name">{item.name}</h6>
                             {item.categoryName && (
-                              <small className="text-muted order-item-category">{item.categoryName}</small>
+                              <small className="text-muted order-success-item-category">{item.categoryName}</small>
                             )}
                           </div>
                         </Col>
-                        <Col xs="3" className="order_detail">
-                          <h5 className="order-qty-text">{item.cartItemCount}</h5>
+                        <Col xs="3" className="order-success-detail-cell">
+                          <h5 className="order-success-qty-text">{item.cartItemCount}</h5>
                         </Col>
-                        <Col xs="2" className="order_detail">
+                        <Col xs="2" className="order-success-detail-cell">
                           <div>
-                            <h6 className="mb-0 order-price-text">
+                            <h6 className="mb-0 order-success-price-text">
                               {symbol}{(effectivePrice * value).toFixed(2)}
                             </h6>
                             {item.discountPrice && item.discountPrice < item.price && (
-                              <small className="text-muted text-decoration-line-through order-original-price">
+                              <small className="text-muted text-decoration-line-through order-success-original-price">
                                 {symbol}{(item.price * value).toFixed(2)}
                               </small>
                             )}
                           </div>
                         </Col>
-                        <Col xs="3" className="order_detail">
-                          <h5 className="order-total-text">
+                        <Col xs="3" className="order-success-detail-cell">
+                          <h5 className="order-success-total-text">
                             {symbol}{(itemTotal * value).toFixed(2)}
                           </h5>
                         </Col>
@@ -262,7 +286,7 @@ const OrderSuccessPage: NextPage = () => {
                   })}
                 </Row>
 
-                <div className="total-sec">
+                <div className="order-success-total-sec">
                   <ul>
                     <li>
                       Cart Total ({orderData.items.length} items)
@@ -308,7 +332,7 @@ const OrderSuccessPage: NextPage = () => {
                     )}
                     
                     {orderData.totalSavings > 0 && (
-                      <li className="text-success">
+                      <li className="order-success-text-success">
                         Total Savings
                         <span>
                           {symbol}{(orderData.totalSavings * value).toFixed(2)}
@@ -318,8 +342,8 @@ const OrderSuccessPage: NextPage = () => {
                   </ul>
                 </div>
                 
-                <div className="final-total">
-                  <h3 className="final-total-text">
+                <div className="order-success-final-total">
+                  <h3 className="order-success-final-total-text">
                     Final Total
                     <span>
                       {symbol}{(orderData.finalTotal * value).toFixed(2)}
@@ -332,12 +356,12 @@ const OrderSuccessPage: NextPage = () => {
             <Col lg="6">
               <div className="row order-success-sec">
                 <div className="col-sm-6">
-                  <h4 className="order-section-title">Order Summary</h4>
-                  <ul className="order-detail">
+                  <h4 className="order-success-section-title">Order Summary</h4>
+                  <ul className="order-success-detail-list">
                     <li><strong>Order ID:</strong> {orderData.orderId}</li>
                     <li><strong>Order Date:</strong> {dayjs(orderData.orderDate).format("DD MMM YYYY, hh:mm A")}</li>
                     <li>
-                      <strong>Order Total:</strong> <span className="order-total-highlight">{symbol}{(orderData.finalTotal * value).toFixed(2)}</span>
+                      <strong>Order Total:</strong> <span className="order-success-total-highlight">{symbol}{(orderData.finalTotal * value).toFixed(2)}</span>
                     </li>
                     {orderData.storeDetails && (
                       <li><strong>Store:</strong> {orderData.storeDetails.name}</li>
@@ -349,9 +373,9 @@ const OrderSuccessPage: NextPage = () => {
                 </div>
                 
                 <div className="col-sm-6">
-                  <h4 className="order-section-title">Shipping Address</h4>
+                  <h4 className="order-success-section-title">Shipping Address</h4>
                   {address ? (
-                    <ul className="order-detail">
+                    <ul className="order-success-detail-list">
                       <li><strong>{address.name}</strong></li>
                       <li>{address.addressLine}</li>
                       <li>{address.cityState}</li>
@@ -364,10 +388,10 @@ const OrderSuccessPage: NextPage = () => {
                   )}
                 </div>
                 
-                <div className="col-sm-12 payment-mode">
-                  <h4 className="order-section-title">Payment Method</h4>
+                <div className="col-sm-12 order-success-payment-mode">
+                  <h4 className="order-success-section-title">Payment Method</h4>
                   <p className="mb-0">
-                    <i className="fa fa-credit-card me-2 payment-icon"></i>
+                    <i className="fa fa-credit-card me-2 order-success-payment-icon"></i>
                     {getPaymentMethodText(orderData.paymentMethod)}
                   </p>
                   
@@ -385,7 +409,7 @@ const OrderSuccessPage: NextPage = () => {
                 </div>
 
                 <div className="col-sm-12 mt-3">
-                  <div className="d-flex gap-2 flex-wrap justify-content-center justify-content-sm-start">
+                  <div className="order-success-d-flex-gap-2-flex-wrap justify-content-center justify-content-sm-start">
                     <button
                       onClick={() => router.push("/")}
                       className="btn btn-outline-primary flex-fill flex-sm-grow-0 order-success-btn-outline"

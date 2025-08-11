@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useContext, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useContext, useEffect, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Form, Row, Col } from "reactstrap";
 import Breadcrumb from "@/views/Containers/Breadcrumb";
@@ -7,12 +7,10 @@ import { CartContext } from "@/helpers/cart/cart.context";
 import { useRouter } from "next/navigation";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { toast } from "react-toastify";
-import { useCart } from "../../../app/providers/useCart/useCart";
+import { OrderPayloadService } from "../../../app/providers/usePlaceOrder/usePlaceOrder";
+import { API } from "@/app/globalProvider";
 import { appConfig } from "../../../app/config/";
-import { DeliveryAddressModel } from "@/app/models/delivery_address_model/delivery_address";
-import { DeliveryAssign, OrderItemsModel, OrderModel } from "@/app/models/order/order";
-import { API } from "@/app/globalProvider"; 
- 
+
 interface FormType {
   firstName: string;
   lastName: string;
@@ -25,538 +23,389 @@ interface FormType {
   pincode: string;
 }
 
+interface CartItem {
+  id: string;
+  name: string;
+  img: string[];
+  cartItemCount: number;
+  cartPurchaseOptionStr: string;
+  price: number;
+  discountPrice?: number;
+  taxType: string;
+  taxAmount: number;
+  active: boolean;
+  isReturnable: boolean;
+  categoryName: string;
+  categoryID: string;
+}
+
+interface Coupon {
+  couponCode: string;
+  couponAmount: number;
+  isCouponPercentage: boolean;
+  maxCouponAmount: number;
+  expireDate?: string;
+  minimumCartValue: number;
+  assignedUsers?: { phone_number: string }[];
+}
+
+interface OrderCalculations {
+  cartAmount: number;
+  packageCost: number;
+  deliveryCharges: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalSavings: number;
+  finalTotal: number;
+  couponDiscount: number;
+}
+
+// Mock AuthContext for user profile data
+interface AuthContextType {
+  user: { phone: string } | null;
+}
+
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
+
+// Mock CouponModel for parsing coupon data
+class CouponModel {
+  couponCode: string;
+  couponAmount: number;
+  isCouponPercentage: boolean;
+  maxCouponAmount: number;
+  expireDate?: string;
+  minimumCartValue: number;
+  assignedUsers?: { phone_number: string }[];
+
+  constructor(data: any) {
+    this.couponCode = data.coupon_code || "";
+    this.couponAmount = data.coupon_amount || 0;
+    this.isCouponPercentage = data.is_coupon_percentage || false;
+    this.maxCouponAmount = data.max_coupon_amount || 0;
+    this.expireDate = data.expire_date;
+    this.minimumCartValue = data.minimum_cart_value || 0;
+    this.assignedUsers = data.assigned_users || [];
+  }
+
+  static fromJson(data: any): Coupon {
+    return new CouponModel(data);
+  }
+
+  isCouponAllowedForUser(phoneNumber: string): boolean {
+    if (!this.assignedUsers || this.assignedUsers.length === 0) return true;
+    return this.assignedUsers.some((user) => user.phone_number === phoneNumber);
+  }
+}
+
 const CheckoutPage: React.FC = () => {
   const router = useRouter();
   const currencyContext = useContext(CurrencyContext);
   const cartContext = useContext(CartContext);
- 
-  const symbol = currencyContext?.selectedCurr?.symbol || '$';
+  const authContext = useContext(AuthContext);
+
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPaymentMode, setSelectedPaymentMode] = useState<string>("COD");
+  const [gstNumber, setGstNumber] = useState<string>("");
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponError, setCouponError] = useState("");
+
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormType>();
+  const phoneNumber = watch("phone") || "";
+
+  const symbol = currencyContext?.selectedCurr?.symbol || "$";
   const contextCartItems = cartContext?.cartItems || [];
   const emptyCart = cartContext?.emptyCart || (() => {});
- 
-  const initializationRef = useRef({
-    cartInitialized: false,
-    contextItemsLength: 0
-  });
- 
-  const cartHook = useCart();
- 
-  const {
-    cartItems = [],
-    selectedPaymentMode,
-    deliveryAddressModel,
-    storeDetails,
-    calcCartAmount = () => 0,
-    getCartDiscount = () => 0,
-    getPackageCost = () => 0,
-    getDeliveryCost = () => 0,
-    totalTaxAmount = () => 0,
-    getCartSavings = () => 0,
-    finalOrderAmount = () => 0,
-    setSelectedPaymentMode = () => {},
-    setDeliveryAddressModel = () => {},
-    setOrderGst = () => {},
-    clearCart = () => {},
-    addItemToCart = () => {},
-    cartIsEmpty = () => true
-  } = cartHook || {};
- 
-  const [gstNumber, setGstNumber] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showValidationErrors, setShowValidationErrors] = useState(false);
- 
-  const { register, handleSubmit, formState: { errors }, getValues } = useForm<FormType>();
-  
-  const appName = appConfig.appName;
-  const defaultStoreId = appConfig.defaultStoreId;
- 
-  const paymentModes = useMemo(() => [
-    { value: "COD", label: "Cash on Delivery (COD)" },
-    { value: "PICK_AT_STORE", label: "Pick at Store" },
-    { value: "RAZORPAY", label: "Razorpay" },
-    { value: "PHONEPE", label: "PhonePe" }
-  ], []);
- 
-  const countries = useMemo(() => [
-    { value: "", label: "Select Country" },
-    { value: "India", label: "India" },
-    { value: "United States", label: "United States" },
-  ], []);
- 
-  // Enhanced price extraction function
-  const extractPrice = useCallback((item: any): number => {
-    if (!item) return 0;
-    
-    try {
-      // Check standard price fields first
-      if (typeof item.price === 'number' && item.price > 0) {
-        return item.price;
-      }
-      
-      // Check for discount price (prioritize over original price)
-      if (item.discountPrice && typeof item.discountPrice === 'number' && item.discountPrice > 0) {
-        return item.discountPrice;
-      }
-      
-      // Check for sale price
-      if (item.salePrice && typeof item.salePrice === 'number' && item.salePrice > 0) {
-        return item.salePrice;
-      }
-      
-      // Check for finalPrice
-      if (item.finalPrice && typeof item.finalPrice === 'number' && item.finalPrice > 0) {
-        return item.finalPrice;
-      }
-      
-      // Check for currentPrice
-      if (item.currentPrice && typeof item.currentPrice === 'number' && item.currentPrice > 0) {
-        return item.currentPrice;
-      }
-      
-      // Check for sellingPrice
-      if (item.sellingPrice && typeof item.sellingPrice === 'number' && item.sellingPrice > 0) {
-        return item.sellingPrice;
-      }
-      
-      // Check Kit-specific price fields
-      if (item.kitPrice && typeof item.kitPrice === 'number' && item.kitPrice > 0) {
-        return item.kitPrice;
-      }
-      
-      // Try extracting from nested price objects
-      const nestedPrice = item.pricing || item.priceInfo || item.cost || item.priceData;
-      if (typeof nestedPrice === 'number' && nestedPrice > 0) {
-        return nestedPrice;
-      }
-      if (typeof nestedPrice === 'object' && nestedPrice !== null) {
-        const extractedPrice = nestedPrice.amount || nestedPrice.value || nestedPrice.price || nestedPrice.final || nestedPrice.current;
-        if (typeof extractedPrice === 'number' && extractedPrice > 0) {
-          return extractedPrice;
-        }
-      }
-      
-      // Try extracting from the product data
-      if (item.product) {
-        return extractPrice(item.product);
-      }
-      
-      // Try extracting from nested productData
-      if (item.productData) {
-        return extractPrice(item.productData);
-      }
-      
-      // Check for string prices that need parsing
-      if (typeof item.price === 'string') {
-        const parsed = parseFloat(item.price.replace(/[^\d.-]/g, ''));
-        if (!isNaN(parsed) && parsed > 0) {
-          return parsed;
-        }
-      }
-      
-    } catch (error) {
-      console.warn("Error extracting price for item:", error);
-    }
-    
-    return 0;
-  }, []);
+  const appName = appConfig?.appName || "MyApp";
+  const defaultStoreId = appConfig?.defaultStoreId || "default";
 
-  const transformCartItem = useCallback((item: any) => {
-    const extractedPrice = extractPrice(item);
-    const extractedDiscountPrice = item.discountPrice ? extractPrice({ price: item.discountPrice }) : undefined;
-    
-    return {
-      id: item.productId || item.id,
-      name: item.name || item.title || item.productName || "Unknown Product",
-      img: item.img || item.image || item.images || ["/static/images/placeholder.png"],
-      cartItemCount: item.qty || item.quantity || item.cartItemCount || 1,
-      cartPurchaseOptionStr: item.purchaseOptionStr || item.variant || "default",
-      price: extractedPrice,
-      discountPrice: extractedDiscountPrice,
+  const paymentModes = useMemo(() => OrderPayloadService.getPaymentModes(), []);
+  const countries = useMemo(() => OrderPayloadService.getCountries(), []);
+
+  // Use dynamic values from appConfig
+  const tenantId = appConfig.tenantId ;
+  const storeId = appConfig.defaultStoreId ;
+
+  // Configuration for tenantId and storeId
+  const apiConfig = {
+    tenantId,
+    storeId,
+  };
+
+  // Fetch and set default phone number from profile or sessionStorage
+  useEffect(() => {
+    let defaultPhone = "";
+    if (authContext?.user?.phone) {
+      defaultPhone = authContext.user.phone;
+    } else if (typeof window !== "undefined") {
+      const addressDetails = window.sessionStorage.getItem("addressDetails");
+      if (addressDetails) {
+        const parsed = JSON.parse(addressDetails);
+        defaultPhone = parsed.phone || "";
+      }
+    }
+    if (defaultPhone) {
+      setValue("phone", defaultPhone, { shouldValidate: true });
+    }
+  }, [authContext, setValue]);
+
+  // Fetch coupons when phone number or cart items change
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        let userPhone = phoneNumber;
+        if (!userPhone && typeof window !== "undefined") {
+          const addressDetails = window.sessionStorage.getItem("addressDetails");
+          if (addressDetails) {
+            const parsed = JSON.parse(addressDetails);
+            userPhone = parsed.phone || "";
+          }
+        }
+
+        // Skip fetching if no valid phone number is available
+        if (!userPhone) {
+          setAvailableCoupons([]);
+          return;
+        }
+
+        const response = await API.get<{ data: any[] }>(`${API.baseURL}/get-coupons`, {
+          tenant_id: apiConfig.tenantId,
+          store_id: apiConfig.storeId,
+        });
+
+        const now = new Date();
+        const coupons: Coupon[] = response.data
+          .map((couponData) => {
+            try {
+              const coupon = CouponModel.fromJson(couponData);
+              if (
+                (!coupon.expireDate || new Date(coupon.expireDate) >= now) &&
+                (!coupon.assignedUsers || coupon.assignedUsers.length === 0 || coupon.assignedUsers.some(user => user.phone_number === userPhone))
+              ) {
+                return coupon;
+              }
+              return null;
+            } catch (e) {
+              console.error(`Error parsing coupon: ${JSON.stringify(couponData)}`);
+              return null;
+            }
+          })
+          .filter((coupon): coupon is Coupon => coupon !== null);
+
+        setAvailableCoupons(coupons);
+      } catch (error) {
+        console.error("Error fetching coupons:", error);
+        setAvailableCoupons([]);
+      }
+    };
+
+    fetchCoupons();
+  }, [phoneNumber, cartItems, apiConfig.tenantId, apiConfig.storeId]);
+
+  const handleSelectCoupon = (coupon: Coupon) => {
+    setCouponError("");
+    const now = new Date();
+    if (coupon.expireDate && new Date(coupon.expireDate) < now) {
+      setCouponError("Coupon has expired.");
+      setAppliedCoupon(null);
+      return;
+    }
+    const cartTotal = cartItems.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.cartItemCount), 0);
+    if (cartTotal < coupon.minimumCartValue) {
+      setCouponError(`Minimum cart value for this coupon is ₹${coupon.minimumCartValue}`);
+      setAppliedCoupon(null);
+      return;
+    }
+    setAppliedCoupon(coupon);
+  };
+
+  useEffect(() => {
+    let buyNowMode = false;
+    let buyNowProduct = null;
+    if (typeof window !== "undefined") {
+      buyNowMode = window.sessionStorage.getItem("checkoutMode") === "buyNow";
+      const buyNowRaw = window.sessionStorage.getItem("buyNowProduct");
+      if (buyNowRaw) buyNowProduct = JSON.parse(buyNowRaw);
+    }
+
+    const getPrice = (item: any) => item.sellingPrice || item.price || 0;
+    const getDiscountPrice = (item: any) => item.discountPrice;
+
+    const buyNowItem: CartItem | null = buyNowMode && buyNowProduct ? {
+      id: buyNowProduct.id || `item-0`,
+      name: buyNowProduct.name || "Unknown Product",
+      img: Array.isArray(buyNowProduct.img) ? buyNowProduct.img : [buyNowProduct.img || "/static/images/placeholder.png"],
+      cartItemCount: buyNowProduct.qty || 1,
+      cartPurchaseOptionStr: buyNowProduct.purchaseOptionStr || "default",
+      price: getPrice(buyNowProduct),
+      discountPrice: getDiscountPrice(buyNowProduct),
+      taxType: buyNowProduct.taxType || "EXCLUSIVE",
+      taxAmount: parseFloat(buyNowProduct.taxAmount) || 0,
+      active: true,
+      isReturnable: buyNowProduct.isReturnable || false,
+      categoryName: buyNowProduct.categoryName || "General",
+      categoryID: buyNowProduct.categoryID || "default"
+    } : null;
+
+    const cartTransformed: CartItem[] = contextCartItems.map((item: any, index: number) => ({
+      id: item.id || `item-${index}`,
+      name: item.name || "Unknown Product",
+      img: Array.isArray(item.img) ? item.img : [item.img || "/static/images/placeholder.png"],
+      cartItemCount: item.qty || 1,
+      cartPurchaseOptionStr: item.purchaseOptionStr || "default",
+      price: getPrice(item),
+      discountPrice: getDiscountPrice(item),
       taxType: item.taxType || "EXCLUSIVE",
-      taxAmount: item.taxAmount || 0,
+      taxAmount: parseFloat(item.taxAmount) || 0,
       active: true,
       isReturnable: item.isReturnable || false,
-      categoryName: item.category || item.categoryName || "General",
-      categoryID: item.categoryId || item.categoryID || "default"
-    };
-  }, [extractPrice]);
- 
-  useEffect(() => {
-    const currentLength = contextCartItems?.length || 0;
-   
-    // Debug logging to help identify the issue
-    if (contextCartItems && contextCartItems.length > 0) {
-      console.log("Context Cart Items:", contextCartItems);
-      contextCartItems.forEach((item, index) => {
-        console.log(`Item ${index}:`, {
-          name: item.name,
-          price: item.price,
-          discountPrice: item.discountPrice,
-          qty: item.qty,
-          fullItem: item
-        });
-      });
-    }
-   
-    if (!initializationRef.current.cartInitialized &&
-        currentLength > 0 &&
-        currentLength !== initializationRef.current.contextItemsLength &&
-        addItemToCart) {
-     
-      try {
-        contextCartItems.forEach((item: any) => {
-          const transformedItem = transformCartItem(item);
-          console.log("Transformed item:", transformedItem);
-          addItemToCart(transformedItem);
-        });
-        initializationRef.current.cartInitialized = true;
-        initializationRef.current.contextItemsLength = currentLength;
-      } catch (error) {
-        console.error("Error loading cart items:", error);
-        toast.error("Error loading cart items");
+      categoryName: item.categoryName || "General",
+      categoryID: item.categoryID || "default"
+    }));
+
+    const merged: { [key: string]: CartItem } = {};
+    const getKey = (item: any) => item.id;
+    if (buyNowItem) merged[getKey(buyNowItem)] = buyNowItem;
+    cartTransformed.forEach(item => {
+      const key = getKey(item);
+      if (merged[key]) {
+        merged[key].cartItemCount += item.cartItemCount;
+      } else {
+        merged[key] = item;
       }
-    }
-  }, [contextCartItems?.length, addItemToCart, transformCartItem]);
- 
-  const cartCalculations = useMemo(() => {
-    try {
-      const cartAmount = calcCartAmount();
-      const packageCost = getPackageCost(cartAmount);
-      const deliveryCharges = getDeliveryCost(cartAmount);
-      const discountAmount = getCartDiscount();
-      const taxAmount = totalTaxAmount();
-      const totalSavings = getCartSavings();
-      const finalTotal = finalOrderAmount();
-     
-      return {
-        cartAmount,
-        packageCost,
-        deliveryCharges,
-        discountAmount,
-        taxAmount,
-        totalSavings,
-        finalTotal
-      };
-    } catch (error) {
-      return {
-        cartAmount: 0,
-        packageCost: 0,
-        deliveryCharges: 0,
-        discountAmount: 0,
-        taxAmount: 0,
-        totalSavings: 0,
-        finalTotal: 0
-      };
-    }
-  }, [cartItems.length, selectedPaymentMode]);
-
-  const validateOrderData = useCallback(() => {
-    const validationErrors = [];
-    const formData = getValues();
-
-    if (!formData.firstName?.trim()) validationErrors.push("First name is required");
-    if (!formData.lastName?.trim()) validationErrors.push("Last name is required");
-    if (!formData.phone?.trim()) validationErrors.push("Phone number is required");
-    if (!formData.email?.trim()) validationErrors.push("Email is required");
-    if (!formData.country?.trim()) validationErrors.push("Country is required");
-    if (!formData.state?.trim()) validationErrors.push("State is required");
-    if (!formData.city?.trim()) validationErrors.push("City is required");
-    if (!formData.address?.trim()) validationErrors.push("Address is required");
-    if (!formData.pincode?.trim()) validationErrors.push("PIN code is required");
-
-    if (!selectedPaymentMode) validationErrors.push("Payment method is required");
-    if (!cartItems || cartItems.length === 0) validationErrors.push("Cart is empty");
-    
-    // Check if cart items have valid prices
-    const hasValidPrices = cartItems.some(item => {
-      const effectivePrice = item.discountPrice && item.discountPrice > 0 ? item.discountPrice : item.price;
-      return effectivePrice > 0;
     });
-    
-    if (!hasValidPrices) {
-      validationErrors.push("Cart items must have valid prices");
-    }
-    
-    // Only validate cart amount if we have valid prices
-    if (hasValidPrices && cartCalculations.cartAmount <= 0) {
-      validationErrors.push("Invalid cart amount");
-    }
-    
-    if (cartCalculations.finalTotal <= 0) validationErrors.push("Invalid order total");
-    if (!storeDetails?.id && !defaultStoreId) validationErrors.push("Store ID is missing");
+    setCartItems(Object.values(merged));
+  }, [contextCartItems]);
 
-    return validationErrors;
-  }, [cartItems, selectedPaymentMode, cartCalculations, storeDetails, getValues, defaultStoreId]);
+  const calculations = useMemo((): OrderCalculations => {
+    let cartAmount = 0;
+    let discountAmount = 0;
+    let taxAmount = 0;
 
-  const handleGstChange = useCallback((gst: string) => {
-    setGstNumber(gst);
-    setOrderGst(gst);
-  }, [setOrderGst]);
- 
-  const createDeliveryAddressModel = useCallback((formData: FormType) => {
-    return new DeliveryAddressModel({
-      id: Date.now(),
-      atStore: selectedPaymentMode === 'PICK_AT_STORE' ? 1 : 0,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      pinCode: formData.pincode,
-      city: formData.city,
-      address: formData.address,
-      phoneNumber: formData.phone,
-      isChoosed: null,
-      lat: 0,
-      lng: 0,
-    });
-  }, [selectedPaymentMode]);
- 
-  const generateOrderId = useCallback(() => {
-    // Generate a unique 10-digit number
-    const timestamp = Date.now().toString();
-    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    const combined = timestamp + randomNum;
-    
-    // Take last 10 digits and add # prefix
-    return `${combined.slice(-10)}`;
-  }, []);
-
-  const getPaymentMethodDisplayText = useCallback((paymentMode: string, isProcessing: boolean) => {
-    if (isProcessing) return "Processing...";
-   
-    const paymentTexts: { [key: string]: string } = {
-      "COD": "Place Order (COD)",
-      "PICK_AT_STORE": "Place Order (Pick at Store)",
-      "PHONEPE": "Pay with PhonePe",
-      "RAZORPAY": "Pay with Razorpay"
-    };
-   
-    return paymentTexts[paymentMode] || "Place Order";
-  }, []);
-
-  const createDeliveryAssign = useCallback(() => {
-    return new DeliveryAssign({
-      name: 'Not Assigned',
-      phone: ''
-    });
-  }, []);
-
-  const createOrderItems = useCallback(() => {
-    const orderItems: OrderItemsModel[] = [];
-   
     cartItems.forEach(item => {
-      const basePrice = item.price * item.cartItemCount;
-      const discountedPrice = item.discountPrice ?
-        item.discountPrice * item.cartItemCount : basePrice;
-     
-      const orderItemData = {
-        id: item.id,
-        name: item.name,
-        baseChoosedPrice: basePrice,
-        choosedPrice: discountedPrice,
-        collectedTax: item.taxAmount ? item.taxAmount * item.cartItemCount : 0,
-        costPrice: item.price,
-        saleQuantityStr: item.cartPurchaseOptionStr,
-        saleQuantity: item.cartItemCount,
-        isProduct: true,
-        isReturnable: item.isReturnable || false,
-        url: item.img[0] || '',
-        rating: 0,
-        categoryName: item.categoryName || '',
-        categoryID: item.categoryID || '',
-        cartItemCount: item.cartItemCount,
-        orderKitItems: [],
-        selfDocRef: undefined,
-        active: item.active !== undefined ? item.active : true,
-        taxType: item.taxType || "EXCLUSIVE",
-        taxAmount: item.taxAmount || 0,
-        selectedSubscription:{},
-      };
-
-      const orderItem = new OrderItemsModel(orderItemData);
-
-      orderItem.status.process = selectedPaymentMode === 'PICK_AT_STORE' ? null : new Date().toISOString();
-      orderItem.status.deliver = selectedPaymentMode === 'PICK_AT_STORE' ? new Date().toISOString() : null;
-      orderItem.status.confirm = null;
-      orderItem.status.package = null;
-      orderItem.status.cancel = null;
-      orderItem.status.transit = null;
-
-      orderItems.push(orderItem);
+      const itemPrice = item.discountPrice || item.price;
+      const itemTotal = itemPrice * item.cartItemCount;
+      cartAmount += itemTotal;
+      if (item.discountPrice && item.discountPrice < item.price) {
+        discountAmount += (item.price - item.discountPrice) * item.cartItemCount;
+      }
+      taxAmount += item.taxAmount * item.cartItemCount;
     });
 
-    return orderItems;
-  }, [cartItems, selectedPaymentMode]);
-
-  const createOrderModel = useCallback((formData: FormType) => {
-    const orderId = generateOrderId();
-    const currentTime = new Date().toISOString();
-    const deliveryAddress = createDeliveryAddressModel(formData);
-    const orderItems = createOrderItems();
-    const deliveryAssign = createDeliveryAssign();
-
-    const taxGroup: Record<string, number> = {};
-    orderItems.forEach(item => {
-      const taxType = item.taxType || 'EXCLUSIVE';
-      taxGroup[taxType] = (taxGroup[taxType] || 0) + item.collectedTax;
-    });
-
-    const orderData = {
-      id: orderId,
-      deliveryAddress: deliveryAddress,
-      orderTime: currentTime,
-      creationTime: currentTime,
-      paymentMode: selectedPaymentMode,
-      phoneNumber: formData.phone,
-      userName: `${formData.firstName} ${formData.lastName}`,
-      store: storeDetails?.name || appName || "Default Store",
-      storeId: storeDetails?.id || defaultStoreId,
-      cartTotal: cartCalculations.cartAmount,
-      finalOrderTotal: cartCalculations.finalTotal,
-      finalOrderTotalWithOutDelivery: cartCalculations.finalTotal - cartCalculations.deliveryCharges,
-      couponCode: "",
-      couponAmount: 0,
-      discountAmount: cartCalculations.discountAmount,
-      packageCost: cartCalculations.packageCost,
-      deliveryCost: cartCalculations.deliveryCharges,
-      totalSavings: cartCalculations.totalSavings,
-      taxTotal: cartCalculations.taxAmount,
-      taxGroup: taxGroup,
-      orderItems: orderItems,
-      img: orderItems.map(item => item.url).filter(url => url),
-      assignedDelivery: deliveryAssign,
-      orderComplete: false,
-      orderAcceptStatus: "PENDING",
-      deviceToken: undefined,
-      txnDetails: undefined,
-      deliveryNotificationSent: false,
-      userNotificationSent: false,
-      orderGst: gstNumber || undefined
-    };
-
-    return new OrderModel(orderData);
-  }, [generateOrderId, createDeliveryAddressModel, createOrderItems, createDeliveryAssign, selectedPaymentMode, storeDetails, appName, defaultStoreId, cartCalculations, gstNumber]);
-
-  const storeOrderSuccessData = useCallback((formData: FormType, orderModel: any) => {
-    try {
-      const orderSuccessData = {
-        orderId: orderModel.id,
-        items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          img: item.img,
-          cartItemCount: item.cartItemCount,
-          price: item.price,
-          discountPrice: item.discountPrice,
-          taxAmount: item.taxAmount,
-          categoryName: item.categoryName
-        })),
-        cartTotal: cartCalculations.cartAmount,
-        finalTotal: cartCalculations.finalTotal,
-        discountAmount: cartCalculations.discountAmount,
-        packageCost: cartCalculations.packageCost,
-        deliveryCost: cartCalculations.deliveryCharges,
-        taxTotal: cartCalculations.taxAmount,
-        totalSavings: cartCalculations.totalSavings,
-        billingAddress: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone,
-          email: formData.email,
-          country: formData.country,
-          state: formData.state,
-          city: formData.city,
-          address: formData.address,
-          pincode: formData.pincode
-        },
-        paymentMethod: selectedPaymentMode,
-        orderDate: new Date().toISOString(),
-        storeDetails: storeDetails,
-        gstNumber: gstNumber
-      };
-
-      // Store in sessionStorage for immediate use
-      sessionStorage.setItem("order-success-data", JSON.stringify(orderSuccessData));
-      
-      // Also store in localStorage as backup with order ID
-      localStorage.setItem(`order-${orderModel.id}`, JSON.stringify(orderSuccessData));
-      
-      // Set expiry for localStorage (30 days)
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30);
-      localStorage.setItem(`order-${orderModel.id}-expiry`, expiryDate.toISOString());
-      
-    } catch (error) {
-      console.error("Error storing order success data:", error);
-      // Don't throw error to prevent order placement failure
+    let couponDiscount = 0;
+    if (appliedCoupon) {
+      couponDiscount = appliedCoupon.isCouponPercentage
+        ? Math.min((cartAmount * appliedCoupon.couponAmount) / 100, appliedCoupon.maxCouponAmount || Infinity)
+        : Math.min(appliedCoupon.couponAmount, appliedCoupon.maxCouponAmount || Infinity);
     }
-  }, [cartItems, cartCalculations, selectedPaymentMode, storeDetails, gstNumber]);
+
+    const packageCost = cartAmount > 500 ? 0 : 50;
+    const deliveryCharges = selectedPaymentMode === "PICK_AT_STORE" ? 0 : cartAmount > 1000 ? 0 : 100;
+    const totalSavings = discountAmount + couponDiscount;
+    const finalTotal = cartAmount + taxAmount + packageCost + deliveryCharges - couponDiscount;
+
+    return {
+      cartAmount,
+      packageCost,
+      deliveryCharges,
+      discountAmount,
+      taxAmount,
+      totalSavings,
+      finalTotal,
+      couponDiscount
+    };
+  }, [cartItems, selectedPaymentMode, appliedCoupon]);
+
+  const handlePaymentModeChange = useCallback((mode: string) => setSelectedPaymentMode(mode), []);
+  const handleGstChange = useCallback((value: string) => setGstNumber(value), []);
+
+  const getPaymentButtonText = useCallback(() => {
+    return isProcessing ? "Processing..." : "Place Order";
+  }, [isProcessing]);
+
+  const handleOrderSuccess = useCallback(async (orderModel: any, formData: FormType) => {
+    toast.success("Order placed successfully!");
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("orderDetails", JSON.stringify(orderModel));
+      window.sessionStorage.setItem("addressDetails", JSON.stringify(formData));
+      window.sessionStorage.removeItem("buyNowProduct");
+      window.sessionStorage.removeItem("checkoutMode");
+    }
+    setCartItems([]);
+    emptyCart();
+    setTimeout(() => router.push("/pages/order-success"), 1500);
+  }, [router, emptyCart]);
 
   const onSubmit = useCallback(async (formData: FormType) => {
+    setIsProcessing(true);
+    setShowValidationErrors(true);
+
+    if (!selectedPaymentMode || cartItems.length === 0) {
+      toast.error(!selectedPaymentMode ? "Please select a payment method" : "Your cart is empty");
+      setIsProcessing(false);
+      return;
+    }
+
     try {
-      setIsProcessing(true);
-      setShowValidationErrors(true);
+      const orderConfig = {
+        formData,
+        cartItems,
+        selectedPaymentMode,
+        cartCalculations: calculations,
+        storeDetails: { id: defaultStoreId, name: appName, active: true },
+        gstNumber,
+        appName,
+        defaultStoreId
+      };
 
-      const validationErrors = validateOrderData();
-      if (validationErrors.length > 0) {
-        validationErrors.forEach(error => toast.error(error));
-        return;
-      }
+      const orderModel = OrderPayloadService.createOrderPayload(orderConfig);
+      if (API && API.saveOrder) await API.saveOrder(orderModel);
 
-      const deliveryAddress = createDeliveryAddressModel(formData);
-      setDeliveryAddressModel(deliveryAddress);
-
-      const orderModel = createOrderModel(formData);
-      
-      // Store order success data before API call
-      storeOrderSuccessData(formData, orderModel);
-      
-      await API.saveOrder(orderModel);
-      
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       switch (selectedPaymentMode) {
-        case 'COD':
-        case 'PICK_AT_STORE':
-          toast.success("Order placed successfully!");
-          clearCart();
-          emptyCart();
-          // Redirect to order success page with order ID
-          router.push(`/pages/order-success?orderId=${orderModel.id}`);
+        case "COD":
+        case "PICK_AT_STORE":
+          await handleOrderSuccess(orderModel, formData);
           break;
-        case 'RAZORPAY':
-        case 'PHONEPE':
+        case "RAZORPAY":
+        case "PHONEPE":
           toast.info("Redirecting to payment gateway...");
-          // Store the order ID for payment gateway callback
-          sessionStorage.setItem("pending-payment-order-id", orderModel.id);
-          // After successful payment, you would also redirect to success page
-          // This would typically be handled in the payment gateway callback
-          // For now, redirect to success page (you can modify this based on your payment flow)
-          router.push(`/pages/order-success?orderId=${orderModel.id}`);
+          setTimeout(async () => await handleOrderSuccess(orderModel, formData), 2000);
           break;
         default:
-          toast.error("Invalid payment method selected");
+          toast.error("Invalid payment method");
       }
-
     } catch (error) {
-      console.error("Order placement error:", error);
+      console.error("Order placement failed:", error);
       toast.error("Failed to place order. Please try again.");
     } finally {
       setIsProcessing(false);
     }
-  }, [validateOrderData, createDeliveryAddressModel, setDeliveryAddressModel, createOrderModel, storeOrderSuccessData, selectedPaymentMode, clearCart, emptyCart, router]);
+  }, [selectedPaymentMode, cartItems, calculations, gstNumber, appName, defaultStoreId, handleOrderSuccess]);
 
-  if (cartIsEmpty()) {
+  const validationErrors = useMemo(() => {
+    if (!showValidationErrors) return [];
+    return [
+      ...(!selectedPaymentMode ? ["Payment method is required"] : []),
+      ...(cartItems.length === 0 ? ["Cart is empty"] : []),
+      ...(phoneNumber === "" ? ["Phone number is required to fetch coupons"] : [])
+    ];
+  }, [showValidationErrors, selectedPaymentMode, cartItems.length, phoneNumber]);
+
+  if (cartItems.length === 0) {
     return (
       <>
         <Breadcrumb title="checkout" parent="home" />
         <section className="checkout-container">
           <div className="container">
-            <div className="empty-cart">
+            <div className="empty-cart text-center py-5">
               <h3>Your cart is empty</h3>
-              <button
-                className="btn-primary"
-                onClick={() => router.push("/")}
-              >
-                Go to Home
+              <p>Add some items to your cart to proceed with checkout.</p>
+              <button className="btn btn-primary" onClick={() => router.push("/")}>
+                Continue Shopping
               </button>
             </div>
           </div>
@@ -570,18 +419,11 @@ const CheckoutPage: React.FC = () => {
       <Breadcrumb title="checkout" parent="home" />
       <section className="checkout-container">
         <div className="container">
-          {!storeDetails?.active && (
-            <div className="alert alert-warning">
-              <strong>Notice:</strong> Store is currently inactive. Orders may be delayed.
-            </div>
-          )}
-
           <Form onSubmit={handleSubmit(onSubmit)}>
             <Row>
               <Col lg="7">
                 <div className="checkout-form">
                   <h3 className="checkout-title">Billing Details</h3>
-                 
                   <Row>
                     <Col md="6">
                       <div className="form-group">
@@ -592,12 +434,9 @@ const CheckoutPage: React.FC = () => {
                           className={`form-control ${errors.firstName ? "error_border" : ""}`}
                           {...register("firstName", { required: "First name is required" })}
                         />
-                        {errors.firstName && (
-                          <span className="error-message">{errors.firstName.message}</span>
-                        )}
+                        {errors.firstName && <span className="error-message">{errors.firstName.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="6">
                       <div className="form-group">
                         <label className="field-label">Last Name *</label>
@@ -607,12 +446,9 @@ const CheckoutPage: React.FC = () => {
                           className={`form-control ${errors.lastName ? "error_border" : ""}`}
                           {...register("lastName", { required: "Last name is required" })}
                         />
-                        {errors.lastName && (
-                          <span className="error-message">{errors.lastName.message}</span>
-                        )}
+                        {errors.lastName && <span className="error-message">{errors.lastName.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="6">
                       <div className="form-group">
                         <label className="field-label">Phone *</label>
@@ -622,18 +458,12 @@ const CheckoutPage: React.FC = () => {
                           className={`form-control ${errors.phone ? "error_border" : ""}`}
                           {...register("phone", {
                             required: "Phone number is required",
-                            pattern: {
-                              value: /^[0-9]{10}$/,
-                              message: "Please enter a valid 10-digit phone number"
-                            }
+                            pattern: { value: /^[0-9]{10}$/, message: "Please enter a valid 10-digit phone number" }
                           })}
                         />
-                        {errors.phone && (
-                          <span className="error-message">{errors.phone.message}</span>
-                        )}
+                        {errors.phone && <span className="error-message">{errors.phone.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="6">
                       <div className="form-group">
                         <label className="field-label">Email *</label>
@@ -643,18 +473,12 @@ const CheckoutPage: React.FC = () => {
                           className={`form-control ${errors.email ? "error_border" : ""}`}
                           {...register("email", {
                             required: "Email is required",
-                            pattern: {
-                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                              message: "Please enter a valid email address"
-                            }
+                            pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Please enter a valid email address" }
                           })}
                         />
-                        {errors.email && (
-                          <span className="error-message">{errors.email.message}</span>
-                        )}
+                        {errors.email && <span className="error-message">{errors.email.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="12">
                       <div className="form-group">
                         <label className="field-label">Country *</label>
@@ -668,12 +492,9 @@ const CheckoutPage: React.FC = () => {
                             </option>
                           ))}
                         </select>
-                        {errors.country && (
-                          <span className="error-message">{errors.country.message}</span>
-                        )}
+                        {errors.country && <span className="error-message">{errors.country.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="6">
                       <div className="form-group">
                         <label className="field-label">State *</label>
@@ -683,12 +504,9 @@ const CheckoutPage: React.FC = () => {
                           className={`form-control ${errors.state ? "error_border" : ""}`}
                           {...register("state", { required: "State is required" })}
                         />
-                        {errors.state && (
-                          <span className="error-message">{errors.state.message}</span>
-                        )}
+                        {errors.state && <span className="error-message">{errors.state.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="6">
                       <div className="form-group">
                         <label className="field-label">City *</label>
@@ -698,12 +516,9 @@ const CheckoutPage: React.FC = () => {
                           className={`form-control ${errors.city ? "error_border" : ""}`}
                           {...register("city", { required: "City is required" })}
                         />
-                        {errors.city && (
-                          <span className="error-message">{errors.city.message}</span>
-                        )}
+                        {errors.city && <span className="error-message">{errors.city.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="12">
                       <div className="form-group">
                         <label className="field-label">Address *</label>
@@ -713,12 +528,9 @@ const CheckoutPage: React.FC = () => {
                           rows={3}
                           {...register("address", { required: "Address is required" })}
                         />
-                        {errors.address && (
-                          <span className="error-message">{errors.address.message}</span>
-                        )}
+                        {errors.address && <span className="error-message">{errors.address.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="6">
                       <div className="form-group">
                         <label className="field-label">PIN Code *</label>
@@ -728,18 +540,12 @@ const CheckoutPage: React.FC = () => {
                           className={`form-control ${errors.pincode ? "error_border" : ""}`}
                           {...register("pincode", {
                             required: "PIN code is required",
-                            pattern: {
-                              value: /^[0-9]{6}$/,
-                              message: "Please enter a valid 6-digit PIN code"
-                            }
+                            pattern: { value: /^[0-9]{6}$/, message: "Please enter a valid 6-digit PIN code" }
                           })}
                         />
-                        {errors.pincode && (
-                          <span className="error-message">{errors.pincode.message}</span>
-                        )}
+                        {errors.pincode && <span className="error-message">{errors.pincode.message}</span>}
                       </div>
                     </Col>
-                   
                     <Col md="6">
                       <div className="form-group">
                         <label className="field-label">GST Number (Optional)</label>
@@ -753,152 +559,153 @@ const CheckoutPage: React.FC = () => {
                       </div>
                     </Col>
                   </Row>
-                 
                   <h3 className="checkout-title">Payment Method</h3>
                   <div className="payment-methods">
                     {paymentModes.map((mode) => (
                       <div
                         key={mode.value}
-                        className={`payment-option ${selectedPaymentMode === mode.value ? 'selected' : ''}`}
-                        onClick={() => setSelectedPaymentMode(mode.value)}
+                        className={`payment-option ${selectedPaymentMode === mode.value ? "selected" : ""}`}
+                        onClick={() => handlePaymentModeChange(mode.value)}
+                        style={{ padding: "15px", border: "1px solid #ddd", marginBottom: "10px", cursor: "pointer", backgroundColor: selectedPaymentMode === mode.value ? "#f0f8ff" : "#fff" }}
                       >
                         <input
                           type="radio"
                           name="payment"
                           value={mode.value}
                           checked={selectedPaymentMode === mode.value}
-                          onChange={(e) => setSelectedPaymentMode(e.target.value)}
+                          onChange={(e) => handlePaymentModeChange(e.target.value)}
+                          style={{ marginRight: "10px" }}
                         />
-                        <label>{mode.label}</label>
+                        <label style={{ cursor: "pointer" }}>{mode.label}</label>
                       </div>
                     ))}
                   </div>
                 </div>
               </Col>
-             
               <Col lg="5">
                 <div className="order-summary">
                   <h3 className="checkout-title">Order Summary</h3>
-                 
-                  <div className="cart-items">
-                    {cartItems.map((item, index) => {
-                      const effectivePrice = item.discountPrice && item.discountPrice > 0 ? item.discountPrice : item.price;
-                      const itemTotal = effectivePrice * item.cartItemCount;
-                      
-                      return (
-                        <div key={`${item.id}_${item.cartPurchaseOptionStr}_${index}`} className="cart-item">
-                          <img
-                            src={Array.isArray(item.img) ? item.img[0] : item.img || "/static/images/placeholder.png"}
-                            alt={item.name}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/static/images/placeholder.png";
-                            }}
-                          />
-                          <div className="item-details">
-                            <div className="item-name">{item.name}</div>
-                            <div className="item-price">
-                              Qty: {item.cartItemCount} × {symbol}{effectivePrice.toFixed(2)}
+                  <div className="cart-items" style={{ marginBottom: "20px" }}>
+                    {cartItems.map((item, index) => (
+                      <div key={`${item.id}_${index}`} className="cart-item" style={{ display: "flex", padding: "15px", borderBottom: "1px solid #eee", alignItems: "center" }}>
+                        <img
+                          src={item.img[0] || "/static/images/placeholder.png"}
+                          alt={item.name}
+                          style={{ width: "60px", height: "60px", objectFit: "cover", marginRight: "15px" }}
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/static/images/placeholder.png"; }}
+                        />
+                        <div className="item-details" style={{ flex: 1 }}>
+                          <div className="item-name" style={{ fontWeight: "bold", marginBottom: "5px" }}>{item.name}</div>
+                          <div className="item-price" style={{ fontSize: "14px", color: "#666" }}>Qty: {item.cartItemCount} × {symbol}{item.price.toFixed(2)}</div>
+                          {item.discountPrice && item.discountPrice < item.price && (
+                            <div className="item-discount" style={{ fontSize: "12px", color: "#28a745" }}>
+                              Discount: {symbol}{((item.price - item.discountPrice) * item.cartItemCount).toFixed(2)}
                             </div>
-                            {item.discountPrice && item.discountPrice > 0 && item.discountPrice < item.price && (
-                              <div className="item-discount">
-                                <small className="text-muted text-decoration-line-through">
-                                  Original: {symbol}{item.price.toFixed(2)}
-                                </small>
-                                <br />
-                                <small className="text-success">
-                                  Discount: {symbol}{((item.price - item.discountPrice) * item.cartItemCount).toFixed(2)}
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                          <div className="item-total">
-                            <strong>{symbol}{itemTotal.toFixed(2)}</strong>
-                          </div>
+                          )}
                         </div>
-                      );
-                    })}
+                        <div className="item-total" style={{ fontWeight: "bold" }}>{symbol}{((item.discountPrice || item.price) * item.cartItemCount).toFixed(2)}</div>
+                      </div>
+                    ))}
                   </div>
-                 
-                  <div className="order-totals">
-                    <div className="total-row">
+                  <div className="order-totals" style={{ padding: "20px", backgroundColor: "#f8f9fa" }}>
+                    <div className="form-group mb-3" style={{ marginTop: "20px" }}>
+                      <label className="field-label" style={{ color: "#00baf2", fontWeight: 600 }}>Available Coupons</label>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "10px" }}>
+                        {availableCoupons.length === 0 && <span style={{ color: "#888" }}>{phoneNumber ? "No coupons available" : "Enter phone number to view coupons"}</span>}
+                        {availableCoupons.map((coupon) => (
+                          <button
+                            key={coupon.couponCode}
+                            type="button"
+                            className="btn"
+                            style={{
+                              background: appliedCoupon?.couponCode === coupon.couponCode ? "#00baf2" : "#e6f7ff",
+                              color: appliedCoupon?.couponCode === coupon.couponCode ? "#fff" : "#00baf2",
+                              border: "1px solid #00baf2",
+                              fontWeight: 500,
+                              padding: "8px 16px",
+                              borderRadius: "6px",
+                              cursor: "pointer"
+                            }}
+                            onClick={() => handleSelectCoupon(coupon)}
+                          >
+                            {coupon.couponCode} - {coupon.isCouponPercentage ? `${coupon.couponAmount}% off` : `₹${coupon.couponAmount} off`} {coupon.maxCouponAmount > 0 ? `(Max ₹${coupon.maxCouponAmount})` : ""}
+                          </button>
+                        ))}
+                      </div>
+                      {couponError && <div className="text-danger mt-1">{couponError}</div>}
+                      {appliedCoupon && (
+                        <div className="mt-1" style={{ color: "#00baf2", fontWeight: 500 }}>
+                          Coupon <strong>{appliedCoupon.couponCode}</strong> applied: {appliedCoupon.isCouponPercentage ? `${appliedCoupon.couponAmount}% off` : `₹${appliedCoupon.couponAmount} off`} {appliedCoupon.maxCouponAmount > 0 ? `(Max ₹${appliedCoupon.maxCouponAmount})` : ""}
+                        </div>
+                      )}
+                    </div>
+                    <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                       <span>Cart Total</span>
-                      <span>{symbol}{cartCalculations.cartAmount.toFixed(2)}</span>
+                      <span>{symbol}{calculations.cartAmount.toFixed(2)}</span>
                     </div>
-                   
-                    {cartCalculations.discountAmount > 0 && (
-                      <div className="total-row discount">
+                    {calculations.discountAmount > 0 && (
+                      <div className="total-row discount" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#28a745" }}>
                         <span>Item Discount</span>
-                        <span>-{symbol}{cartCalculations.discountAmount.toFixed(2)}</span>
+                        <span>-{symbol}{calculations.discountAmount.toFixed(2)}</span>
                       </div>
                     )}
-                   
-                    {cartCalculations.taxAmount > 0 && (
-                      <div className="total-row">
+                    {calculations.couponDiscount > 0 && (
+                      <div className="total-row coupon" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#00baf2" }}>
+                        <span>Coupon Discount</span>
+                        <span>-{symbol}{calculations.couponDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {calculations.taxAmount > 0 && (
+                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                         <span>Tax</span>
-                        <span>{symbol}{cartCalculations.taxAmount.toFixed(2)}</span>
+                        <span>{symbol}{calculations.taxAmount.toFixed(2)}</span>
                       </div>
                     )}
-                   
-                    {cartCalculations.packageCost > 0 && (
-                      <div className="total-row">
+                    {calculations.packageCost > 0 && (
+                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                         <span>Package Cost</span>
-                        <span>{symbol}{cartCalculations.packageCost.toFixed(2)}</span>
+                        <span>{symbol}{calculations.packageCost.toFixed(2)}</span>
                       </div>
                     )}
-                   
-                    {cartCalculations.deliveryCharges > 0 && (
-                      <div className="total-row">
+                    {calculations.deliveryCharges > 0 && (
+                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                         <span>Delivery Charges</span>
-                        <span>{symbol}{cartCalculations.deliveryCharges.toFixed(2)}</span>
+                        <span>{symbol}{calculations.deliveryCharges.toFixed(2)}</span>
                       </div>
                     )}
-                   
-                    {cartCalculations.totalSavings > 0 && (
-                      <div className="total-row savings">
+                    {calculations.totalSavings > 0 && (
+                      <div className="total-row savings" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#28a745" }}>
                         <span>Total Savings</span>
-                        <span>{symbol}{cartCalculations.totalSavings.toFixed(2)}</span>
+                        <span>{symbol}{calculations.totalSavings.toFixed(2)}</span>
                       </div>
                     )}
-                   
-                    <div className="total-row final">
+                    <hr />
+                    <div className="total-row final" style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "18px" }}>
                       <span>Final Total</span>
-                      <span>{symbol}{cartCalculations.finalTotal.toFixed(2)}</span>
+                      <span>{symbol}{calculations.finalTotal.toFixed(2)}</span>
                     </div>
                   </div>
-
-                  {showValidationErrors && (() => {
-                    const validationErrors = validateOrderData();
-                    return validationErrors.length > 0 && (
-                      <div className="alert alert-danger">
-                        <h6>Please fix the following errors:</h6>
-                        <ul className="mb-0">
-                          {validationErrors.map((error, index) => (
-                            <li key={index}>{error}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })()}
-                 
+                  {validationErrors.length > 0 && (
+                    <div className="alert alert-danger" style={{ marginTop: "20px" }}>
+                      <h6>Please fix the following errors:</h6>
+                      <ul className="mb-0">
+                        {validationErrors.map((error, index) => <li key={index}>{error}</li>)}
+                      </ul>
+                    </div>
+                  )}
                   <button
                     type="submit"
-                    className="btn-primary"
+                    className="btn btn-primary btn-block"
                     disabled={isProcessing || !selectedPaymentMode}
+                    style={{ width: "100%", marginTop: "20px", padding: "15px", fontSize: "16px", fontWeight: "bold" }}
                   >
-                    {getPaymentMethodDisplayText(selectedPaymentMode, isProcessing)}
+                    {getPaymentButtonText()}
                   </button>
-
-                  <div className="mt-3">
+                  <div style={{ marginTop: "15px" }}>
                     <small className="text-muted">
-                      {selectedPaymentMode === 'PICK_AT_STORE' && 
-                        "You can collect your order from our store location."
-                      }
-                      {selectedPaymentMode === 'COD' && 
-                        "Pay cash when your order is delivered to your address."
-                      }
-                      {(selectedPaymentMode === 'RAZORPAY' || selectedPaymentMode === 'PHONEPE') && 
-                        "You will be redirected to the payment gateway to complete your payment."
-                      }
+                      {selectedPaymentMode === "PICK_AT_STORE" && "Order will be ready for pickup at store."}
+                      {selectedPaymentMode === "COD" && "Payment will be collected upon delivery."}
+                      {(selectedPaymentMode === "RAZORPAY" || selectedPaymentMode === "PHONEPE") && "You will be redirected to payment gateway."}
                     </small>
                   </div>
                 </div>
