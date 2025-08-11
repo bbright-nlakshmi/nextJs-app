@@ -1,10 +1,10 @@
 // Fixed Order Models - order.ts
 import { DeliveryAddressModel } from '../delivery_address_model/delivery_address';
- 
+
 export class DeliveryAssign {
   name: string;
   phone: string;
- 
+
   constructor(params: { name: string; phone: string }) {
     this.name = params.name;
     this.phone = params.phone;
@@ -24,7 +24,6 @@ export class DeliveryAssign {
     });
   }
 }
- 
 export class OrderItemsModel {
   id: string;
   name: string;
@@ -54,9 +53,9 @@ export class OrderItemsModel {
     cancel: string | null;
     transit: string | null;
   };
- 
+  
   selectedSubscription: {};
- 
+
   constructor(params: {
     id: string;
     name: string;
@@ -99,7 +98,6 @@ export class OrderItemsModel {
     this.active = params.active ?? true;
     this.taxType = params.taxType ?? "EXCLUSIVE";
     this.taxAmount = params.taxAmount ?? 0;
- 
     // Initialize status
     this.status = {
       process: null,
@@ -109,13 +107,13 @@ export class OrderItemsModel {
       cancel: null,
       transit: null,
     };
- 
+
     // Initialize subscription
     this.selectedSubscription = {
-     
+      
     };
   }
- 
+
   static fromMap(data: any): OrderItemsModel {
     return new OrderItemsModel({
       id: data.id,
@@ -140,7 +138,6 @@ export class OrderItemsModel {
       taxAmount: data.tax_amount ?? 0,
     });
   }
- 
   toJsonObj(): any {
     return {
       id: this.id,
@@ -168,7 +165,6 @@ export class OrderItemsModel {
     };
   }
 }
- 
 export class OrderModel {
   id: string;
   deliveryAddress: DeliveryAddressModel;
@@ -272,7 +268,6 @@ export class OrderModel {
         orderItems.push(OrderItemsModel.fromMap(item));
       });
     }
- 
     return new OrderModel({
       id: data.id,
       deliveryAddress: DeliveryAddressModel.fromMap(data.delivery_address),
@@ -366,4 +361,3 @@ export class OrderModel {
     return this.assignedDelivery.name;
   }
 }
- 

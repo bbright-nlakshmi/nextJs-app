@@ -23,16 +23,24 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   bundle,
   swatch,
 }) => {
+
   const [modal, setModal] = useState(false);
   const [qty, setQty] = useState(1);
   const [stock, setStock] = useState("InStock");
   const [activesize, setSize] = useState("");
   const { addToWish } = React.useContext(WishlistContext);
-
   const { addToCart } = useContext(CartContext);
-
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
+
+  // Ensure product details persist after refresh
+  React.useEffect(() => {
+    if (item) {
+      try {
+        sessionStorage.setItem("productDetail", JSON.stringify(item));
+      } catch {}
+    }
+  }, [item]);
 
   //const price = searchController.getDetails(item.productId,'getPrice');
   //const discountedPrice = searchController.getDetails(item.productId,'getPriceWithDiscount');
@@ -72,17 +80,25 @@ const ProductDetail: React.FC<ProductRightProps> = ({
     }
   };
 
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-
     // Check stock before adding
     if (item.stock && qty > item.stock) {
       setStock("Out of Stock !");
       return;
     }
-
-    // Add to cart with the selected quantity
     addToCart(item, qty);
+  };
+
+  // Buy Now handler: store product in sessionStorage and set checkout mode
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      sessionStorage.setItem("buyNowProduct", JSON.stringify({ ...item, qty }));
+      sessionStorage.setItem("checkoutMode", "buyNow");
+    } catch {}
+    window.location.href = "/pages/account/checkout";
   };
 
   // const { id } = router.query;
@@ -247,7 +263,11 @@ const ProductDetail: React.FC<ProductRightProps> = ({
           >
             add to cart
           </a>
-          <a href="/pages/account/checkout" className="btn btn-normal">
+          <a
+            href="#"
+            className="btn btn-normal"
+            onClick={handleBuyNow}
+          >
             buy now
           </a>
         </div>
