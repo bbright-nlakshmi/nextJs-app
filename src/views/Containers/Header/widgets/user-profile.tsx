@@ -21,10 +21,10 @@ const UserProfile: NextPage = () => {
   const [otpArray, setOtpArray] = useState<string[]>(Array(6).fill(""));
   const [otpSent, setOtpSent] = useState(false);
   const [user, setUser] = useState<string | null>(
-    typeof window !== "undefined" ? localStorage.getItem("Login") : null
+     null
   );
   const [userName, setUserName] = useState<string | null>(
-    typeof window !== "undefined" ? localStorage.getItem("UserName") : null
+    null
   );
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
@@ -72,12 +72,12 @@ const UserProfile: NextPage = () => {
 
   useEffect(() => {
     // Load user data from localStorage when component mounts
-    if (typeof window !== "undefined") {
+    // if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("Login");
       const storedUserName = localStorage.getItem("UserName");
       setUser(storedUser);
       setUserName(storedUserName);
-    }
+    // }
   }, []);
 
   const toggleAccount = () => setOpenAccount(!openAccount);

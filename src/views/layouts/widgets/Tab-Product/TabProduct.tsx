@@ -69,6 +69,26 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
     addToCart(cartItem, qty);
   };
 
+  // Function to handle adding item to wishlist with price included
+  const handleAddToWish = (item: any) => {
+    const wishItem = {
+      ...item,
+      price: getPrice(item.productId),
+      id: item.productId,
+    };
+    addToWish(wishItem);
+  };
+
+  // Function to handle adding item to compare with price included
+  const handleAddToCompare = (item: any) => {
+    const compareItem = {
+      ...item,
+      price: getPrice(item.productId),
+      id: item.productId,
+    };
+    addToCompare(compareItem);
+  };
+
   if (categories?.length)
     return (
       <>
@@ -146,8 +166,8 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
                                     data={item}
                                     newLabel={item.name}
                                     addCart={handleAddToCart}
-                                    addCompare={() => addToCompare(item)}
-                                    addWish={() => addToWish(item)}
+                                    addCompare={() => handleAddToCompare(item)}
+                                    addWish={() => handleAddToWish(item)}
                                   />
                                 </SwiperSlide>
                               )
