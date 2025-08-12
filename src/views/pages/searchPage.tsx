@@ -7,7 +7,7 @@ import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import { CartContext } from "@/helpers/cart/cart.context";
 import { CompareContext } from "@/helpers/compare/compare.context";
-
+import PostLoader from "@/common/postLoader";
 //const localSearch = new SearchPageControl();
 const ITEMS_PER_PAGE = 50;
 
@@ -81,15 +81,43 @@ const SearchPage: NextPage = () => {
   const [allItems, setAllItems] = useState<any[]>([]);
   const [filteredItems, setFilteredItems] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [isSorting, setIsSorting] = useState(false);
 
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
   const cols = "col-xl-2 col-md-4 col-6 col-grid-box";
   const [grid, setGrid] = useState(cols);
-  const [pageLimit, setPageLimit] = useState(50);
   const [layout, setLayout] = useState("");
   const [currentRange, setCurrentRange] = useState<[number, number]>([0, 100]);
+  const [sortBy, setSortBy] = useState("ASC_ORDER");
+
+  const defaultRangeSize = 100;
+  const maxRanges = useMemo(() => {
+    return Math.ceil(filteredItems.length / defaultRangeSize);
+  }, [filteredItems.length]);
+
+  useEffect(() => {
+    setLoading(true);
+    searchController.clearText();
+    searchController.searchInput = "";
+    searchController.showEmptySearchResult = false;
+    searchController.refreshGrid("");
+
+    const updateItems = () => {
+      const combined = [...searchController.products, ...searchController.kits];
+      setAllItems(combined);
+      setFilteredItems(combined);
+      setCurrentPage(1);
+      setLoading(false);
+    };
+
+    searchController.on("update", updateItems);
+    return () => {
+      searchController.off("update", updateItems);
+    };
+  }, []);
 
   const handleAddToCart = (item: any, qty = 1) => {
     const cartItem = {
@@ -100,28 +128,6 @@ const SearchPage: NextPage = () => {
     addToCart(cartItem, qty);
   };
 
-  // Initial load (show all items)
-  useEffect(() => {
-    searchController.clearText();
-    searchController.searchInput = "";
-    searchController.showEmptySearchResult = false;
-
-    // Load all data initially
-    searchController.refreshGrid(""); // empty query to load everything
-
-    const updateItems = () => {
-      const combined = [...searchController.products, ...searchController.kits];
-      setAllItems(combined);
-      setFilteredItems(combined);
-      setCurrentPage(1);
-    };
-
-    searchController.on("update", updateItems);
-    return () => {
-      searchController.off("update", updateItems);
-    };
-  }, []);
-
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
@@ -129,9 +135,7 @@ const SearchPage: NextPage = () => {
     searchController.refreshGrid(value);
   };
 
-  // Update filteredItems when query changes and new data comes
   useEffect(() => {
-    //console.log(searchController.products);
     const combined = [...searchController.products, ...searchController.kits];
     const filtered = query.trim()
       ? combined.filter((item) =>
@@ -140,11 +144,6 @@ const SearchPage: NextPage = () => {
       : combined;
     setFilteredItems(filtered);
   }, [query, searchController.products, searchController.kits]);
-  const defaultRangeSize = 100;
-  const maxRanges = 5;
-  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
-
-  const [sortBy, setSortBy] = useState("ASC_ORDER");
 
   const rangeOptions = useMemo(() => {
     const ranges: Array<{ label: string; value: [number, number] }> = [];
@@ -164,7 +163,7 @@ const SearchPage: NextPage = () => {
 
     if (rangeCount > 1) {
       ranges.push({
-        label: "Show All (0-" + filteredItems.length + ")",
+        label: `Show All (0-${filteredItems.length})`,
         value: [0, filteredItems.length],
       });
     }
@@ -329,30 +328,19 @@ const SearchPage: NextPage = () => {
               <div className="product-page-filter">
                 <select
                   name="filter"
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => {
+                    setIsSorting(true);
+                    const selectedSort = e.target.value;
+                    setSortBy(selectedSort);
+                    setTimeout(() => setIsSorting(false), 500);
+                  }}
                 >
                   <option value="">Sorting items</option>
-                  <option
-                    value="HIGH_TO_LOW"
-                    selected={sortBy === "HIGH_TO_LOW"}
-                  >
-                    High To Low
-                  </option>
-                  <option
-                    value="LOW_TO_HIGH"
-                    selected={sortBy === "LOW_TO_HIGH"}
-                  >
-                    Low To High
-                  </option>
-                  <option value="NEWEST" selected={sortBy === "NEWEST"}>
-                    Newest
-                  </option>
-                  <option value="ASC_ORDER" selected={sortBy === "ASC_ORDER"}>
-                    Asc Order
-                  </option>
-                  <option value="DESC_ORDER" selected={sortBy === "DESC_ORDER"}>
-                    Desc Order
-                  </option>
+                  <option value="HIGH_TO_LOW">High To Low</option>
+                  <option value="LOW_TO_HIGH">Low To High</option>
+                  <option value="NEWEST">Newest</option>
+                  <option value="ASC_ORDER">Asc Order</option>
+                  <option value="DESC_ORDER">Desc Order</option>
                 </select>
               </div>
             </div>
@@ -362,35 +350,48 @@ const SearchPage: NextPage = () => {
 
       <section className="section-big-py-space ratio_asos">
         <div className="custom-container">
-          <div className="row search-product related-pro1">
-            <div
-              className={`product product-slide-6 product-m no-arrow ${layout}`}
-            >
-              <Row>
-                {paginatedItems.length > 0 ? (
-                  paginatedItems.map((item: Product) => (
-                    <div className={grid}>
-                      <ProductBox
-                        layout="layout-one"
-                        price={item.getPrice()}
-                        hoverEffect={"icon-inline"}
-                        data={item}
-                        addCart={handleAddToCart}
-                        addCompare={() => addToCompare(item)}
-                        addWish={() => addToWish(item)}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <Col className="text-center w-100">
-                    <p>No matching products or kits found.</p>
-                  </Col>
-                )}
-              </Row>
-            </div>
-          </div>
+          {loading ? (
+            <Row>
+              <PostLoader count={20} />
+            </Row>
+          ) : (
+            <>
+              {isSorting && (
+                <div className="d-flex justify-content-center align-items-center my-4">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="sr-only">Sorting...</span>
+                  </div>
+                </div>
+              )}
+              <div className="row search-product related-pro1">
+                <div
+                  className={`product product-slide-6 product-m no-arrow ${layout}`}
+                >
+                  <Row>
+                    {paginatedItems.length > 0 ? (
+                      paginatedItems.map((item: Product) => (
+                        <div className={grid} key={item.id}>
+                          <ProductBox
+                            layout="layout-one"
+                            price={item.getPrice()}
+                            hoverEffect={"icon-inline"}
+                            data={item}
+                            addCart={handleAddToCart}
+                            addCompare={() => addToCompare(item)}
+                            addWish={() => addToWish(item)}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <Col className="text-center w-100">
+                        <p>No matching products or kits found.</p>
+                      </Col>
+                    )}
+                  </Row>
+                </div>
+              </div>
 
-          {/* {filteredItems.length > ITEMS_PER_PAGE && (
+              {/* {filteredItems.length > ITEMS_PER_PAGE && (
             <div className="pagination-bar text-center mt-4">
               <ul className="pagination justify-content-center">
                 <li
@@ -434,7 +435,9 @@ const SearchPage: NextPage = () => {
                 </li>
               </ul>
             </div>
-          )} */}
+          )} */}              
+            </>
+          )}
         </div>
       </section>
     </>

@@ -99,7 +99,7 @@ const NewProduct: React.FC = () => {
                 >
                   <a>
                     <Media
-                      className="img-fluid product-thumbnail.img p-2 h-100"
+                      className="img-fluid product-thumbnail-img p-2"
                       src={product.img[0]}
                       alt={product.name}
                     />

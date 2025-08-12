@@ -1200,7 +1200,38 @@ private async ensureBusinessId(): Promise<string> {
       throw error;
     }
   }
-  
+//   // PhonePe
+// async getPhonePeDetails(): Promise<PhonePeModel[]> {
+//   try {
+//     const response = await this.get<{ data: any[] }>(
+//       `${this.baseURL}/get-phonepe`,
+//       {
+//         tenant_id: this.tenantId,
+//         business_id: await this.ensureBusinessId(),
+//       }
+//     );
+
+//     if (Array.isArray(response.data)) {
+//       return response.data
+//         .map((data) => {
+//           try {
+//             return PhonePeModel.fromMap(data);
+//           } catch (e) {
+//             console.error(
+//               `Error parsing PhonePe details: ${JSON.stringify(data)}`
+//             );
+//             return null;
+//           }
+//         })
+//         .filter((model): model is PhonePeModel => model !== null);
+//     }
+//     return [];
+//   } catch (error) {
+//     console.error("Error fetching PhonePe details:", error);
+//     throw error;
+//   }
+// }
+
   // Users
   async getUserData(): Promise<UserModel[]> {
     try {

@@ -225,6 +225,7 @@ const WishListPage: NextPage = () => {
                             >
                               <i className="ti-close"></i>
                             </a>
+                            /
                             <a
                               href="#"
                               className="cart"
@@ -233,7 +234,8 @@ const WishListPage: NextPage = () => {
                                 handleAddCart(item);
                               }}
                             >
-                              <i className="ti-shopping-cart"></i>
+                              
+                              <i className="ti-shopping-cart wishlist-buttons ms-4">--Add to Cart</i>
                             </a>
                           </td>
                         </tr>
@@ -246,16 +248,10 @@ const WishListPage: NextPage = () => {
                 <Col xs="12">
                   <Link
                     className="btn btn-normal"
-                    href="/collections/leftsidebar"
+                    href="/#"
                   >
                     continue shopping
-                  </Link>
-                  <Link
-                    className="btn btn-normal"
-                    href="/pages/account/checkout"
-                  >
-                    check out
-                  </Link>
+                  </Link>                  
                 </Col>
               </Row>
             </>

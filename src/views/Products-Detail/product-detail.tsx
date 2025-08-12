@@ -109,15 +109,21 @@ const ProductDetail: React.FC<ProductRightProps> = ({
     <div className="product-right contents">
       <div className="product-status">
         <span className="product-catagory">{item.categoryName}</span>
-        <div className="d-flex align-items-center gap-2">
-          <ul className="rating-star m-2 p-0">
-            <i className="fa fa-star text-warning"></i>
-            <i className="fa fa-star text-warning"></i>
-            <i className="fa fa-star text-warning"></i>
-            <i className="fa fa-star text-warning"></i>
-            <i className="fa fa-star-o text-warning"></i>
-          </ul>
-        </div>
+        <div className="rating-star">
+          {[...Array(5)].map((_, i) => (
+            <i
+              key={i}
+              className={`fa fa-star ${
+                i <
+                (item.rating
+                  ? item.rating.calculateRating?.() ?? 0
+                  : 0)
+                  ? "text-warning"
+                  : "fa-star-o text-warning"
+              }`}
+            ></i>
+           ))}
+        </div>                              
       </div>
       <h2>{item.name}</h2>
       {item.discount ? (

@@ -17,7 +17,7 @@ const CollectionBanner: NextPage<Props> = ({ img, name , details }) => {
     </a>
     <div className="top-banner-content small-section">
       <h4>{name}</h4>
-      <p>{details ?? "Lorem Ipsum is simply dummy text of the printing and typesetting industry."}</p>
+      <p>{details}</p>
     </div>
   </div>
 )};

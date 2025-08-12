@@ -29308,12 +29308,12 @@ select {
   margin-right: 1rem;
 }
 .product-thumbnail img {
-  border: 2px solid silver;
-  border-radius: 0.5rem;
-  width: 100px;
-  height: 100px;
-  padding: 5px;
-  object-fit: cover;
+  border: 2px solid silver !important;
+  border-radius: 0.5rem !important;
+  width: 100px !important;
+  height: 100px !important;
+  padding: 5px !important;
+  object-fit: cover !important;
 }
 
 @media only screen and (max-width: 480px) {
@@ -33281,4 +33281,84 @@ li a:hover .category-name {
     padding: 6px 12px;
     font-size: 11px;
   }
+}
+.rzp-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+// Price Range Spinner Styles
+.price-range-spinner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 8px;
+}
+
+.price-range-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.price-range-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  padding: 1px;
+  text-align: center;
+  background: #f8f9fa;
+  border: 2px solid transparent;
+  user-select: none;
+}
+
+.price-range-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.price-range-card.active {
+  background: var(--theme-color1);
+  color: white;
+  border-color: #0056b3;
+}
+
+.price-range-card.active .price-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.price-main {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.price-subtitle {
+  font-size: 12px;
+  margin: 0;
+  color: #6c757d;
+}
+
+.price-range-card.processing {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: scale(0.98);
+}
+
+.price-range-card.processing:hover {
+  transform: scale(0.98);
+  box-shadow: none;
+}
+.theme-color{
+  color: var(--theme-color1);
 }
