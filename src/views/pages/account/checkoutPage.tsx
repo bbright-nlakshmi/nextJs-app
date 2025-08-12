@@ -10,6 +10,8 @@ import { toast } from "react-toastify";
 import { OrderPayloadService } from "../../../app/providers/usePlaceOrder/usePlaceOrder";
 import { API } from "@/app/globalProvider";
 import { appConfig } from "../../../app/config/";
+import RazorpayButton from "../../../app/(MainBody)/pages/account/checkout/components/RazorpayButton";
+import { createOrderPayload, storeOrderSuccessData } from "../../../utils/orderPayloadUtils";
 
 interface FormType {
   firstName: string;
@@ -322,8 +324,17 @@ const CheckoutPage: React.FC = () => {
   const handleGstChange = useCallback((value: string) => setGstNumber(value), []);
 
   const getPaymentButtonText = useCallback(() => {
-    return isProcessing ? "Processing..." : "Place Order";
-  }, [isProcessing]);
+    if (isProcessing) return "Processing...";
+    
+    const paymentTexts: { [key: string]: string } = {
+      "COD": "Place Order (COD)",
+      "PICK_AT_STORE": "Place Order (Pick at Store)",
+      "PHONEPE": "Pay with PhonePe",
+      "RAZORPAY": "Pay with Razorpay"
+    };
+
+    return paymentTexts[selectedPaymentMode] || "Place Order";
+  }, [isProcessing, selectedPaymentMode]);
 
   const handleOrderSuccess = useCallback(async (orderModel: any, formData: FormType) => {
     toast.success("Order placed successfully!");
@@ -337,6 +348,99 @@ const CheckoutPage: React.FC = () => {
     emptyCart();
     setTimeout(() => router.push("/pages/order-success"), 1500);
   }, [router, emptyCart]);
+
+  // Function to prepare order data for Razorpay
+  const prepareOrderData = useCallback((formData: FormType) => {
+    try {
+      const orderConfig = {
+        formData,
+        cartItems,
+        selectedPaymentMode,
+        cartCalculations: calculations,
+        storeDetails: { id: defaultStoreId, name: appName, active: true },
+        gstNumber,
+        appName,
+        defaultStoreId
+      };
+
+      const orderModel = OrderPayloadService.createOrderPayload(orderConfig);
+      
+      // Create order data for Razorpay
+      const orderData = {
+        orderId: orderModel.id,
+        amount: calculations.finalTotal,
+        billingDetails: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          email: formData.email,
+          country: formData.country,
+          state: formData.state,
+          city: formData.city,
+          address: formData.address,
+          pincode: formData.pincode
+        }
+      };
+
+      // Create delivery address
+      const deliveryAddress = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
+        address: formData.address,
+        pincode: formData.pincode
+      };
+
+      return { orderData, orderModel, deliveryAddress };
+    } catch (error) {
+      console.error("Error preparing order data:", error);
+      toast.error("Failed to prepare order data");
+      return null;
+    }
+  }, [cartItems, selectedPaymentMode, calculations, gstNumber, appName, defaultStoreId]);
+
+  // Handle Razorpay success
+  const handleRazorpaySuccess = useCallback(async () => {
+    try {
+      // Get order data from session storage
+      const orderSuccessData = sessionStorage.getItem("order-success-data");
+      if (orderSuccessData) {
+        const orderData = JSON.parse(orderSuccessData);
+        
+        // Store complete order success data
+        storeOrderSuccessData(
+          {
+            firstName: orderData.billingDetails.firstName,
+            lastName: orderData.billingDetails.lastName,
+            phone: orderData.billingDetails.phone,
+            email: orderData.billingDetails.email,
+            country: orderData.billingDetails.country,
+            state: orderData.billingDetails.state,
+            city: orderData.billingDetails.city,
+            address: orderData.billingDetails.address,
+            pincode: orderData.billingDetails.pincode
+          },
+          orderData.orderModel || {},
+          cartItems,
+          calculations,
+          selectedPaymentMode,
+          { id: defaultStoreId, name: appName },
+          gstNumber
+        );
+        
+        // Clear cart and redirect
+        setCartItems([]);
+        emptyCart();
+        setTimeout(() => router.push("/pages/order-success"), 1500);
+      }
+    } catch (error) {
+      console.error("Error handling Razorpay success:", error);
+      toast.error("Error processing payment success");
+    }
+  }, [cartItems, calculations, selectedPaymentMode, defaultStoreId, appName, gstNumber, emptyCart, router]);
 
   const onSubmit = useCallback(async (formData: FormType) => {
     setIsProcessing(true);
@@ -371,6 +475,11 @@ const CheckoutPage: React.FC = () => {
           await handleOrderSuccess(orderModel, formData);
           break;
         case "RAZORPAY":
+          // For Razorpay, the payment is handled by the RazorpayButton component
+          // The order is already saved, so we just need to show success message
+          toast.success("Order created successfully! Please complete the payment.");
+          setIsProcessing(false);
+          return;
         case "PHONEPE":
           toast.info("Redirecting to payment gateway...");
           setTimeout(async () => await handleOrderSuccess(orderModel, formData), 2000);
@@ -394,6 +503,31 @@ const CheckoutPage: React.FC = () => {
       ...(phoneNumber === "" ? ["Phone number is required to fetch coupons"] : [])
     ];
   }, [showValidationErrors, selectedPaymentMode, cartItems.length, phoneNumber]);
+
+  // Get payment button based on selected payment mode
+  const getPaymentButton = useCallback(() => {
+    if (selectedPaymentMode === "RAZORPAY") {
+      return (
+        <RazorpayButton
+          formData={watch()}
+          prepareOrderData={prepareOrderData}
+          finalTotal={calculations.finalTotal}
+          onSuccess={handleRazorpaySuccess}
+        />
+      );
+    }
+
+    return (
+      <button
+        type="submit"
+        className="btn btn-primary btn-block"
+        disabled={isProcessing || !selectedPaymentMode}
+        style={{ width: "100%", marginTop: "20px", padding: "15px", fontSize: "16px", fontWeight: "bold" }}
+      >
+        {getPaymentButtonText()}
+      </button>
+    );
+  }, [selectedPaymentMode, watch, prepareOrderData, calculations.finalTotal, handleRazorpaySuccess, isProcessing, getPaymentButtonText]);
 
   if (cartItems.length === 0) {
     return (
@@ -693,19 +827,16 @@ const CheckoutPage: React.FC = () => {
                       </ul>
                     </div>
                   )}
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-block"
-                    disabled={isProcessing || !selectedPaymentMode}
-                    style={{ width: "100%", marginTop: "20px", padding: "15px", fontSize: "16px", fontWeight: "bold" }}
-                  >
-                    {getPaymentButtonText()}
-                  </button>
+                  
+                  {/* Render payment button based on selected payment mode */}
+                  {getPaymentButton()}
+                  
                   <div style={{ marginTop: "15px" }}>
                     <small className="text-muted">
                       {selectedPaymentMode === "PICK_AT_STORE" && "Order will be ready for pickup at store."}
                       {selectedPaymentMode === "COD" && "Payment will be collected upon delivery."}
-                      {(selectedPaymentMode === "RAZORPAY" || selectedPaymentMode === "PHONEPE") && "You will be redirected to payment gateway."}
+                      {selectedPaymentMode === "RAZORPAY" && "Secure payment powered by Razorpay."}
+                      {selectedPaymentMode === "PHONEPE" && "You will be redirected to payment gateway."}
                     </small>
                   </div>
                 </div>

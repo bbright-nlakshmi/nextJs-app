@@ -1,7 +1,7 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
-import { API } from "@/app/services/api.service";
+import { API } from "@/app/globalProvider";
 import { RazorpayModel } from "@/app/globalProvider";
 
 interface RazorpayButtonProps {
@@ -16,14 +16,13 @@ interface RazorpayButtonProps {
 }
 
 const RazorpayButton: React.FC<RazorpayButtonProps> = ({
-  // orderData,
-  // orderModel,
-  // deliveryAddress,
   formData,
   prepareOrderData,
   finalTotal,
   onSuccess,
 }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // Loads Razorpay SDK dynamically
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -55,77 +54,120 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
 
   // Main function to trigger the Razorpay payment process
   const triggerPayment = async () => {
-    const preparedData = prepareOrderData(formData);
-    if (!preparedData) return;
-
-    const { orderData, orderModel, deliveryAddress } = preparedData;
-
-    const isScriptLoaded = await loadRazorpayScript();
-    if (!isScriptLoaded) {
-      toast.error("Razorpay SDK failed to load");
+    if (!formData || !prepareOrderData) {
+      toast.error("Form data is missing");
       return;
     }
 
-    const key = await fetchRazorpayKey();
-    if (!key) return;
-    const amountInPaise = Math.round(finalTotal * 100);
+    setIsProcessing(true);
 
-    const options = {
-      key: key,
-      amount: amountInPaise, // Razorpay accepts amount in paise
-      currency: "INR",
-      name: "RupeEcom", 
-      description:`Order #${orderData.orderId}`,
-      image: "",      
-      // If you wish to incorporate a backend-generated order id, you can include it here
-      order_id:'',
-      handler: async function (response: any) {
-        // Attach Razorpay response to your orderData
+    try {
+      const preparedData = prepareOrderData(formData);
+      if (!preparedData) {
+        setIsProcessing(false);
+        return;
+      }
 
-        try {
-          orderModel.txnDetails = response;
-          await API.saveOrder(orderModel);
+      const { orderData, orderModel, deliveryAddress } = preparedData;
 
-          sessionStorage.setItem(
-            "order-success-data",
-            JSON.stringify({
-              orderId: orderData.orderId,
-              amount: orderData.amount,
-              billingDetails: orderData.billingDetails,
-              deliveryAddress: deliveryAddress,
-              paymentStatus: "success"
-            })
-          );
-          toast.success("Order placed successfully!");
-          onSuccess(); // e.g. clear cart and redirect
-        } catch (error) {
-          console.error("Error saving order:", error);
-          toast.error("Order placement failed");
-        }
-      },
-      prefill: {
-        name:`${orderData.billingDetails.firstName} ${orderData.billingDetails.lastName}`,
-        email: orderData.billingDetails.email,
-        contact: orderData.billingDetails.phone
-      },
-      theme: {
-        color: "#3399cc",
-      },
-      modal: {
-        ondismiss: () => {
-          toast.info("Payment cancelled");
+      // Load Razorpay script
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        toast.error("Razorpay SDK failed to load");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Fetch Razorpay key
+      const key = await fetchRazorpayKey();
+      if (!key) {
+        setIsProcessing(false);
+        return;
+      }
+
+      const amountInPaise = Math.round(finalTotal * 100);
+
+      const options = {
+        key: key,
+        amount: amountInPaise, // Razorpay accepts amount in paise
+        currency: "INR",
+        name: "RupeEcom", 
+        description: `Order #${orderData.orderId}`,
+        image: "",      
+        order_id: '',
+        handler: async function (response: any) {
+          try {
+            // Attach Razorpay response to order model
+            orderModel.txnDetails = response;
+            
+            // Save the order with transaction details
+            await API.saveOrder(orderModel);
+
+            // Store order success data in session storage
+            sessionStorage.setItem(
+              "order-success-data",
+              JSON.stringify({
+                orderId: orderData.orderId,
+                amount: orderData.amount,
+                billingDetails: orderData.billingDetails,
+                deliveryAddress: deliveryAddress,
+                paymentStatus: "success",
+                orderModel: orderModel
+              })
+            );
+
+            toast.success("Payment successful! Order placed successfully!");
+            setIsProcessing(false);
+            onSuccess(); // Clear cart and redirect
+          } catch (error) {
+            console.error("Error saving order:", error);
+            toast.error("Payment successful but order placement failed");
+            setIsProcessing(false);
+          }
         },
-      },
-    };
+        prefill: {
+          name: `${orderData.billingDetails.firstName} ${orderData.billingDetails.lastName}`,
+          email: orderData.billingDetails.email,
+          contact: orderData.billingDetails.phone
+        },
+        notes: {
+          order_id: orderData.orderId,
+          store: "RupeEcom"
+        },
+        theme: {
+          color: "#3399cc",
+        },
+        modal: {
+          ondismiss: () => {
+            toast.info("Payment cancelled");
+            setIsProcessing(false);
+          },
+        },
+        onError: (error: any) => {
+          console.error("Razorpay error:", error);
+          toast.error("Payment failed. Please try again.");
+          setIsProcessing(false);
+        }
+      };
 
-    // Open the Razorpay checkout modal
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+      // Open the Razorpay checkout modal
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error("Error triggering payment:", error);
+      toast.error("Failed to initiate payment");
+      setIsProcessing(false);
+    }
   };
 
   return (
-    <button type="button" className="btn-primary" onClick={triggerPayment}>
-      Pay ₹{finalTotal.toFixed(2)} with Razorpay
+    <button 
+      type="button" 
+      className="btn btn-primary btn-block rzp-btn"
+      onClick={triggerPayment}
+      disabled={isProcessing}
+    >
+      {isProcessing ? "Processing..." : `Pay ₹${finalTotal.toFixed(2)} with Razorpay`}
     </button>
   );
 };
