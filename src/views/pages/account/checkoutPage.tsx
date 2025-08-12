@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { OrderPayloadService } from "../../../app/providers/usePlaceOrder/usePlaceOrder";
 import { API } from "@/app/globalProvider";
 import { appConfig } from "../../../app/config/";
+import { searchController, Kit } from "@/app/globalProvider"; // Import searchController and Kit
 
 interface FormType {
   firstName: string;
@@ -37,6 +38,12 @@ interface CartItem {
   isReturnable: boolean;
   categoryName: string;
   categoryID: string;
+  // Additional properties that might exist
+  productId?: string;
+  qty?: number;
+  purchaseOptionStr?: string;
+  cartItemId?: string;
+  key?: string;
 }
 
 interface Coupon {
@@ -58,6 +65,11 @@ interface OrderCalculations {
   totalSavings: number;
   finalTotal: number;
   couponDiscount: number;
+}
+
+interface KitRaw {
+  id: string;
+  [key: string]: any;
 }
 
 // Mock AuthContext for user profile data
@@ -116,6 +128,7 @@ const CheckoutPage: React.FC = () => {
   const phoneNumber = watch("phone") || "";
 
   const symbol = currencyContext?.selectedCurr?.symbol || "$";
+  const currencyValue = currencyContext?.selectedCurr?.value || 1;
   const contextCartItems = cartContext?.cartItems || [];
   const emptyCart = cartContext?.emptyCart || (() => {});
   const appName = appConfig?.appName || "MyApp";
@@ -125,13 +138,123 @@ const CheckoutPage: React.FC = () => {
   const countries = useMemo(() => OrderPayloadService.getCountries(), []);
 
   // Use dynamic values from appConfig
-  const tenantId = appConfig.tenantId ;
-  const storeId = appConfig.defaultStoreId ;
+  const tenantId = appConfig.tenantId;
+  const storeId = appConfig.defaultStoreId;
 
   // Configuration for tenantId and storeId
   const apiConfig = {
     tenantId,
     storeId,
+  };
+
+  // CONSISTENT PRICE CALCULATION FUNCTION - Same as Cart Page
+  const getProductById = (productId: string): any => {
+    if (!productId) return null;
+
+    try {
+      if (searchController?.allProducts instanceof Map) {
+        for (const products of searchController.allProducts.values()) {
+          if (Array.isArray(products)) {
+            const product = products.find((p: any) => p?.id === productId);
+            if (product) return product;
+          }
+        }
+      }
+
+      if (searchController?.kits && Array.isArray(searchController.kits)) {
+        const kitRaw = searchController.kits.find((k: KitRaw) => k?.id === productId);
+        if (kitRaw) {
+          if (Kit.fromMap && typeof Kit.fromMap === "function") {
+            return Kit.fromMap(kitRaw);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error finding product:", error);
+    }
+
+    return null;
+  };
+
+  const getPrice = (item: CartItem): number => {
+    if (!item) return 0;
+
+    try {
+      const product = getProductById(item.productId || item.id);
+      
+      if (product) {
+        if (product instanceof Kit && typeof product.getPrice === "function") {
+          try {
+            const price = product.getPrice({ cartQuantity: item.cartItemCount || item.qty || 1 });
+            if (typeof price === 'number' && !isNaN(price) && price > 0) {
+              return price;
+            }
+          } catch (methodError) {
+            console.warn("Kit getPrice method failed:", methodError);
+          }
+        }
+        
+        if (product?.getPrice && typeof product.getPrice === "function") {
+          try {
+            const price = product.getPrice({
+              cartQuantity: item.cartItemCount || item.qty || 1,
+              purchaseOptionStr: item.cartPurchaseOptionStr || item.purchaseOptionStr || "",
+            });
+            if (typeof price === 'number' && !isNaN(price) && price > 0) {
+              return price;
+            }
+          } catch (methodError) {
+            console.warn("Product getPrice method failed:", methodError);
+          }
+        }
+      }
+
+      const extractPriceFromObject = (obj: any): number => {
+        if (!obj || typeof obj !== 'object') return 0;
+
+        const priceFields = ['discountPrice', 'price', 'kitPrice', 'salePrice', 'finalPrice', 'currentPrice', 'sellingPrice'];
+        
+        for (const field of priceFields) {
+          if (field in obj && typeof obj[field] === 'number' && obj[field] > 0) {
+            return obj[field];
+          }
+        }
+
+        const nestedPrice = obj.pricing || obj.priceInfo || obj.cost || obj.priceData;
+        if (typeof nestedPrice === 'number' && nestedPrice > 0) {
+          return nestedPrice;
+        }
+        if (typeof nestedPrice === 'object' && nestedPrice !== null) {
+          const extractedPrice = nestedPrice.amount || nestedPrice.value || nestedPrice.price || nestedPrice.final || nestedPrice.current;
+          if (typeof extractedPrice === 'number' && extractedPrice > 0) {
+            return extractedPrice;
+          }
+        }
+
+        return 0;
+      };
+
+      if (product) {
+        const productPrice = extractPriceFromObject(product);
+        if (productPrice > 0) return productPrice;
+      }
+
+      const itemPrice = extractPriceFromObject(item);
+      if (itemPrice > 0) return itemPrice;
+
+      // Fallback to item.discountPrice || item.price
+      if (item.discountPrice && typeof item.discountPrice === 'number' && item.discountPrice > 0) {
+        return item.discountPrice;
+      }
+      if (typeof item.price === 'number' && item.price > 0) {
+        return item.price;
+      }
+
+      return 0;
+    } catch (err) {
+      console.error("Price extraction error:", err);
+      return item.discountPrice || item.price || 0;
+    }
   };
 
   // Fetch and set default phone number from profile or sessionStorage
@@ -212,7 +335,7 @@ const CheckoutPage: React.FC = () => {
       setAppliedCoupon(null);
       return;
     }
-    const cartTotal = cartItems.reduce((sum, item) => sum + ((item.discountPrice || item.price) * item.cartItemCount), 0);
+    const cartTotal = cartItems.reduce((sum, item) => sum + (getPrice(item) * (item.cartItemCount || item.qty || 1)), 0);
     if (cartTotal < coupon.minimumCartValue) {
       setCouponError(`Minimum cart value for this coupon is ₹${coupon.minimumCartValue}`);
       setAppliedCoupon(null);
@@ -230,23 +353,23 @@ const CheckoutPage: React.FC = () => {
       if (buyNowRaw) buyNowProduct = JSON.parse(buyNowRaw);
     }
 
-    const getPrice = (item: any) => item.sellingPrice || item.price || 0;
-    const getDiscountPrice = (item: any) => item.discountPrice;
-
     const buyNowItem: CartItem | null = buyNowMode && buyNowProduct ? {
       id: buyNowProduct.id || `item-0`,
       name: buyNowProduct.name || "Unknown Product",
       img: Array.isArray(buyNowProduct.img) ? buyNowProduct.img : [buyNowProduct.img || "/static/images/placeholder.png"],
       cartItemCount: buyNowProduct.qty || 1,
       cartPurchaseOptionStr: buyNowProduct.purchaseOptionStr || "default",
-      price: getPrice(buyNowProduct),
-      discountPrice: getDiscountPrice(buyNowProduct),
+      price: buyNowProduct.price || 0,
+      discountPrice: buyNowProduct.discountPrice,
       taxType: buyNowProduct.taxType || "EXCLUSIVE",
       taxAmount: parseFloat(buyNowProduct.taxAmount) || 0,
       active: true,
       isReturnable: buyNowProduct.isReturnable || false,
       categoryName: buyNowProduct.categoryName || "General",
-      categoryID: buyNowProduct.categoryID || "default"
+      categoryID: buyNowProduct.categoryID || "default",
+      productId: buyNowProduct.productId || buyNowProduct.id,
+      qty: buyNowProduct.qty || 1,
+      purchaseOptionStr: buyNowProduct.purchaseOptionStr || "default"
     } : null;
 
     const cartTransformed: CartItem[] = contextCartItems.map((item: any, index: number) => ({
@@ -255,14 +378,17 @@ const CheckoutPage: React.FC = () => {
       img: Array.isArray(item.img) ? item.img : [item.img || "/static/images/placeholder.png"],
       cartItemCount: item.qty || 1,
       cartPurchaseOptionStr: item.purchaseOptionStr || "default",
-      price: getPrice(item),
-      discountPrice: getDiscountPrice(item),
+      price: item.price || 0,
+      discountPrice: item.discountPrice,
       taxType: item.taxType || "EXCLUSIVE",
       taxAmount: parseFloat(item.taxAmount) || 0,
       active: true,
       isReturnable: item.isReturnable || false,
       categoryName: item.categoryName || "General",
-      categoryID: item.categoryID || "default"
+      categoryID: item.categoryID || "default",
+      productId: item.productId || item.id,
+      qty: item.qty || 1,
+      purchaseOptionStr: item.purchaseOptionStr || "default"
     }));
 
     const merged: { [key: string]: CartItem } = {};
@@ -272,6 +398,7 @@ const CheckoutPage: React.FC = () => {
       const key = getKey(item);
       if (merged[key]) {
         merged[key].cartItemCount += item.cartItemCount;
+        if (merged[key].qty) merged[key].qty! += (item.qty || 1);
       } else {
         merged[key] = item;
       }
@@ -285,13 +412,17 @@ const CheckoutPage: React.FC = () => {
     let taxAmount = 0;
 
     cartItems.forEach(item => {
-      const itemPrice = item.discountPrice || item.price;
-      const itemTotal = itemPrice * item.cartItemCount;
+      const currentPrice = getPrice(item); // Use consistent price calculation
+      const quantity = item.cartItemCount || item.qty || 1;
+      const itemTotal = currentPrice * quantity;
       cartAmount += itemTotal;
-      if (item.discountPrice && item.discountPrice < item.price) {
-        discountAmount += (item.price - item.discountPrice) * item.cartItemCount;
+      
+      // Calculate discount only if there's a difference between original price and current price
+      if (item.price && currentPrice < item.price) {
+        discountAmount += (item.price - currentPrice) * quantity;
       }
-      taxAmount += item.taxAmount * item.cartItemCount;
+      
+      taxAmount += (item.taxAmount || 0) * quantity;
     });
 
     let couponDiscount = 0;
@@ -586,26 +717,35 @@ const CheckoutPage: React.FC = () => {
                 <div className="order-summary">
                   <h3 className="checkout-title">Order Summary</h3>
                   <div className="cart-items" style={{ marginBottom: "20px" }}>
-                    {cartItems.map((item, index) => (
-                      <div key={`${item.id}_${index}`} className="cart-item" style={{ display: "flex", padding: "15px", borderBottom: "1px solid #eee", alignItems: "center" }}>
-                        <img
-                          src={item.img[0] || "/static/images/placeholder.png"}
-                          alt={item.name}
-                          style={{ width: "60px", height: "60px", objectFit: "cover", marginRight: "15px" }}
-                          onError={(e) => { (e.target as HTMLImageElement).src = "/static/images/placeholder.png"; }}
-                        />
-                        <div className="item-details" style={{ flex: 1 }}>
-                          <div className="item-name" style={{ fontWeight: "bold", marginBottom: "5px" }}>{item.name}</div>
-                          <div className="item-price" style={{ fontSize: "14px", color: "#666" }}>Qty: {item.cartItemCount} × {symbol}{item.price.toFixed(2)}</div>
-                          {item.discountPrice && item.discountPrice < item.price && (
-                            <div className="item-discount" style={{ fontSize: "12px", color: "#28a745" }}>
-                              Discount: {symbol}{((item.price - item.discountPrice) * item.cartItemCount).toFixed(2)}
+                    {cartItems.map((item, index) => {
+                      const currentPrice = getPrice(item); // Use consistent price calculation
+                      const quantity = item.cartItemCount || item.qty || 1;
+                      
+                      return (
+                        <div key={`${item.id}_${index}`} className="cart-item" style={{ display: "flex", padding: "15px", borderBottom: "1px solid #eee", alignItems: "center" }}>
+                          <img
+                            src={item.img[0] || "/static/images/placeholder.png"}
+                            alt={item.name}
+                            style={{ width: "60px", height: "60px", objectFit: "cover", marginRight: "15px" }}
+                            onError={(e) => { (e.target as HTMLImageElement).src = "/static/images/placeholder.png"; }}
+                          />
+                          <div className="item-details" style={{ flex: 1 }}>
+                            <div className="item-name" style={{ fontWeight: "bold", marginBottom: "5px" }}>{item.name}</div>
+                            <div className="item-price" style={{ fontSize: "14px", color: "#666" }}>
+                              Qty: {quantity} × {symbol}{currentPrice.toFixed(2)}
                             </div>
-                          )}
+                            {item.price && currentPrice < item.price && (
+                              <div className="item-discount" style={{ fontSize: "12px", color: "#28a745" }}>
+                                Discount: {symbol}{((item.price - currentPrice) * quantity).toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="item-total" style={{ fontWeight: "bold" }}>
+                            {symbol}{(currentPrice * quantity * currencyValue).toFixed(2)}
+                          </div>
                         </div>
-                        <div className="item-total" style={{ fontWeight: "bold" }}>{symbol}{((item.discountPrice || item.price) * item.cartItemCount).toFixed(2)}</div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className="order-totals" style={{ padding: "20px", backgroundColor: "#f8f9fa" }}>
                     <div className="form-group mb-3" style={{ marginTop: "20px" }}>
@@ -641,48 +781,48 @@ const CheckoutPage: React.FC = () => {
                     </div>
                     <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                       <span>Cart Total</span>
-                      <span>{symbol}{calculations.cartAmount.toFixed(2)}</span>
+                      <span>{symbol}{(calculations.cartAmount * currencyValue).toFixed(2)}</span>
                     </div>
                     {calculations.discountAmount > 0 && (
                       <div className="total-row discount" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#28a745" }}>
                         <span>Item Discount</span>
-                        <span>-{symbol}{calculations.discountAmount.toFixed(2)}</span>
+                        <span>-{symbol}{(calculations.discountAmount * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.couponDiscount > 0 && (
                       <div className="total-row coupon" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#00baf2" }}>
                         <span>Coupon Discount</span>
-                        <span>-{symbol}{calculations.couponDiscount.toFixed(2)}</span>
+                        <span>-{symbol}{(calculations.couponDiscount * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.taxAmount > 0 && (
                       <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                         <span>Tax</span>
-                        <span>{symbol}{calculations.taxAmount.toFixed(2)}</span>
+                        <span>{symbol}{(calculations.taxAmount * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.packageCost > 0 && (
                       <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                         <span>Package Cost</span>
-                        <span>{symbol}{calculations.packageCost.toFixed(2)}</span>
+                        <span>{symbol}{(calculations.packageCost * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.deliveryCharges > 0 && (
                       <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                         <span>Delivery Charges</span>
-                        <span>{symbol}{calculations.deliveryCharges.toFixed(2)}</span>
+                        <span>{symbol}{(calculations.deliveryCharges * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.totalSavings > 0 && (
                       <div className="total-row savings" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#28a745" }}>
                         <span>Total Savings</span>
-                        <span>{symbol}{calculations.totalSavings.toFixed(2)}</span>
+                        <span>{symbol}{(calculations.totalSavings * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     <hr />
                     <div className="total-row final" style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "18px" }}>
                       <span>Final Total</span>
-                      <span>{symbol}{calculations.finalTotal.toFixed(2)}</span>
+                      <span>{symbol}{(calculations.finalTotal * currencyValue).toFixed(2)}</span>
                     </div>
                   </div>
                   {validationErrors.length > 0 && (
