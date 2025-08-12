@@ -124,7 +124,7 @@ const Footer: NextPage = () => (
                           <li>
                             <a onClick={() => router.push("/pages/account/profile")} style={{ cursor: "pointer" }}> my account</a>
                           </li>
-                          <li>
+                          {/* <li>
                             <a href="#"> orders tracking</a>
                           </li>
                           <li>
@@ -135,7 +135,7 @@ const Footer: NextPage = () => (
                           </li>
                           <li>
                             <a href="#">new products</a>
-                          </li>
+                          </li> */}
                         </ul>
                       </div>
                     </div>

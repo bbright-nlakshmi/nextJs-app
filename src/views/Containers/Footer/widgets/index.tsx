@@ -95,8 +95,8 @@ const FooterSection: React.FC<FooterProps> = ({ layoutLogo }) => {
                                 links: [
                                   ["Store Location", "/pages/store"],
                                   ["my account", "/pages/account/profile"],
-                                  ["orders tracking", "#"],
-                                  ["FAQ", "#"],
+                                  // ["orders tracking", "#"],
+                                  // ["FAQ", "#"],
                                 ],
                               },
                               {
