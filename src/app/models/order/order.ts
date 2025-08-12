@@ -9,14 +9,14 @@ export class DeliveryAssign {
     this.name = params.name;
     this.phone = params.phone;
   }
-
+ 
   toJsonObj() {
     return {
       name: this.name,
       phone: this.phone,
     };
   }
-
+ 
   static fromMap(data: any): DeliveryAssign {
     return new DeliveryAssign({
       name: data.name ?? '',
@@ -24,7 +24,6 @@ export class DeliveryAssign {
     });
   }
 }
-
 export class OrderItemsModel {
   id: string;
   name: string;
@@ -99,7 +98,6 @@ export class OrderItemsModel {
     this.active = params.active ?? true;
     this.taxType = params.taxType ?? "EXCLUSIVE";
     this.taxAmount = params.taxAmount ?? 0;
-
     // Initialize status
     this.status = {
       process: null,
@@ -140,7 +138,6 @@ export class OrderItemsModel {
       taxAmount: data.tax_amount ?? 0,
     });
   }
-
   toJsonObj(): any {
     return {
       id: this.id,
@@ -168,7 +165,6 @@ export class OrderItemsModel {
     };
   }
 }
-
 export class OrderModel {
   id: string;
   deliveryAddress: DeliveryAddressModel;
@@ -200,7 +196,7 @@ export class OrderModel {
   userNotificationSent: boolean;
   orderAcceptStatus: string;
   orderGst?: string;
-
+ 
   constructor(params: {
     id: string;
     deliveryAddress: DeliveryAddressModel;
@@ -264,7 +260,7 @@ export class OrderModel {
     this.userNotificationSent = params.userNotificationSent ?? false;
     this.orderGst = params.orderGst;
   }
-
+ 
   static fromMap(data: any): OrderModel {
     const orderItems: OrderItemsModel[] = [];
     if (Array.isArray(data.order_items)) {
@@ -272,7 +268,6 @@ export class OrderModel {
         orderItems.push(OrderItemsModel.fromMap(item));
       });
     }
-
     return new OrderModel({
       id: data.id,
       deliveryAddress: DeliveryAddressModel.fromMap(data.delivery_address),
@@ -306,7 +301,7 @@ export class OrderModel {
       orderGst: data.order_gst,
     });
   }
-
+ 
   toJsonObj(): any {
     return {
       id: this.id,
@@ -341,11 +336,11 @@ export class OrderModel {
       order_gst: this.orderGst,
     };
   }
-
+ 
   getDeliveryAssignName(): string {
     return this.assignedDelivery.name;
   }
-
+ 
   getItemsCount(): number {
     let count = 0;
     this.orderItems.forEach(orderItem => {
@@ -357,11 +352,11 @@ export class OrderModel {
     });
     return count;
   }
-
+ 
   getOrderAmountWithOutDelivery(): number {
     return this.finalOrderTotalWithOutDelivery;
   }
-
+ 
   getAssignedDeliveryName(): string {
     return this.assignedDelivery.name;
   }

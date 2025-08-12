@@ -170,6 +170,9 @@ export class CentralDataCollector {
         this.getKits(),
         this.getStores(),
       ]);
+      
+      // Emit completion event
+      objCache.emit("dataLoaded");
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {

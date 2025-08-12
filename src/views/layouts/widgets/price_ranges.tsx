@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { NextPage } from "next";
 import { Col, Row } from "reactstrap";
 import {
@@ -24,11 +24,11 @@ interface Props {
 }
 
 const Spinner = () => (
-  <div className="custom-spinner-overlay">
-    <div className="custom-spinner">
-      <div className="custom-spinner-dot"></div>
-      <div className="custom-spinner-dot"></div>
-      <div className="custom-spinner-dot"></div>
+  <div className="price-range-spinner-overlay">
+    <div className="price-range-spinner">
+      <div className="spinner-border text-primary" role="status">
+        <span className="visually-hidden">Loading...</span>
+      </div>
     </div>
   </div>
 );
@@ -40,12 +40,14 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingFilter, setLoadingFilter] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
 
   const ranges = priceRanges?.price_ranges || [];
+  const processingRef = useRef(false);
 
   const getPrice = (item: ProductItem): number => {
     if ('sellingPrice' in item && item.sellingPrice) return item.sellingPrice;
@@ -94,25 +96,41 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     }
   }, []);
 
+  // Memoized filtering function for better performance
   const filterByRange = useCallback(
     (range: number) => {
-      if (!range || !allProducts.length) return;
+      if (!range || !allProducts.length) {
+        setFilteredProducts([]);
+        return;
+      }
+
+      if (processingRef.current) return; // Prevent multiple simultaneous operations
+      
+      processingRef.current = true;
       setLoadingFilter(true);
+      
+      // Use requestAnimationFrame for smooth UI updates
+      requestAnimationFrame(() => {
+        try {
+          const currentIndex = ranges.findIndex((r) => r === range);
+          const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
 
-      setTimeout(() => {
-        const currentIndex = ranges.findIndex((r) => r === range);
-        const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
+          const filtered = allProducts
+            .filter((item) => {
+              const price = getPrice(item);
+              return price > 0 && price > previousPrice && price <= range;
+            })
+            .sort((a, b) => getPrice(a) - getPrice(b));
 
-        const filtered = allProducts
-          .filter((item) => {
-            const price = getPrice(item);
-            return price > 0 && price > previousPrice && price <= range;
-          })
-          .sort((a, b) => getPrice(a) - getPrice(b));
-
-        setFilteredProducts(filtered);
-        setLoadingFilter(false);
-      }, 350); // slight delay for spinner effect
+          setFilteredProducts(filtered);
+        } catch (error) {
+          console.error('Error filtering products:', error);
+          setFilteredProducts([]);
+        } finally {
+          setLoadingFilter(false);
+          processingRef.current = false;
+        }
+      });
     },
     [allProducts, ranges]
   );
@@ -153,6 +171,18 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     }
   }, [addToCart]);
 
+  // Handle price range selection with debouncing
+  const handleRangeSelect = useCallback((range: number) => {
+    if (activeRange === range || isProcessing) return; // Prevent unnecessary re-filtering
+    
+    setIsProcessing(true);
+    setActiveRange(range);
+    filterByRange(range);
+    
+    // Reset processing state after a short delay
+    setTimeout(() => setIsProcessing(false), 300);
+  }, [activeRange, filterByRange, isProcessing]);
+
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
@@ -165,17 +195,16 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   // Set default active range on mount
   useEffect(() => {
     if (ranges.length > 0 && activeRange === null) {
-      setActiveRange(ranges[0]);
+      const defaultRange = ranges[0];
+      setActiveRange(defaultRange);
+      // Filter products for default range
+      if (allProducts.length > 0) {
+        filterByRange(defaultRange);
+      }
     }
-  }, [ranges, activeRange]);
+  }, [ranges, activeRange, allProducts.length, filterByRange]);
 
-  // Always filter products when activeRange, allProducts, or ranges change
-  useEffect(() => {
-    if (activeRange !== null && allProducts.length > 0 && ranges.length > 0) {
-      filterByRange(activeRange);
-    }
-  }, [activeRange, allProducts, ranges, filterByRange]);
-
+  // Listen for product updates
   useEffect(() => {
     const handleProductsUpdate = () => fetchAllProducts();
     const handleKitsUpdate = () => fetchAllProducts();
@@ -201,8 +230,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
 
   if (!ranges.length) return null;
 
-  // Show products for first range by default
-  const shouldShowProducts = filteredProducts.length > 0;
+  // Show products for selected range
+  const shouldShowProducts = filteredProducts.length > 0 || loadingFilter;
 
   return (
     <>
@@ -238,11 +267,9 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                       <SwiperSlide key={i}>
                         <div className="single-category-one single-price-range">
                           <div
-                            onClick={() => {
-                              setActiveRange(range);
-                              filterByRange(range);
-                            }}
-                            className={`price-range-card ${activeRange === range ? "active" : ""}`}
+                            onClick={() => handleRangeSelect(range)}
+                            className={`price-range-card ${activeRange === range ? "active" : ""} ${isProcessing ? "processing" : ""}`}
+                            style={{ pointerEvents: isProcessing ? 'none' : 'auto' }}
                           >
                             <div className="price-range-content">
                               <div className="price-main">{main}</div>
@@ -269,30 +296,35 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
             <div className="row">
               <div className="col-lg-12">
                 <div className="product product-slide-6 product-m no-arrow">
-                  <Swiper
-                    slidesPerView={6}
-                    spaceBetween={30}
-                    autoplay={{ delay: 1000, pauseOnMouseEnter: true }}
-                    breakpoints={appConfig.mediaQueries}
-                    modules={[Autoplay, Navigation, Keyboard]}
-                  >
-                    {filteredProducts.map((product: any, i: number) => (
-                      <SwiperSlide key={`${product.id || product.productId || i}-${activeRange}`}>
-                        <ProductBox
-                          layout="layout-one"
-                          newLabel={product.new}
-                          item={product}
-                          hoverEffect={"icon-inline"}
-                          price={getPrice(product)}
-                          addCart={handleAddToCart}
-                          addCompare={() => addToCompare(product)}
-                          addWish={() => addToWish(product)}
-                          data={product}
-                        />
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
-                  {loadingFilter && <Spinner />}
+                  {loadingFilter ? (
+                    <div className="text-center py-5">
+                      <Spinner />
+                    </div>
+                  ) : (
+                    <Swiper
+                      slidesPerView={6}
+                      spaceBetween={30}
+                      autoplay={{ delay: 1000, pauseOnMouseEnter: true }}
+                      breakpoints={appConfig.mediaQueries}
+                      modules={[Autoplay, Navigation, Keyboard]}
+                    >
+                      {filteredProducts.map((product: any, i: number) => (
+                        <SwiperSlide key={`${product.id || product.productId || i}-${activeRange}`}>
+                          <ProductBox
+                            layout="layout-one"
+                            newLabel={product.new}
+                            item={product}
+                            hoverEffect={"icon-inline"}
+                            price={getPrice(product)}
+                            addCart={handleAddToCart}
+                            addCompare={() => addToCompare(product)}
+                            addWish={() => addToWish(product)}
+                            data={product}
+                          />
+                        </SwiperSlide>
+                      ))}
+                    </Swiper>
+                  )}
                 </div>
               </div>
             </div>
@@ -300,8 +332,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         </section>
       )}
 
-
-      {activeRange !== null && filteredProducts.length === 0 && (
+      {activeRange !== null && filteredProducts.length === 0 && !loadingFilter && (
         <section className="section-py-space">
           <div className="product-box single-shopping-card-one">
             <div className="text-center py-4">
@@ -309,7 +340,10 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
               <p>No products available in the selected price range.</p>
               <button
                 className="btn btn-outline-primary"
-                onClick={() => setActiveRange(null)}
+                onClick={() => {
+                  setActiveRange(null);
+                  setFilteredProducts([]);
+                }}
               >
                 Clear Selection
               </button>
@@ -322,10 +356,4 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
 };
 
 export default PriceRanges;
-
-// Spinner CSS scoped to this component
-// Uses styled-jsx (Next.js default)
-// If you use a different CSS-in-JS solution, let me know
-
-/* Add this inside your component's return, after all JSX: */
 

@@ -11,7 +11,7 @@ import MobileSearch from "./widgets/mobile-search";
 import MobileSetting from "./widgets/mobile-setting";
 import Search from "./widgets/search";
 import ShoppingCart from "./widgets/shopping-cart";
-import UserProfile from "./widgets/user-profile";
+import dynamic from "next/dynamic";
 import Whishlist from "./widgets/whishlist";
 
 interface header {
@@ -21,7 +21,9 @@ interface header {
   categoryHeaderClass: string;
   layoutLogo: string;
 }
-
+const UserProfile = dynamic(() => import('@/views/Containers/Header/widgets/user-profile.client'), {
+  ssr: false,
+});
 const Header: NextPage<header> = ({ cartPopupPosition, display, category, categoryHeaderClass, layoutLogo }) => {
   const menuContext = useContext(MenuContext);
   const { setLeftMenu, leftMenu } = menuContext;
