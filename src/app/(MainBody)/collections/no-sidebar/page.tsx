@@ -28,12 +28,16 @@ const NoSidebar: NextPage = () => {
   const [absoluteMinPrice, setAbsoluteMinPrice] = useState<number>(0);
   const [absoluteMaxPrice, setAbsoluteMaxPrice] = useState<number>(150);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [discountCategories, setDiscountCategories] = useState<Category[]>([]);
   const [selectedCatgeoryProducts, setselectedCatgeoryProducts] = useState<
     CategoryProducts[]
   >([]);
   const [filteredProducts, setFilteredProducts] = useState<CategoryProducts[]>(
     []
   );
+  const [allDiscountProducts, setAllDiscountProducts] = useState<
+    CategoryProducts[]
+  >([]);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [currentDiscount, setCurrentDiscount] = useState<any>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -52,6 +56,10 @@ const NoSidebar: NextPage = () => {
   const updatePriceRangeFromFilteredProducts = useCallback((
     products: CategoryProducts[]
   ) => {
+    // For discount pages, keep absolute min/max from all discounted products; don't override on per-category updates
+    if (categoryType === "discount") {
+      return;
+    }
     const prices: number[] = products
       .map((prod: any) => {
         const id = categoryType === "discount" ? prod.id : prod.productId;
@@ -110,17 +118,136 @@ const NoSidebar: NextPage = () => {
     }
 
     if (categoryType === "discount") {
-      // For discount type, get discount data for display
+      // For discount type, prepare discount-specific categories and products
       const found = objCache.discountList.find((item: any) => item.id === categoryId);
       if (found) {
         setCurrentDiscount(found);
+        
+        // Get all products from objCache to build a comprehensive mapping
+        const allProducts = objCache.allProducstsList || [];
+        const productToCategory = new Map<string, string>();
+        
+        // Build productId -> categoryId map from all categories
+        (objCache.allCategories || []).forEach((cat: Category) => {
+          (cat.category_products || []).forEach((prod: any) => {
+            const pid = String(prod.productId ?? prod.id ?? "");
+            if (pid) productToCategory.set(pid, cat.id);
+          });
+        });
+        
+        // Also try to map by product name as fallback
+        allProducts.forEach((prod: any) => {
+          const pid = String(prod.productId ?? prod.id ?? "");
+          if (pid && !productToCategory.has(pid)) {
+            // Try to find category by product name
+            const matchingCategory = (objCache.allCategories || []).find((cat: Category) => {
+              return (cat.category_products || []).some((catProd: any) => 
+                catProd.name === prod.name || catProd.title === prod.title
+              );
+            });
+            if (matchingCategory) {
+              productToCategory.set(pid, matchingCategory.id);
+            }
+          }
+        });
+
+        // Normalize discount items into CategoryProducts-like objects
+        const items: CategoryProducts[] = (found.discountItems || []).map((item: any) => {
+          const pid = String(item.productId ?? item.id ?? "");
+          const derivedCatId = item.categoryId || productToCategory.get(pid) || "";
+          
+          // Debug logging for category mapping
+          console.log('Mapping discount item:', {
+            itemId: item.id,
+            productId: item.productId,
+            name: item.name,
+            originalCategoryId: item.categoryId,
+            derivedCategoryId: derivedCatId,
+            mappedFromProductId: productToCategory.get(pid)
+          });
+          
+          return {
+            ...item,
+            active: item.active ?? false,
+            productId: item.productId ?? item.id,
+            categoryId: derivedCatId,
+          };
+        });
+
+        setAllDiscountProducts(items);
+
+        // Build categories list that have discounted products
+        const categoryIds = new Set<string>(items.map((it: any) => it.categoryId).filter((id: any) => !!id));
+        const availableCategories: Category[] = (objCache.allCategories || []).filter(
+          (cat: Category) => categoryIds.has(cat.id)
+        );
+        
+        // If no categories found, create a fallback category to ensure products are shown
+        let finalCategories = availableCategories;
+        if (availableCategories.length === 0 && items.length > 0) {
+          // Create a fallback category for uncategorized discount products
+          const fallbackCategory: Category = {
+            id: 'uncategorized-discount',
+            name: 'Discount Products',
+            img: [],
+            category_products: items,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          finalCategories = [fallbackCategory];
+          
+          // Update items to use the fallback category
+          const updatedItems = items.map(item => ({
+            ...item,
+            categoryId: 'uncategorized-discount'
+          }));
+          setAllDiscountProducts(updatedItems);
+          setselectedCatgeoryProducts(updatedItems);
+          setFilteredProducts(updatedItems);
+        } else {
+          setAllDiscountProducts(items);
+          setselectedCatgeoryProducts(items);
+          setFilteredProducts(!isPriceFilterApplied ? items : applyPriceFilter(items, minPrice, maxPrice));
+        }
+        
+        setDiscountCategories(finalCategories);
+
+        // Default selection: all categories that have discount products
+        setSelectedCategories(finalCategories);
+
+        // Calculate absolute min/max price from all discounted products with rounding
+        const prices: number[] = (finalCategories.length === 0 ? items : items).map((prod: any) => 
+          searchController.getDetails(prod.id, "getPrice")
+        ).filter((p): p is number => typeof p === "number" && !isNaN(p));
+        
+        if (prices.length > 0) {
+          const min = Math.floor(Math.min(...prices));
+          const max = Math.ceil(Math.max(...prices));
+          setAbsoluteMinPrice(min);
+          setAbsoluteMaxPrice(max);
+          if (!isPriceFilterApplied) {
+            setMinPrice(min);
+            setMaxPrice(max);
+            setTempMinPrice(min);
+            setTempMaxPrice(max);
+          }
+        } else {
+          setAbsoluteMinPrice(0);
+          setAbsoluteMaxPrice(150);
+          if (!isPriceFilterApplied) {
+            setMinPrice(0);
+            setMaxPrice(150);
+            setTempMinPrice(0);
+            setTempMaxPrice(150);
+          }
+        }
+      } else {
+        setDiscountCategories([]);
+        setSelectedCategories([]);
+        setAllDiscountProducts([]);
+        setselectedCatgeoryProducts([]);
+        setFilteredProducts([]);
       }
-      setSelectedCategories([]);
-      setselectedCatgeoryProducts([]);
-      setFilteredProducts([]);
-      setMinPrice(0);
-      setMaxPrice(150);
-      setIsPriceFilterApplied(false);
       currentCategoryId.current = categoryId;
     } else {
 
@@ -229,20 +356,28 @@ const NoSidebar: NextPage = () => {
   // FIXED: Reset price filter function
   const resetPriceFilter = () => {
     setFilteredProducts(selectedCatgeoryProducts);
-    const prices: number[] = selectedCatgeoryProducts
-      .map((prod: any) => {
-        const id = categoryType === "discount" ? prod.id : prod.productId;
-        return searchController.getDetails(id, "getPrice");
-      })
-      .filter((p): p is number => typeof p === "number" && !isNaN(p));
+    if (categoryType === "discount") {
+      // Reset to absolute min/max derived from all discounted products
+      setMinPrice(absoluteMinPrice);
+      setMaxPrice(absoluteMaxPrice);
+      setTempMinPrice(absoluteMinPrice);
+      setTempMaxPrice(absoluteMaxPrice);
+    } else {
+      const prices: number[] = selectedCatgeoryProducts
+        .map((prod: any) => {
+          const id = prod.productId;
+          return searchController.getDetails(id, "getPrice");
+        })
+        .filter((p): p is number => typeof p === "number" && !isNaN(p));
 
-    if (prices.length > 0) {
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
-      setMinPrice(min);
-      setMaxPrice(max);
-      setTempMinPrice(min);
-      setTempMaxPrice(max);
+      if (prices.length > 0) {
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        setMinPrice(min);
+        setMaxPrice(max);
+        setTempMinPrice(min);
+        setTempMaxPrice(max);
+      }
     }
     setIsPriceFilterApplied(false);
   };
@@ -272,17 +407,27 @@ const NoSidebar: NextPage = () => {
 
     setSelectedCategories(updatedCategories);
     const updatedProducts = getFilteredByCategoryProducts(updatedCategories);
-    setselectedCatgeoryProducts(updatedProducts);
     
-    // Apply price filter if it was previously applied
-    if (isPriceFilterApplied) {
-      const filtered = applyPriceFilter(updatedProducts, minPrice, maxPrice);
-      setFilteredProducts(filtered);
+    // Ensure we always have products for discount mode
+    if (categoryType === "discount" && updatedProducts.length === 0 && updatedCategories.length > 0) {
+      // If no products found but categories are selected, fall back to all discount products
+      setselectedCatgeoryProducts(allDiscountProducts);
+      setFilteredProducts(isPriceFilterApplied ? applyPriceFilter(allDiscountProducts, minPrice, maxPrice) : allDiscountProducts);
     } else {
-      setFilteredProducts(updatedProducts);
+      setselectedCatgeoryProducts(updatedProducts);
+      
+      // Apply price filter if it was previously applied
+      if (isPriceFilterApplied) {
+        const filtered = applyPriceFilter(updatedProducts, minPrice, maxPrice);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts(updatedProducts);
+      }
     }
     
-    updatePriceRangeFromFilteredProducts(updatedProducts);
+    if (categoryType !== "discount") {
+      updatePriceRangeFromFilteredProducts(updatedProducts);
+    }
 
     // Update current category tracking
     if (updatedCategories.length > 0) {
@@ -295,11 +440,50 @@ const NoSidebar: NextPage = () => {
   const getFilteredByCategoryProducts = (
     catselected: Category[]
   ): CategoryProducts[] => {
-    const catProds: CategoryProducts[] = [];
-    catselected.forEach((cat) => {
-      catProds.push(...(cat.category_products || []));
-    });
-    return catProds;
+    if (categoryType === "discount") {
+      // Filter all discounted items by selected categories
+      if (!catselected.length) return allDiscountProducts;
+      
+      // Build a map of category ID to products for efficient filtering
+      const categoryToProducts = new Map<string, CategoryProducts[]>();
+      allDiscountProducts.forEach((prod: any) => {
+        const catId = prod.categoryId;
+        if (catId) {
+          if (!categoryToProducts.has(catId)) {
+            categoryToProducts.set(catId, []);
+          }
+          categoryToProducts.get(catId)!.push(prod);
+        }
+      });
+      
+      // Get products from selected categories
+      const selectedIds = new Set(catselected.map((c) => c.id));
+      const filteredProducts: CategoryProducts[] = [];
+      
+      selectedIds.forEach((catId) => {
+        const products = categoryToProducts.get(catId);
+        if (products) {
+          filteredProducts.push(...products);
+        }
+      });
+      
+      // Debug logging
+      console.log('Discount filtering:', {
+        selectedCategories: catselected.map(c => c.name),
+        selectedIds: Array.from(selectedIds),
+        categoryToProducts: Object.fromEntries(categoryToProducts),
+        filteredProductsCount: filteredProducts.length,
+        allDiscountProductsCount: allDiscountProducts.length
+      });
+      
+      return filteredProducts;
+    } else {
+      const catProds: CategoryProducts[] = [];
+      catselected.forEach((cat) => {
+        catProds.push(...(cat.category_products || []));
+      });
+      return catProds;
+    }
   };
 
   // FIXED: Group filtered products by category for display
@@ -340,17 +524,27 @@ const NoSidebar: NextPage = () => {
     const updatedCategories = selectedCategories.filter(cat => cat.id !== categoryId);
     setSelectedCategories(updatedCategories);
     const updatedProducts = getFilteredByCategoryProducts(updatedCategories);
-    setselectedCatgeoryProducts(updatedProducts);
     
-    // Apply price filter if it was previously applied
-    if (isPriceFilterApplied) {
-      const filtered = applyPriceFilter(updatedProducts, minPrice, maxPrice);
-      setFilteredProducts(filtered);
+    // Ensure we always have products for discount mode
+    if (categoryType === "discount" && updatedProducts.length === 0 && updatedCategories.length > 0) {
+      // If no products found but categories are selected, fall back to all discount products
+      setselectedCatgeoryProducts(allDiscountProducts);
+      setFilteredProducts(isPriceFilterApplied ? applyPriceFilter(allDiscountProducts, minPrice, maxPrice) : allDiscountProducts);
     } else {
-      setFilteredProducts(updatedProducts);
+      setselectedCatgeoryProducts(updatedProducts);
+      
+      // Apply price filter if it was previously applied
+      if (isPriceFilterApplied) {
+        const filtered = applyPriceFilter(updatedProducts, minPrice, maxPrice);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts(updatedProducts);
+      }
     }
     
-    updatePriceRangeFromFilteredProducts(updatedProducts);
+    if (categoryType !== "discount") {
+      updatePriceRangeFromFilteredProducts(updatedProducts);
+    }
     
     // Update current category tracking
     if (updatedCategories.length > 0) {
@@ -484,7 +678,7 @@ const NoSidebar: NextPage = () => {
         <h5 className="title">Product Categories</h5>
         <div className="filterbox-body">
           <div className="category-wrapper">
-            {allCategories.map((cat, i) => (
+            {(categoryType === "discount" ? discountCategories : allCategories).map((cat, i) => (
               <div className="single-category" key={i}>
                 <input
                   id={`cat${i + 1}`}
@@ -547,18 +741,18 @@ const NoSidebar: NextPage = () => {
               <div className="collection-wrapper">
                 <div className="custom-container section-big-pb-space">
                   {categoryType === "discount" ? (
-                    // For discount type, show Collection component with empty data
+                    // For discount type, show filtered discount products
                     <section className="w-full rts-category-area section-pt-space">
                       <div className="custom-container title-area-between">
                         <h2 className="title-left">
                           {currentDiscount?.name || "Discount Products"}
-                          <span className="category-count"> ({currentDiscount?.discountItems?.length || 0} products)</span>
+                          <span className="category-count"> ({(isPriceFilterApplied ? filteredProducts.length : selectedCatgeoryProducts.length) || 0} products)</span>
                         </h2>
                       </div>
                       <div className="custom-container">
                         <Row>
                           <Collection
-                            categoryProducts={[]}
+                            categoryProducts={isPriceFilterApplied ? filteredProducts : selectedCatgeoryProducts}
                             cols="col-xl-3 col-lg-3 col-sm-4 col-md-4 col-6 col-grid-box"
                             layoutList=""
                           />

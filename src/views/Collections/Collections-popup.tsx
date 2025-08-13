@@ -132,7 +132,8 @@ const CollectionPopup: NextPage<CollectionProps> = ({ cols, layoutList }) => {
                           </li>
                         </ul>
                       </div>
-                      <div className="collection-grid-view" style={layout === "list-view" ? { opacity: 0 } : { opacity: 1 }}>
+                      {/* <div className="collection-grid-view" style={layout === "list-view" ? { opacity: 0 } : { opacity: 1 }}>*/}
+                      <div className={`collection-grid-view ${layout === "list-view" ? 'collection-grid-opacity-hidden' : 'collection-grid-opacity'}`}>
                         <ul>
                           <li onClick={() => setGrid("col-lg-6")}>
                             <Media src="/images/category/icon/2.png" alt="" className="product-2-layout-view" />

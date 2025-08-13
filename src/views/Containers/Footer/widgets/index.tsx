@@ -95,8 +95,8 @@ const FooterSection: React.FC<FooterProps> = ({ layoutLogo }) => {
                                 links: [
                                   ["Store Location", "/pages/store"],
                                   ["my account", "/pages/account/profile"],
-                                  ["orders tracking", "#"],
-                                  ["FAQ", "#"],
+                                  // ["orders tracking", "#"],
+                                  // ["FAQ", "#"],
                                 ],
                               },
                               {
@@ -171,7 +171,8 @@ const FooterSection: React.FC<FooterProps> = ({ layoutLogo }) => {
                                           <li key={text}>
                                             <a
                                               onClick={() => router.push(path)}
-                                              style={{ cursor: "pointer" }}
+                                              // style={{ cursor: "pointer" }}
+                                              className="cursor-pointer"
                                             >
                                               {text}
                                             </a>

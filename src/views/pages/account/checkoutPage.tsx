@@ -520,9 +520,9 @@ const CheckoutPage: React.FC = () => {
     return (
       <button
         type="submit"
-        className="btn btn-primary btn-block"
+        className="btn btn-primary btn-block checkout-button"
         disabled={isProcessing || !selectedPaymentMode}
-        style={{ width: "100%", marginTop: "20px", padding: "15px", fontSize: "16px", fontWeight: "bold" }}
+        // style={{ width: "100%", marginTop: "20px", padding: "15px", fontSize: "16px", fontWeight: "bold" }}
       >
         {getPaymentButtonText()}
       </button>
@@ -708,9 +708,10 @@ const CheckoutPage: React.FC = () => {
                           value={mode.value}
                           checked={selectedPaymentMode === mode.value}
                           onChange={(e) => handlePaymentModeChange(e.target.value)}
-                          style={{ marginRight: "10px" }}
+                          // style={{ marginRight: "10px" }}
+                          className="payment-mode-radio"
                         />
-                        <label style={{ cursor: "pointer" }}>{mode.label}</label>
+                        <label className="payment-mode-label">{mode.label}</label>
                       </div>
                     ))}
                   </div>
@@ -719,33 +720,33 @@ const CheckoutPage: React.FC = () => {
               <Col lg="5">
                 <div className="order-summary">
                   <h3 className="checkout-title">Order Summary</h3>
-                  <div className="cart-items" style={{ marginBottom: "20px" }}>
+                  <div className="cart-items-container">
                     {cartItems.map((item, index) => (
-                      <div key={`${item.id}_${index}`} className="cart-item" style={{ display: "flex", padding: "15px", borderBottom: "1px solid #eee", alignItems: "center" }}>
+                      <div key={`${item.id}_${index}`} className="cart-item">
                         <img
                           src={item.img[0] || "/static/images/placeholder.png"}
                           alt={item.name}
-                          style={{ width: "60px", height: "60px", objectFit: "cover", marginRight: "15px" }}
+                          className="cart-item-image"
                           onError={(e) => { (e.target as HTMLImageElement).src = "/static/images/placeholder.png"; }}
                         />
-                        <div className="item-details" style={{ flex: 1 }}>
-                          <div className="item-name" style={{ fontWeight: "bold", marginBottom: "5px" }}>{item.name}</div>
-                          <div className="item-price" style={{ fontSize: "14px", color: "#666" }}>Qty: {item.cartItemCount} × {symbol}{item.price.toFixed(2)}</div>
+                        <div className="item-details">
+                          <div className="item-name">{item.name}</div>
+                          <div className="item-price">Qty: {item.cartItemCount} × {symbol}{item.price.toFixed(2)}</div>
                           {item.discountPrice && item.discountPrice < item.price && (
-                            <div className="item-discount" style={{ fontSize: "12px", color: "#28a745" }}>
+                            <div className="item-discount">
                               Discount: {symbol}{((item.price - item.discountPrice) * item.cartItemCount).toFixed(2)}
                             </div>
                           )}
                         </div>
-                        <div className="item-total" style={{ fontWeight: "bold" }}>{symbol}{((item.discountPrice || item.price) * item.cartItemCount).toFixed(2)}</div>
+                        <div className="item-total">{symbol}{((item.discountPrice || item.price) * item.cartItemCount).toFixed(2)}</div>
                       </div>
                     ))}
                   </div>
-                  <div className="order-totals" style={{ padding: "20px", backgroundColor: "#f8f9fa" }}>
+                  <div className="order-totals">
                     <div className="form-group mb-3" style={{ marginTop: "20px" }}>
-                      <label className="field-label" style={{ color: "#00baf2", fontWeight: 600 }}>Available Coupons</label>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "10px" }}>
-                        {availableCoupons.length === 0 && <span style={{ color: "#888" }}>{phoneNumber ? "No coupons available" : "Enter phone number to view coupons"}</span>}
+                      <label className="field-label coupon-label">Available Coupons</label>
+                      <div className="coupon-container">
+                        {availableCoupons.length === 0 && <span className="no-coupons">{phoneNumber ? "No coupons available" : "Enter phone number to view coupons"}</span>}
                         {availableCoupons.map((coupon) => (
                           <button
                             key={coupon.couponCode}
@@ -768,7 +769,7 @@ const CheckoutPage: React.FC = () => {
                       </div>
                       {couponError && <div className="text-danger mt-1">{couponError}</div>}
                       {appliedCoupon && (
-                        <div className="mt-1" style={{ color: "#00baf2", fontWeight: 500 }}>
+                        <div className="mt-1 coupon-discount">
                           Coupon <strong>{appliedCoupon.couponCode}</strong> applied: {appliedCoupon.isCouponPercentage ? `${appliedCoupon.couponAmount}% off` : `₹${appliedCoupon.couponAmount} off`} {appliedCoupon.maxCouponAmount > 0 ? `(Max ₹${appliedCoupon.maxCouponAmount})` : ""}
                         </div>
                       )}

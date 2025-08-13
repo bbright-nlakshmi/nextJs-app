@@ -79,10 +79,16 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
   useEffect(() => {
     if (categoryType === "category") {
       setProductData([...categoryProducts]);
+      setDiscount(undefined);
     } else if (categoryType === "discount") {
+      // Always set discount so banner can render
       const found = objCache.discountList.find((item: Discount) => item.id === categoryId);
-      if (found) {
-        setDiscount(found);
+      if (found) setDiscount(found); else setDiscount(undefined);
+
+      // If filtered products are provided from parent, use them; otherwise fall back to discount list
+      if (categoryProducts && categoryProducts.length > 0) {
+        setProductData([...categoryProducts]);
+      } else if (found) {
         setProductData(
           (found.discountItems || []).map((item: any) => ({
             ...item,
@@ -91,6 +97,8 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
             categoryId: item.categoryId ?? "",
           }))
         );
+      } else {
+        setProductData([]);
       }
     }
   }, [categoryProducts, categoryType, categoryId]);

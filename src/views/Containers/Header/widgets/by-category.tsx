@@ -108,29 +108,29 @@ const ByCategory: NextPage<ByCategoryProps> = ({ category }) => {
               <h4>All Categories</h4>
             </li>
             <li
-              className="back-btn"
+              className="back-btn back-category"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowState(false); // Also close the main dropdown
                 setLeftMenu(false);
                 document.body.style.overflow = "visible";
               }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "8px 12px",
-                cursor: "pointer"
-              }}
+              // style={{
+              //   display: "flex",
+              //   alignItems: "center",
+              //   padding: "8px 12px",
+              //   cursor: "pointer"
+              // }}
             >
-              <a style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+              <a className="category-link">
                 <i 
-                  className="fa fa-angle-left" 
-                  style={{ 
-                    marginRight: "8px",
-                    fontSize: "16px",
-                    display: "flex",
-                    alignItems: "center"
-                  }}
+                  className="fa fa-angle-left category-link-name" 
+                  // style={{ 
+                  //   marginRight: "8px",
+                  //   fontSize: "16px",
+                  //   display: "flex",
+                  //   alignItems: "center"
+                  // }}
                 ></i>
                 <span>Back</span>
               </a>

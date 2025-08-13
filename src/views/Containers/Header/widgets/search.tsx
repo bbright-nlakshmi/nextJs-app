@@ -85,8 +85,8 @@ const Search: NextPage = () => {
   };
   return (
     <form
-      className="big-deal-form"
-      style={{ position: "relative", zIndex: 100 }}
+      className="big-deal-form search-widget-container"
+      // style={{ position: "relative", zIndex: 100 }}
     >
       <InputGroup>
         <InputGroupText>
@@ -124,13 +124,13 @@ const Search: NextPage = () => {
               {allCategories.map((cat) => (
                 <DropdownItem
                   key={cat.id}
-                  className="custom-dropdown-item"
+                  className="custom-dropdown-item cursor-pointer"
                   onClick={() =>
                     router.push(
                       `/collections/no-sidebar?id=${cat.id}&type=category`
                     )
                   }
-                  style={{ cursor: "pointer" }}
+                  // style={{ cursor: "pointer" }}
                 >
                   {cat.name}
                 </DropdownItem>

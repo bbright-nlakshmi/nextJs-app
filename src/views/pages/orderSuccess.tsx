@@ -180,7 +180,7 @@ const OrderSuccessPage: NextPage = () => {
                   <strong>No Order Found</strong>
                 </h3>
                 <p className="mb-4">We couldn't find your order details. This might happen if:</p>
-                <ul className="text-left d-inline-block mb-4" style={{ textAlign: 'left' }}>
+                <ul className="text-left d-inline-block mb-4 order-success-list">
                   <li>The order data has expired</li>
                   <li>You accessed this page directly</li>
                   <li>There was an error processing your order</li>
