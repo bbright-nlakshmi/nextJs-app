@@ -92,10 +92,10 @@ const NewProduct: React.FC = () => {
             <div key={groupIndex}>
               {group.map((product) => (
                 <div
-                  className="media cursor-pointer product-thumbnail flex-shrink-0 img.align-self-center p-3"
+                  className="media cursor-pointer product-thumbnail flex-shrink-0 img.align-self-center p-3 cursor-pointer"
                   key={product.id}
                   onClick={() => handleProductClick(product.id)}
-                  style={{ cursor: "pointer" }}
+                  // style={{ cursor: "pointer" }}
                 >
                   <a>
                     <Media

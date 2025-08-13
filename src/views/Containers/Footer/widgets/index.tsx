@@ -171,7 +171,8 @@ const FooterSection: React.FC<FooterProps> = ({ layoutLogo }) => {
                                           <li key={text}>
                                             <a
                                               onClick={() => router.push(path)}
-                                              style={{ cursor: "pointer" }}
+                                              // style={{ cursor: "pointer" }}
+                                              className="cursor-pointer"
                                             >
                                               {text}
                                             </a>

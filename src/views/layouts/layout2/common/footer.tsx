@@ -90,16 +90,16 @@ const Footer: NextPage = () => (
                       <div className="footer-contant">
                         <ul>
                           <li>
-                            <a onClick={() => router.push("/pages/about-us")} style={{ cursor: "pointer" }}>About Us</a>
+                            <a onClick={() => router.push("/pages/about-us")} className="cursor-pointer">About Us</a>
                           </li>
                           <li>
-                            <a onClick={() => router.push("/pages/ContactUs")} style={{ cursor: "pointer" }}>contact us</a>
+                            <a onClick={() => router.push("/pages/ContactUs")} className="cursor-pointer">contact us</a>
                           </li>
                          <li>
-                            <a onClick={() => router.push("/pages/terms")} style={{ cursor: "pointer" }}>terms & conditions</a>
+                            <a onClick={() => router.push("/pages/terms")} className="cursor-pointer">terms & conditions</a>
                           </li>
                           <li>
-                            <a onClick={() => router.push("/pages/privacy")} style={{ cursor: "pointer" }}>Privacy Policy</a>
+                            <a onClick={() => router.push("/pages/privacy")} className="cursor-pointer">Privacy Policy</a>
                           </li>
                           <li>
                             <a href="#">returns & exchanges</a>
@@ -119,10 +119,10 @@ const Footer: NextPage = () => (
                       <div className="footer-contant">
                         <ul>
                           <li>
-                            <a onClick={() => router.push("/pages/store")} style={{ cursor: "pointer" }}>Store Location</a>
+                            <a onClick={() => router.push("/pages/store")} className="cursor-pointer">Store Location</a>
                           </li>
                           <li>
-                            <a onClick={() => router.push("/pages/account/profile")} style={{ cursor: "pointer" }}> my account</a>
+                            <a onClick={() => router.push("/pages/account/profile")} className="cursor-pointer"> my account</a>
                           </li>
                           {/* <li>
                             <a href="#"> orders tracking</a>

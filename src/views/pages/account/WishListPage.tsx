@@ -200,8 +200,7 @@ const WishListPage: NextPage = () => {
                             <img
                               src={item.img?.[0] || ""}
                               alt={item.title || "Product"}
-                              className="img-fluid"
-                              style={{ width: 60 }}
+                              className="img-fluid wishlist-image"                              
                             />
                           </td>
                           <td>{item.title}</td>

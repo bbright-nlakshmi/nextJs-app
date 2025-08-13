@@ -147,7 +147,7 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({
             <h2>Related Products</h2>
             <div className="related-products-slider">
               {isLoading ? (
-                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+                <div className="d-flex justify-content-center align-items-center related-products-container">
                   <div className="text-center">
                     <div className="spinner-border mb-3" role="status">
                       <span className="visually-hidden">Loading...</span>
