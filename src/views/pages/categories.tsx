@@ -112,8 +112,8 @@ const CategoryPage: NextPage = () => {
       <div className="bg-light">
         <Breadcrumb title="Store" parent="home" />
         <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "400px" }}
+          className="d-flex justify-content-center align-items-center categories-container"
+          // style={{ height: "400px" }}
         >
           <div className="spinner-border" role="status">
             <span className="sr-only">Loading...</span>

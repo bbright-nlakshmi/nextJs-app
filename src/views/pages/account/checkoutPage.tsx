@@ -684,9 +684,9 @@ const CheckoutPage: React.FC = () => {
     return (
       <button
         type="submit"
-        className="btn btn-primary btn-block"
+        className="btn btn-primary btn-block checkout-button"
         disabled={isProcessing || !selectedPaymentMode}
-        style={{ width: "100%", marginTop: "20px", padding: "15px", fontSize: "16px", fontWeight: "bold" }}
+        // style={{ width: "100%", marginTop: "20px", padding: "15px", fontSize: "16px", fontWeight: "bold" }}
       >
         {getPaymentButtonText()}
       </button>
@@ -896,11 +896,10 @@ const CheckoutPage: React.FC = () => {
                           value={mode.value}
                           checked={selectedPaymentMode === mode.value}
                           onChange={(e) => handlePaymentModeChange(e.target.value)}
-                          style={{ marginRight: "12px" }}
+                          // style={{ marginRight: "10px" }}
+                          className="payment-mode-radio"
                         />
-                        <label style={{ cursor: "pointer", fontWeight: selectedPaymentMode === mode.value ? "600" : "400" }}>
-                          {mode.label}
-                        </label>
+                        <label className="payment-mode-label">{mode.label}</label>
                       </div>
                     ))}
                   </div>
@@ -909,60 +908,57 @@ const CheckoutPage: React.FC = () => {
               <Col lg="5">
                 <div className="order-summary" style={{ position: "sticky", top: "20px" }}>
                   <h3 className="checkout-title">Order Summary</h3>
-                  <div className="cart-items" style={{ marginBottom: "20px", maxHeight: "400px", overflowY: "auto" }}>
-                    {cartItems.map((item, index) => {
-                      const currentPrice = getPriceUsingSearchController(item);
-                      const quantity = item.cartItemCount || item.qty || 1;
-                      const itemKey = getItemKey(item);
-                      
-                      return (
-                        <div key={itemKey} className="cart-item" style={{ 
-                          display: "flex", 
-                          padding: "15px", 
-                          borderBottom: "1px solid #eee", 
-                          alignItems: "center",
-                          backgroundColor: "#fff",
-                          marginBottom: "8px",
-                          borderRadius: "6px",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-                        }}>
-                          <img
-                            src={item.img[0] || "/static/images/placeholder.png"}
-                            alt={item.name}
-                            style={{ 
-                              width: "60px", 
-                              height: "60px", 
-                              objectFit: "cover", 
-                              marginRight: "15px",
+                  <div className="cart-items-container">
+                    {cartItems.map((item, index) => (
+                      <div key={`${item.id}_${index}`} className="cart-item">
+                        <img
+                          src={item.img[0] || "/static/images/placeholder.png"}
+                          alt={item.name}
+                          className="cart-item-image"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/static/images/placeholder.png"; }}
+                        />
+                        <div className="item-details">
+                          <div className="item-name">{item.name}</div>
+                          <div className="item-price">Qty: {item.cartItemCount} × {symbol}{item.price.toFixed(2)}</div>
+                          {item.discountPrice && item.discountPrice < item.price && (
+                            <div className="item-discount">
+                              Discount: {symbol}{((item.price - item.discountPrice) * item.cartItemCount).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="item-total">{symbol}{((item.discountPrice || item.price) * item.cartItemCount).toFixed(2)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="order-totals">
+                    <div className="form-group mb-3" style={{ marginTop: "20px" }}>
+                      <label className="field-label coupon-label">Available Coupons</label>
+                      <div className="coupon-container">
+                        {availableCoupons.length === 0 && <span className="no-coupons">{phoneNumber ? "No coupons available" : "Enter phone number to view coupons"}</span>}
+                        {availableCoupons.map((coupon) => (
+                          <button
+                            key={coupon.couponCode}
+                            type="button"
+                            className="btn"
+                            style={{
+                              background: appliedCoupon?.couponCode === coupon.couponCode ? "#00baf2" : "#e6f7ff",
+                              color: appliedCoupon?.couponCode === coupon.couponCode ? "#fff" : "#00baf2",
+                              border: "1px solid #00baf2",
+                              fontWeight: 500,
+                              padding: "8px 16px",
                               borderRadius: "6px",
                               border: "1px solid #e0e0e0"
                             }}
-                            onError={(e) => { 
-                              const target = e.target as HTMLImageElement;
-                              target.src = "/static/images/placeholder.png"; 
-                            }}
-                          />
-                          <div className="item-details" style={{ flex: 1 }}>
-                            <div className="item-name" style={{ 
-                              fontWeight: "600", 
-                              marginBottom: "5px", 
-                              fontSize: "14px",
-                              lineHeight: "1.3"
-                            }}>
-                              {item.name}
-                            </div>
-                            <div className="item-price" style={{ fontSize: "13px", color: "#666" }}>
-                              Qty: {quantity} × {symbol}{currentPrice.toFixed(2)}
-                            </div>
-                            {item.price && currentPrice < item.price && (
-                              <div className="item-discount" style={{ fontSize: "12px", color: "#28a745", fontWeight: "500" }}>
-                                Saved: {symbol}{((item.price - currentPrice) * quantity).toFixed(2)}
-                              </div>
-                            )}
-                          </div>
-                          <div className="item-total" style={{ fontWeight: "700", color: "#333", fontSize: "15px" }}>
-                            {symbol}{(currentPrice * quantity * currencyValue).toFixed(2)}
-                          </div>
+                            onClick={() => handleSelectCoupon(coupon)}
+                          >
+                            {coupon.couponCode} - {coupon.isCouponPercentage ? `${coupon.couponAmount}% off` : `₹${coupon.couponAmount} off`} {coupon.maxCouponAmount > 0 ? `(Max ₹${coupon.maxCouponAmount})` : ""}
+                          </button>
+                        ))}
+                      </div>
+                      {couponError && <div className="text-danger mt-1">{couponError}</div>}
+                      {appliedCoupon && (
+                        <div className="mt-1 coupon-discount">
+                          Coupon <strong>{appliedCoupon.couponCode}</strong> applied: {appliedCoupon.isCouponPercentage ? `${appliedCoupon.couponAmount}% off` : `₹${appliedCoupon.couponAmount} off`} {appliedCoupon.maxCouponAmount > 0 ? `(Max ₹${appliedCoupon.maxCouponAmount})` : ""}
                         </div>
                       );
                     })}

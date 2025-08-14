@@ -369,9 +369,9 @@ const Wishlist: NextPage = () => {
             <div className="empty-cart-cls text-center">
               <img
                 src="/images/empty-wishlist.png"
-                className=" mb-4"
+                className=" mb-4 wishlist-max-width"
                 alt="empty wishlist"
-                style={{ maxWidth: 200 }}
+                // style={{ maxWidth: 200 }}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = "none";

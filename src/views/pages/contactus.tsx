@@ -132,7 +132,8 @@ const ContactUsPage: NextPage = () => {
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    style={{ width: "100%", height: "400px", border: 0 }}
+                    // style={{ width: "100%", height: "400px", border: 0 }}
+                    className="contact-map"
                   />
                 ) : (
                   <p>Loading map...</p>

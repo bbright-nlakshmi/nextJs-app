@@ -79,7 +79,8 @@ const LeftSidebar: NextPage = () => {
         <section className="section-big-pt-space shopdetails-style-1-wrapper">
           <Row>
             <Col lg="12" xl="12">
-              <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+              <div className="d-flex justify-content-center align-items-center product-details-container">
+                {/* style={{ minHeight: '400px' }} */}
                 <div className="text-center">
                   <div className="spinner-border mb-3" role="status">
                     <span className="visually-hidden">Loading...</span>

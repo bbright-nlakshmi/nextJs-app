@@ -230,7 +230,8 @@ const UserProfile: NextPage = () => {
   return (
     <>
       <li className="mobile-user onhover-dropdown" onClick={toggleAccount}>
-        <a href="#" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {/* <a href="#" style={{ display: "flex", alignItems: "center", gap: "8px" }}></a> */}
+        <a href="#" className="user-profile-link">
           <i className="icon-user"></i>
         </a>
       </li>

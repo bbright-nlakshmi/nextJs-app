@@ -138,7 +138,7 @@ const KitDiscription: React.FC<ProductRightProps> = ({ item }) => {
                             <tr key={index}>
                               <td>
                                 {kitItem.img && kitItem.img.length > 0 ? (
-                                  <img src={kitItem.img[0]} alt={kitItem.name} style={{ width: 50, height: 50, objectFit: "cover" }} />
+                                  <img src={kitItem.img[0]} alt={kitItem.name} className="kit-item-image" />
                                 ) : (
                                   "N/A"
                                 )}

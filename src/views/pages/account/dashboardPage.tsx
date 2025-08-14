@@ -275,18 +275,17 @@ const Dashboard: NextPage = () => {
                 <img 
                   src={item.img?.[0] || "/static/images/placeholder.png"} 
                   alt="wishlist" 
-                  className="img-fluid rounded"
-                  style={{ width: '60px', height: '60px', objectFit: 'cover' }}
+                  className="img-fluid rounded dashboard-product-image"
                 />
               </div>
               <div className="col-6">
                 <h6 className="mb-1">{item.title}</h6>
-                <p className="mb-0 small" style={{ color: '#00baf2', fontWeight: 'bold' }}>
+                <p className="mb-0 small dashboard-product-name">
                   {symbol}{(price * value).toFixed(2)}
                 </p>
               </div>
               <div className="col-3 text-right">
-                <small style={{ color: (item.stock ?? 0) > 0 ? '#28a745' : '#dc3545' }}>
+                <small className={(item.stock ?? 0) > 0 ? 'dashboard-stock-status' : 'dashboard-stock-status-out'}>
                   {(item.stock ?? 0) > 0 ? "In Stock" : "Out of Stock"}
                 </small>
               </div>
@@ -321,14 +320,15 @@ const Dashboard: NextPage = () => {
           <img 
             src={item.img?.[0] || "/static/images/placeholder.png"} 
             alt="wishlist" 
-            style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: '8px' }} 
+            className="dashboard-table-image"
+            // style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: '8px' }} 
           />
         </td>
         <td className="p-3">{item.title}</td>
-        <td className="text-center p-3" style={{ fontWeight: '600', color: '#333' }}>
+        <td className="text-center p-3 dashboard-table-price">
           {symbol}{(price * value).toFixed(2)}
         </td>
-        <td className="text-center p-3" style={{ color: (item.stock ?? 0) > 0 ? '#28a745' : '#dc3545', fontWeight: '500' }}>
+        <td className={`text-center p-3 ${(item.stock ?? 0) > 0 ? 'dashboard-table-stock' : 'dashboard-table-stock-out'}`}>
           {(item.stock ?? 0) > 0 ? "In Stock" : "Out of Stock"}
         </td>
         <td className="text-center p-3">
@@ -555,7 +555,7 @@ const Dashboard: NextPage = () => {
             ) : (
               <Card className="shadow-sm">
                 <CardBody className="text-center py-5">
-                  <i className="fa fa-heart fa-5x mb-4" style={{ color: '#00baf2' }}></i>
+                  <i className="fa fa-heart fa-5x mb-4 dashboard-icon-primary"></i>
                   <h3 className="mb-3"><strong>Your wishlist is Empty</strong></h3>
                   <p className="text-muted mb-4">Explore more and shortlist some items.</p>
                   <Link href="/">
@@ -624,7 +624,7 @@ const Dashboard: NextPage = () => {
             ) : filteredOrders.length === 0 ? (
               <Card className="shadow-sm">
                 <CardBody className="text-center py-5">
-                  <i className="fa fa-shopping-bag fa-5x mb-4" style={{ color: '#00baf2' }}></i>
+                  <i className="fa fa-shopping-bag fa-5x mb-4 dashboard-icon-primary"></i>
                   <h5>No orders found</h5>
                   <p>You haven't placed any orders yet</p>
                 </CardBody>
@@ -643,17 +643,17 @@ const Dashboard: NextPage = () => {
                       </div>
                       <div className="d-flex align-items-center gap-3">
                         <div className="text-center">
-                          <strong style={{ color: '#00baf2' }}>{Object.keys(order.orderItems).length}</strong>
+                          <strong className="dashboard-order-count">{Object.keys(order.orderItems).length}</strong>
                           <div><small>Items</small></div>
                         </div>
                         <div className="text-center">
-                          <strong style={{ color: '#00baf2' }}>₹{order.finalOrderTotal.toFixed(2)}</strong>
+                          <strong className="dashboard-order-total">₹{order.finalOrderTotal.toFixed(2)}</strong>
                           <div><small>Total</small></div>
                         </div>
                         <Badge color={getStatusColor(order.orderAcceptStatus || "Pending")}>
                           {order.orderAcceptStatus || "Pending"}
                         </Badge>
-                        <i className={`fa ${expandedOrderId === order.id ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: '#00baf2' }}></i>
+                        <i className={`fa ${expandedOrderId === order.id ? 'fa-chevron-up' : 'fa-chevron-down'} dashboard-expand-icon`}></i>
                       </div>
                     </div>
 
@@ -665,7 +665,7 @@ const Dashboard: NextPage = () => {
                             <img
                               src={item.url || "/images/placeholder.png"}
                               alt={item.name}
-                              style={{ width: 60, height: 60, objectFit: 'cover' }}
+                              className="dashboard-table-image"
                               className="me-3 rounded"
                             />
                             <div className="flex-grow-1">
@@ -673,7 +673,7 @@ const Dashboard: NextPage = () => {
                               <p className="text-muted mb-0">{item.categoryName || "N/A"}</p>
                             </div>
                             <div className="text-end">
-                              <div className="fw-bold" style={{ color: '#00baf2' }}>₹{item.choosedPrice?.toFixed(2) ?? "0.00"}</div>
+                              <div className="fw-bold dashboard-icon-primary">₹{item.choosedPrice?.toFixed(2) ?? "0.00"}</div>
                               <small>Qty: {item.cartItemCount}</small>
                             </div>
                           </div>
@@ -700,8 +700,8 @@ const Dashboard: NextPage = () => {
               <CardBody>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <div>
-                    <h5 className="mb-1" style={{ color: '#333', fontWeight: '600' }}>
-                      <i className="fa fa-user me-2" style={{ color: '#00baf2' }}></i>
+                    <h5 className="mb-1 dashboard-section-title">
+                      <i className="fa fa-user me-2 dashboard-icon"></i>
                       Contact Information
                     </h5>
                     <p className="text-muted mb-0 small">Keep your contact details up to date</p>
@@ -767,7 +767,7 @@ const Dashboard: NextPage = () => {
                     <Col md="4">
                       <div className="info-item mb-3">
                         <div className="info-label">
-                          <i className="fa fa-user me-2" style={{ color: '#00baf2' }}></i>
+                          <i className="fa fa-user me-2 dashboard-icon"></i>
                           <strong>Name</strong>
                         </div>
                         <div className="info-value">{userInfo.name}</div>
@@ -776,7 +776,7 @@ const Dashboard: NextPage = () => {
                     <Col md="4">
                       <div className="info-item mb-3">
                         <div className="info-label">
-                          <i className="fa fa-envelope me-2" style={{ color: '#00baf2' }}></i>
+                          <i className="fa fa-envelope me-2 dashboard-icon"></i>
                           <strong>Email</strong>
                         </div>
                         <div className="info-value">{userInfo.email}</div>
@@ -785,7 +785,7 @@ const Dashboard: NextPage = () => {
                     <Col md="4">
                       <div className="info-item mb-3">
                         <div className="info-label">
-                          <i className="fa fa-phone me-2" style={{ color: '#00baf2' }}></i>
+                          <i className="fa fa-phone me-2 dashboard-icon"></i>
                           <strong>Phone</strong>
                         </div>
                         <div className="info-value">{userInfo.phone}</div>
@@ -801,8 +801,8 @@ const Dashboard: NextPage = () => {
               <CardBody>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <div>
-                    <h5 className="mb-1" style={{ color: '#333', fontWeight: '600' }}>
-                      <i className="fa fa-map-marker me-2" style={{ color: '#00baf2' }}></i>
+                    <h5 className="mb-1 dashboard-section-title">
+                      <i className="fa fa-map-marker me-2 dashboard-icon"></i>
                       Address Information
                     </h5>
                     <p className="text-muted mb-0 small">Manage your billing and shipping addresses</p>
@@ -856,7 +856,7 @@ const Dashboard: NextPage = () => {
                     <Col md="6">
                       <div className="address-card">
                         <div className="address-header">
-                          <i className="fa fa-credit-card me-2" style={{ color: '#00baf2' }}></i>
+                          <i className="fa fa-credit-card me-2 dashboard-icon"></i>
                           <strong>Billing Address</strong>
                         </div>
                         <div className="address-content">

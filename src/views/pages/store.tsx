@@ -56,8 +56,8 @@ const StorePage: NextPage = () => {
       <div className="bg-light">
         <Breadcrumb title="Store" parent="home" />
         <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "400px" }}
+          className="d-flex justify-content-center align-items-center store-map-container"
+          // style={{ height: "400px" }}
         >
           <div className="spinner-border" role="status">
             <span className="sr-only">Loading...</span>
@@ -72,8 +72,8 @@ const StorePage: NextPage = () => {
       <div className="bg-light">
         <Breadcrumb title="Store" parent="home" />
         <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "400px" }}
+          className="d-flex justify-content-center align-items-center store-map-container"
+          // style={{ height: "400px" }}
         >
           <div className="alert alert-danger" role="alert">
             Error loading store data: {error}

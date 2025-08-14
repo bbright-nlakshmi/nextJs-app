@@ -21,5 +21,6 @@ export const appConfig = {
 };
 // Get tenantId from environment variables or config
 // {etcnlzil, 5e2f938f-5d53-4f33-bfd1-1248acec2fc7}
+// {frmkiokg, c3d1ca3c-98c1-43f9-8f48-ea9641b390ad}
 // {dxrhudtb,5b547df0-967d-4aa4-8996-e02511c66e26}
 //  {owuhhrlb, b0aec458-86f7-4c29-8587-ec4271b9168c}
