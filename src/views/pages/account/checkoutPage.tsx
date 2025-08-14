@@ -10,7 +10,7 @@ import { toast } from "react-toastify";
 import { OrderPayloadService } from "../../../app/providers/usePlaceOrder/usePlaceOrder";
 import { API } from "@/app/globalProvider";
 import { appConfig } from "../../../app/config/";
-import { searchController, Kit } from "@/app/globalProvider"; // Import searchController and Kit
+import { searchController, Kit } from "@/app/globalProvider";
 import RazorpayButton from "../../../app/(MainBody)/pages/account/checkout/components/RazorpayButton";
 import { createOrderPayload, storeOrderSuccessData } from "../../../utils/orderPayloadUtils";
 
@@ -40,7 +40,6 @@ interface CartItem {
   isReturnable: boolean;
   categoryName: string;
   categoryID: string;
-  // Additional properties that might exist
   productId?: string;
   qty?: number;
   purchaseOptionStr?: string;
@@ -150,7 +149,7 @@ const CheckoutPage: React.FC = () => {
   };
 
   // CONSISTENT PRICE CALCULATION FUNCTION - Same as Cart Page
-  const getProductById = (productId: string): any => {
+  const getProductById = useCallback((productId: string): any => {
     if (!productId) return null;
 
     try {
@@ -176,15 +175,16 @@ const CheckoutPage: React.FC = () => {
     }
 
     return null;
-  };
+  }, []);
 
-  const getPrice = (item: CartItem): number => {
+  const getPrice = useCallback((item: CartItem): number => {
     if (!item) return 0;
 
     try {
       const product = getProductById(item.productId || item.id);
       
       if (product) {
+        // Handle Kit products
         if (product instanceof Kit && typeof product.getPrice === "function") {
           try {
             const price = product.getPrice({ cartQuantity: item.cartItemCount || item.qty || 1 });
@@ -196,6 +196,7 @@ const CheckoutPage: React.FC = () => {
           }
         }
         
+        // Handle regular products
         if (product?.getPrice && typeof product.getPrice === "function") {
           try {
             const price = product.getPrice({
@@ -211,6 +212,7 @@ const CheckoutPage: React.FC = () => {
         }
       }
 
+      // Fallback price extraction
       const extractPriceFromObject = (obj: any): number => {
         if (!obj || typeof obj !== 'object') return 0;
 
@@ -244,7 +246,7 @@ const CheckoutPage: React.FC = () => {
       const itemPrice = extractPriceFromObject(item);
       if (itemPrice > 0) return itemPrice;
 
-      // Fallback to item.discountPrice || item.price
+      // Final fallbacks
       if (item.discountPrice && typeof item.discountPrice === 'number' && item.discountPrice > 0) {
         return item.discountPrice;
       }
@@ -257,7 +259,29 @@ const CheckoutPage: React.FC = () => {
       console.error("Price extraction error:", err);
       return item.discountPrice || item.price || 0;
     }
-  };
+  }, [getProductById]);
+
+  // Alternative price calculation using searchController.getDetails
+  const getPriceUsingSearchController = useCallback((item: CartItem): number => {
+    try {
+      const productId = item.productId || item.id;
+      if (searchController && searchController.getDetails) {
+        const price = searchController.getDetails(productId, 'getPrice');
+        if (typeof price === 'number' && !isNaN(price) && price > 0) {
+          return price;
+        }
+      }
+    } catch (error) {
+      console.warn("SearchController getPrice failed, using fallback:", error);
+    }
+    
+    return getPrice(item);
+  }, [getPrice]);
+
+  // Helper function to get unique identifier for item
+  const getItemKey = useCallback((item: CartItem): string => {
+    return item.cartItemId || item.key || item.id || item.productId || Math.random().toString();
+  }, []);
 
   // Fetch and set default phone number from profile or sessionStorage
   useEffect(() => {
@@ -267,8 +291,12 @@ const CheckoutPage: React.FC = () => {
     } else if (typeof window !== "undefined") {
       const addressDetails = window.sessionStorage.getItem("addressDetails");
       if (addressDetails) {
-        const parsed = JSON.parse(addressDetails);
-        defaultPhone = parsed.phone || "";
+        try {
+          const parsed = JSON.parse(addressDetails);
+          defaultPhone = parsed.phone || "";
+        } catch (e) {
+          console.error("Error parsing addressDetails:", e);
+        }
       }
     }
     if (defaultPhone) {
@@ -284,12 +312,15 @@ const CheckoutPage: React.FC = () => {
         if (!userPhone && typeof window !== "undefined") {
           const addressDetails = window.sessionStorage.getItem("addressDetails");
           if (addressDetails) {
-            const parsed = JSON.parse(addressDetails);
-            userPhone = parsed.phone || "";
+            try {
+              const parsed = JSON.parse(addressDetails);
+              userPhone = parsed.phone || "";
+            } catch (e) {
+              console.error("Error parsing addressDetails for phone:", e);
+            }
           }
         }
 
-        // Skip fetching if no valid phone number is available
         if (!userPhone) {
           setAvailableCoupons([]);
           return;
@@ -329,7 +360,7 @@ const CheckoutPage: React.FC = () => {
     fetchCoupons();
   }, [phoneNumber, cartItems, apiConfig.tenantId, apiConfig.storeId]);
 
-  const handleSelectCoupon = (coupon: Coupon) => {
+  const handleSelectCoupon = useCallback((coupon: Coupon) => {
     setCouponError("");
     const now = new Date();
     if (coupon.expireDate && new Date(coupon.expireDate) < now) {
@@ -337,84 +368,87 @@ const CheckoutPage: React.FC = () => {
       setAppliedCoupon(null);
       return;
     }
-    const cartTotal = cartItems.reduce((sum, item) => sum + (getPrice(item) * (item.cartItemCount || item.qty || 1)), 0);
+    const cartTotal = cartItems.reduce((sum, item) => sum + (getPriceUsingSearchController(item) * (item.cartItemCount || item.qty || 1)), 0);
     if (cartTotal < coupon.minimumCartValue) {
       setCouponError(`Minimum cart value for this coupon is ₹${coupon.minimumCartValue}`);
       setAppliedCoupon(null);
       return;
     }
     setAppliedCoupon(coupon);
-  };
+  }, [cartItems, getPriceUsingSearchController]);
 
+  // Set cart items from context or buyNow mode
   useEffect(() => {
     let buyNowMode = false;
     let buyNowProduct = null;
     if (typeof window !== "undefined") {
       buyNowMode = window.sessionStorage.getItem("checkoutMode") === "buyNow";
       const buyNowRaw = window.sessionStorage.getItem("buyNowProduct");
-      if (buyNowRaw) buyNowProduct = JSON.parse(buyNowRaw);
+      if (buyNowRaw) {
+        try {
+          buyNowProduct = JSON.parse(buyNowRaw);
+        } catch (e) {
+          console.error("Error parsing buyNowProduct:", e);
+        }
+      }
     }
 
-    const buyNowItem: CartItem | null = buyNowMode && buyNowProduct ? {
-      id: buyNowProduct.id || `item-0`,
-      name: buyNowProduct.name || "Unknown Product",
-      img: Array.isArray(buyNowProduct.img) ? buyNowProduct.img : [buyNowProduct.img || "/static/images/placeholder.png"],
-      cartItemCount: buyNowProduct.qty || 1,
-      cartPurchaseOptionStr: buyNowProduct.purchaseOptionStr || "default",
-      price: buyNowProduct.price || 0,
-      discountPrice: buyNowProduct.discountPrice,
-      taxType: buyNowProduct.taxType || "EXCLUSIVE",
-      taxAmount: parseFloat(buyNowProduct.taxAmount) || 0,
-      active: true,
-      isReturnable: buyNowProduct.isReturnable || false,
-      categoryName: buyNowProduct.categoryName || "General",
-      categoryID: buyNowProduct.categoryID || "default",
-      productId: buyNowProduct.productId || buyNowProduct.id,
-      qty: buyNowProduct.qty || 1,
-      purchaseOptionStr: buyNowProduct.purchaseOptionStr || "default"
-    } : null;
-
-    const cartTransformed: CartItem[] = contextCartItems.map((item: any, index: number) => ({
-      id: item.id || `item-${index}`,
-      name: item.name || "Unknown Product",
-      img: Array.isArray(item.img) ? item.img : [item.img || "/static/images/placeholder.png"],
-      cartItemCount: item.qty || 1,
-      cartPurchaseOptionStr: item.purchaseOptionStr || "default",
-      price: item.price || 0,
-      discountPrice: item.discountPrice,
-      taxType: item.taxType || "EXCLUSIVE",
-      taxAmount: parseFloat(item.taxAmount) || 0,
-      active: true,
-      isReturnable: item.isReturnable || false,
-      categoryName: item.categoryName || "General",
-      categoryID: item.categoryID || "default",
-      productId: item.productId || item.id,
-      qty: item.qty || 1,
-      purchaseOptionStr: item.purchaseOptionStr || "default"
-    }));
-
-    const merged: { [key: string]: CartItem } = {};
-    const getKey = (item: any) => item.id;
-    if (buyNowItem) merged[getKey(buyNowItem)] = buyNowItem;
-    cartTransformed.forEach(item => {
-      const key = getKey(item);
-      if (merged[key]) {
-        merged[key].cartItemCount += item.cartItemCount;
-        if (merged[key].qty) merged[key].qty! += (item.qty || 1);
-      } else {
-        merged[key] = item;
-      }
-    });
-    setCartItems(Object.values(merged));
+    if (buyNowMode && buyNowProduct) {
+      // For buyNow mode, show only the buyNow product
+      const buyNowItem: CartItem = {
+        id: buyNowProduct.id || `item-0`,
+        name: buyNowProduct.name || "Unknown Product",
+        img: Array.isArray(buyNowProduct.img) ? buyNowProduct.img : [buyNowProduct.img || "/static/images/placeholder.png"],
+        cartItemCount: buyNowProduct.qty || 1,
+        cartPurchaseOptionStr: buyNowProduct.purchaseOptionStr || "default",
+        price: buyNowProduct.price || 0,
+        discountPrice: buyNowProduct.discountPrice,
+        taxType: buyNowProduct.taxType || "EXCLUSIVE",
+        taxAmount: parseFloat(buyNowProduct.taxAmount) || 0,
+        active: true,
+        isReturnable: buyNowProduct.isReturnable || false,
+        categoryName: buyNowProduct.categoryName || "General",
+        categoryID: buyNowProduct.categoryID || "default",
+        productId: buyNowProduct.productId || buyNowProduct.id,
+        qty: buyNowProduct.qty || 1,
+        purchaseOptionStr: buyNowProduct.purchaseOptionStr || "default"
+      };
+      setCartItems([buyNowItem]);
+    } else {
+      // For normal cart mode, show all cart items without merging duplicates
+      const cartTransformed: CartItem[] = contextCartItems.map((item: any, index: number) => ({
+        id: item.id || `item-${index}`,
+        name: item.name || "Unknown Product",
+        img: Array.isArray(item.img) ? item.img : [item.img || "/static/images/placeholder.png"],
+        cartItemCount: item.qty || 1,
+        cartPurchaseOptionStr: item.purchaseOptionStr || "default",
+        price: item.price || 0,
+        discountPrice: item.discountPrice,
+        taxType: item.taxType || "EXCLUSIVE",
+        taxAmount: parseFloat(item.taxAmount) || 0,
+        active: true,
+        isReturnable: item.isReturnable || false,
+        categoryName: item.categoryName || "General",
+        categoryID: item.categoryID || "default",
+        productId: item.productId || item.id,
+        qty: item.qty || 1,
+        purchaseOptionStr: item.purchaseOptionStr || "default",
+        cartItemId: item.cartItemId,
+        key: item.key
+      }));
+      
+      setCartItems(cartTransformed);
+    }
   }, [contextCartItems]);
 
+  // Calculate order totals with consistent pricing
   const calculations = useMemo((): OrderCalculations => {
     let cartAmount = 0;
     let discountAmount = 0;
     let taxAmount = 0;
 
     cartItems.forEach(item => {
-      const currentPrice = getPrice(item); // Use consistent price calculation
+      const currentPrice = getPriceUsingSearchController(item);
       const quantity = item.cartItemCount || item.qty || 1;
       const itemTotal = currentPrice * quantity;
       cartAmount += itemTotal;
@@ -449,7 +483,7 @@ const CheckoutPage: React.FC = () => {
       finalTotal,
       couponDiscount
     };
-  }, [cartItems, selectedPaymentMode, appliedCoupon]);
+  }, [cartItems, selectedPaymentMode, appliedCoupon, getPriceUsingSearchController]);
 
   const handlePaymentModeChange = useCallback((mode: string) => setSelectedPaymentMode(mode), []);
   const handleGstChange = useCallback((value: string) => setGstNumber(value), []);
@@ -607,7 +641,6 @@ const CheckoutPage: React.FC = () => {
           break;
         case "RAZORPAY":
           // For Razorpay, the payment is handled by the RazorpayButton component
-          // The order is already saved, so we just need to show success message
           toast.success("Order created successfully! Please complete the payment.");
           setIsProcessing(false);
           return;
@@ -667,9 +700,24 @@ const CheckoutPage: React.FC = () => {
         <section className="checkout-container">
           <div className="container">
             <div className="empty-cart text-center py-5">
-              <h3>Your cart is empty</h3>
-              <p>Add some items to your cart to proceed with checkout.</p>
-              <button className="btn btn-primary" onClick={() => router.push("/")}>
+              <img
+                src="/static/images/icon-empty-cart.png"
+                className="img-fluid mb-4 empty-cart-image"
+                alt="empty cart"
+                style={{ maxWidth: '200px' }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                }}
+              />
+              <h3 className="empty-cart-title mb-3">
+                <strong>Your Cart is Empty</strong>
+              </h3>
+              <p className="empty-cart-subtitle text-muted mb-4">
+                Add some items to your cart to proceed with checkout.
+              </p>
+              <button className="btn btn-primary btn-lg" onClick={() => router.push("/")}>
+                <i className="fa fa-shopping-cart mr-2"></i>
                 Continue Shopping
               </button>
             </div>
@@ -831,7 +879,16 @@ const CheckoutPage: React.FC = () => {
                         key={mode.value}
                         className={`payment-option ${selectedPaymentMode === mode.value ? "selected" : ""}`}
                         onClick={() => handlePaymentModeChange(mode.value)}
-                        style={{ padding: "15px", border: "1px solid #ddd", marginBottom: "10px", cursor: "pointer", backgroundColor: selectedPaymentMode === mode.value ? "#f0f8ff" : "#fff" }}
+                        style={{ 
+                          padding: "15px", 
+                          border: "2px solid", 
+                          borderColor: selectedPaymentMode === mode.value ? "#00baf2" : "#ddd",
+                          marginBottom: "10px", 
+                          cursor: "pointer", 
+                          backgroundColor: selectedPaymentMode === mode.value ? "#f0f8ff" : "#fff",
+                          borderRadius: "8px",
+                          transition: "all 0.3s ease"
+                        }}
                       >
                         <input
                           type="radio"
@@ -839,131 +896,226 @@ const CheckoutPage: React.FC = () => {
                           value={mode.value}
                           checked={selectedPaymentMode === mode.value}
                           onChange={(e) => handlePaymentModeChange(e.target.value)}
-                          style={{ marginRight: "10px" }}
+                          style={{ marginRight: "12px" }}
                         />
-                        <label style={{ cursor: "pointer" }}>{mode.label}</label>
+                        <label style={{ cursor: "pointer", fontWeight: selectedPaymentMode === mode.value ? "600" : "400" }}>
+                          {mode.label}
+                        </label>
                       </div>
                     ))}
                   </div>
                 </div>
               </Col>
               <Col lg="5">
-                <div className="order-summary">
+                <div className="order-summary" style={{ position: "sticky", top: "20px" }}>
                   <h3 className="checkout-title">Order Summary</h3>
-                  <div className="cart-items" style={{ marginBottom: "20px" }}>
+                  <div className="cart-items" style={{ marginBottom: "20px", maxHeight: "400px", overflowY: "auto" }}>
                     {cartItems.map((item, index) => {
-                      const currentPrice = getPrice(item); // Use consistent price calculation
+                      const currentPrice = getPriceUsingSearchController(item);
                       const quantity = item.cartItemCount || item.qty || 1;
+                      const itemKey = getItemKey(item);
                       
                       return (
-                        <div key={`${item.id}_${index}`} className="cart-item" style={{ display: "flex", padding: "15px", borderBottom: "1px solid #eee", alignItems: "center" }}>
+                        <div key={itemKey} className="cart-item" style={{ 
+                          display: "flex", 
+                          padding: "15px", 
+                          borderBottom: "1px solid #eee", 
+                          alignItems: "center",
+                          backgroundColor: "#fff",
+                          marginBottom: "8px",
+                          borderRadius: "6px",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+                        }}>
                           <img
                             src={item.img[0] || "/static/images/placeholder.png"}
                             alt={item.name}
-                            style={{ width: "60px", height: "60px", objectFit: "cover", marginRight: "15px" }}
-                            onError={(e) => { (e.target as HTMLImageElement).src = "/static/images/placeholder.png"; }}
+                            style={{ 
+                              width: "60px", 
+                              height: "60px", 
+                              objectFit: "cover", 
+                              marginRight: "15px",
+                              borderRadius: "6px",
+                              border: "1px solid #e0e0e0"
+                            }}
+                            onError={(e) => { 
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/static/images/placeholder.png"; 
+                            }}
                           />
                           <div className="item-details" style={{ flex: 1 }}>
-                            <div className="item-name" style={{ fontWeight: "bold", marginBottom: "5px" }}>{item.name}</div>
-                            <div className="item-price" style={{ fontSize: "14px", color: "#666" }}>
+                            <div className="item-name" style={{ 
+                              fontWeight: "600", 
+                              marginBottom: "5px", 
+                              fontSize: "14px",
+                              lineHeight: "1.3"
+                            }}>
+                              {item.name}
+                            </div>
+                            <div className="item-price" style={{ fontSize: "13px", color: "#666" }}>
                               Qty: {quantity} × {symbol}{currentPrice.toFixed(2)}
                             </div>
                             {item.price && currentPrice < item.price && (
-                              <div className="item-discount" style={{ fontSize: "12px", color: "#28a745" }}>
-                                Discount: {symbol}{((item.price - currentPrice) * quantity).toFixed(2)}
+                              <div className="item-discount" style={{ fontSize: "12px", color: "#28a745", fontWeight: "500" }}>
+                                Saved: {symbol}{((item.price - currentPrice) * quantity).toFixed(2)}
                               </div>
                             )}
                           </div>
-                          <div className="item-total" style={{ fontWeight: "bold" }}>
+                          <div className="item-total" style={{ fontWeight: "700", color: "#333", fontSize: "15px" }}>
                             {symbol}{(currentPrice * quantity * currencyValue).toFixed(2)}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="order-totals" style={{ padding: "20px", backgroundColor: "#f8f9fa" }}>
-                    <div className="form-group mb-3" style={{ marginTop: "20px" }}>
-                      <label className="field-label" style={{ color: "#00baf2", fontWeight: 600 }}>Available Coupons</label>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "10px" }}>
-                        {availableCoupons.length === 0 && <span style={{ color: "#888" }}>{phoneNumber ? "No coupons available" : "Enter phone number to view coupons"}</span>}
-                        {availableCoupons.map((coupon) => (
-                          <button
-                            key={coupon.couponCode}
-                            type="button"
-                            className="btn"
-                            style={{
-                              background: appliedCoupon?.couponCode === coupon.couponCode ? "#00baf2" : "#e6f7ff",
-                              color: appliedCoupon?.couponCode === coupon.couponCode ? "#fff" : "#00baf2",
-                              border: "1px solid #00baf2",
-                              fontWeight: 500,
-                              padding: "8px 16px",
-                              borderRadius: "6px",
-                              cursor: "pointer"
-                            }}
-                            onClick={() => handleSelectCoupon(coupon)}
-                          >
-                            {coupon.couponCode} - {coupon.isCouponPercentage ? `${coupon.couponAmount}% off` : `₹${coupon.couponAmount} off`} {coupon.maxCouponAmount > 0 ? `(Max ₹${coupon.maxCouponAmount})` : ""}
-                          </button>
-                        ))}
-                      </div>
-                      {couponError && <div className="text-danger mt-1">{couponError}</div>}
-                      {appliedCoupon && (
-                        <div className="mt-1" style={{ color: "#00baf2", fontWeight: 500 }}>
-                          Coupon <strong>{appliedCoupon.couponCode}</strong> applied: {appliedCoupon.isCouponPercentage ? `${appliedCoupon.couponAmount}% off` : `₹${appliedCoupon.couponAmount} off`} {appliedCoupon.maxCouponAmount > 0 ? `(Max ₹${appliedCoupon.maxCouponAmount})` : ""}
-                        </div>
+
+                  {/* Coupon Section */}
+                  <div className="coupon-section" style={{ marginBottom: "20px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
+                    <label className="field-label" style={{ color: "#00baf2", fontWeight: "600", marginBottom: "15px", display: "block" }}>
+                      Available Coupons
+                    </label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "15px" }}>
+                      {availableCoupons.length === 0 && (
+                        <span style={{ color: "#888", fontSize: "14px", fontStyle: "italic" }}>
+                          {phoneNumber ? "No coupons available" : "Enter phone number to view coupons"}
+                        </span>
                       )}
+                      {availableCoupons.map((coupon) => (
+                        <button
+                          key={coupon.couponCode}
+                          type="button"
+                          className="btn btn-sm"
+                          style={{
+                            background: appliedCoupon?.couponCode === coupon.couponCode ? "#00baf2" : "#e6f7ff",
+                            color: appliedCoupon?.couponCode === coupon.couponCode ? "#fff" : "#00baf2",
+                            border: "1px solid #00baf2",
+                            fontWeight: "500",
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            transition: "all 0.3s ease"
+                          }}
+                          onClick={() => handleSelectCoupon(coupon)}
+                          onMouseEnter={(e) => {
+                            if (appliedCoupon?.couponCode !== coupon.couponCode) {
+                              e.currentTarget.style.backgroundColor = "#d1ecf1";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (appliedCoupon?.couponCode !== coupon.couponCode) {
+                              e.currentTarget.style.backgroundColor = "#e6f7ff";
+                            }
+                          }}
+                        >
+                          {coupon.couponCode} - {coupon.isCouponPercentage ? `${coupon.couponAmount}% off` : `₹${coupon.couponAmount} off`}
+                          {coupon.maxCouponAmount > 0 && ` (Max ₹${coupon.maxCouponAmount})`}
+                        </button>
+                      ))}
                     </div>
-                    <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                    {couponError && <div className="text-danger" style={{ fontSize: "13px", marginBottom: "10px" }}>{couponError}</div>}
+                    {appliedCoupon && (
+                      <div style={{ 
+                        color: "#00baf2", 
+                        fontWeight: "500", 
+                        fontSize: "13px", 
+                        padding: "8px", 
+                        backgroundColor: "#e6f7ff", 
+                        borderRadius: "4px", 
+                        border: "1px solid #b3d9ff" 
+                      }}>
+                        ✓ Coupon <strong>{appliedCoupon.couponCode}</strong> applied: {appliedCoupon.isCouponPercentage ? `${appliedCoupon.couponAmount}% off` : `₹${appliedCoupon.couponAmount} off`}
+                        {appliedCoupon.maxCouponAmount > 0 && ` (Max ₹${appliedCoupon.maxCouponAmount})`}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Order Totals */}
+                  <div className="order-totals" style={{ 
+                    padding: "20px", 
+                    backgroundColor: "#fff", 
+                    border: "1px solid #e0e0e0", 
+                    borderRadius: "8px" 
+                  }}>
+                    <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", fontSize: "14px" }}>
                       <span>Cart Total</span>
-                      <span>{symbol}{(calculations.cartAmount * currencyValue).toFixed(2)}</span>
+                      <span style={{ fontWeight: "500" }}>{symbol}{(calculations.cartAmount * currencyValue).toFixed(2)}</span>
                     </div>
                     {calculations.discountAmount > 0 && (
-                      <div className="total-row discount" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#28a745" }}>
+                      <div className="total-row discount" style={{ 
+                        display: "flex", 
+                        justifyContent: "space-between", 
+                        marginBottom: "12px", 
+                        color: "#28a745",
+                        fontSize: "14px"
+                      }}>
                         <span>Item Discount</span>
-                        <span>-{symbol}{(calculations.discountAmount * currencyValue).toFixed(2)}</span>
+                        <span style={{ fontWeight: "500" }}>-{symbol}{(calculations.discountAmount * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.couponDiscount > 0 && (
-                      <div className="total-row coupon" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#00baf2" }}>
+                      <div className="total-row coupon" style={{ 
+                        display: "flex", 
+                        justifyContent: "space-between", 
+                        marginBottom: "12px", 
+                        color: "#00baf2",
+                        fontSize: "14px"
+                      }}>
                         <span>Coupon Discount</span>
-                        <span>-{symbol}{(calculations.couponDiscount * currencyValue).toFixed(2)}</span>
+                        <span style={{ fontWeight: "500" }}>-{symbol}{(calculations.couponDiscount * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.taxAmount > 0 && (
-                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", fontSize: "14px" }}>
                         <span>Tax</span>
-                        <span>{symbol}{(calculations.taxAmount * currencyValue).toFixed(2)}</span>
+                        <span style={{ fontWeight: "500" }}>{symbol}{(calculations.taxAmount * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.packageCost > 0 && (
-                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", fontSize: "14px" }}>
                         <span>Package Cost</span>
-                        <span>{symbol}{(calculations.packageCost * currencyValue).toFixed(2)}</span>
+                        <span style={{ fontWeight: "500" }}>{symbol}{(calculations.packageCost * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.deliveryCharges > 0 && (
-                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                      <div className="total-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", fontSize: "14px" }}>
                         <span>Delivery Charges</span>
-                        <span>{symbol}{(calculations.deliveryCharges * currencyValue).toFixed(2)}</span>
+                        <span style={{ fontWeight: "500" }}>{symbol}{(calculations.deliveryCharges * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
                     {calculations.totalSavings > 0 && (
-                      <div className="total-row savings" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", color: "#28a745" }}>
+                      <div className="total-row savings" style={{ 
+                        display: "flex", 
+                        justifyContent: "space-between", 
+                        marginBottom: "15px", 
+                        color: "#28a745",
+                        fontSize: "14px",
+                        fontWeight: "600"
+                      }}>
                         <span>Total Savings</span>
                         <span>{symbol}{(calculations.totalSavings * currencyValue).toFixed(2)}</span>
                       </div>
                     )}
-                    <hr />
-                    <div className="total-row final" style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "18px" }}>
+                    <hr style={{ margin: "15px 0", borderColor: "#e0e0e0" }} />
+                    <div className="total-row final" style={{ 
+                      display: "flex", 
+                      justifyContent: "space-between", 
+                      fontWeight: "700", 
+                      fontSize: "18px",
+                      color: "#000"
+                    }}>
                       <span>Final Total</span>
-                      <span>{symbol}{(calculations.finalTotal * currencyValue).toFixed(2)}</span>
+                      <span style={{ color: "#00baf2" }}>{symbol}{(calculations.finalTotal * currencyValue).toFixed(2)}</span>
                     </div>
                   </div>
+
+                  {/* Validation Errors */}
                   {validationErrors.length > 0 && (
-                    <div className="alert alert-danger" style={{ marginTop: "20px" }}>
-                      <h6>Please fix the following errors:</h6>
-                      <ul className="mb-0">
-                        {validationErrors.map((error, index) => <li key={index}>{error}</li>)}
+                    <div className="alert alert-danger" style={{ marginTop: "20px", padding: "15px", borderRadius: "6px" }}>
+                      <h6 style={{ marginBottom: "10px", fontWeight: "600" }}>Please fix the following errors:</h6>
+                      <ul className="mb-0" style={{ paddingLeft: "20px" }}>
+                        {validationErrors.map((error, index) => (
+                          <li key={index} style={{ marginBottom: "5px", fontSize: "14px" }}>{error}</li>
+                        ))}
                       </ul>
                     </div>
                   )}
@@ -971,12 +1123,12 @@ const CheckoutPage: React.FC = () => {
                   {/* Render payment button based on selected payment mode */}
                   {getPaymentButton()}
                   
-                  <div style={{ marginTop: "15px" }}>
-                    <small className="text-muted">
-                      {selectedPaymentMode === "PICK_AT_STORE" && "Order will be ready for pickup at store."}
-                      {selectedPaymentMode === "COD" && "Payment will be collected upon delivery."}
-                      {selectedPaymentMode === "RAZORPAY" && "Secure payment powered by Razorpay."}
-                      {selectedPaymentMode === "PHONEPE" && "You will be redirected to payment gateway."}
+                  <div style={{ marginTop: "15px", textAlign: "center" }}>
+                    <small className="text-muted" style={{ fontSize: "12px", lineHeight: "1.4" }}>
+                      {selectedPaymentMode === "PICK_AT_STORE" && "Order will be ready for pickup at store within 2-4 hours."}
+                      {selectedPaymentMode === "COD" && "Payment will be collected upon delivery (Cash/Card)."}
+                      {selectedPaymentMode === "RAZORPAY" && "Secure payment powered by Razorpay. All major cards accepted."}
+                      {selectedPaymentMode === "PHONEPE" && "You will be redirected to PhonePe payment gateway."}
                     </small>
                   </div>
                 </div>
