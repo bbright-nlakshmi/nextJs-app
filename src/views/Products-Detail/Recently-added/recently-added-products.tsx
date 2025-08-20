@@ -6,12 +6,13 @@ import {
   objCache,
   Product,
   appConfig,
-  searchController,
+
 } from "@/app/globalProvider";
 import ProductBox from "../../layouts/widgets/Product-Box/productbox";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import { CartContext } from "@/helpers/cart/cart.context";
 import { CompareContext } from "@/helpers/compare/compare.context";
+import { getProductFinalPrice } from "@/utils/price.helper";
 
 const RecentlyAddedProducts: React.FC = () => {
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
@@ -20,21 +21,26 @@ const RecentlyAddedProducts: React.FC = () => {
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
 
-  const getPrice = (productId: string) => {
-    const price = searchController.getDetails(productId, "getPrice");
-
-    return price;
-  };
+  const getPrice = (product: Product) =>
+  getProductFinalPrice({
+    price: product.sellingPrice,
+    discount: product.discount,
+    sellingPrices: product.sellingPrices,
+    activeIndex: 0,
+  });
 
   // Function to handle adding item to cart with price included
-  const handleAddToCart = (item: any, qty = 1) => {
-    const cartItem = {
-      ...item,
-      price: item.getPrice(),
-      id: item.id,
-    };
-    addToCart(cartItem, qty);
+  const handleAddToCart = (item: Product, qty = 1) => {
+  const finalPrice = getPrice(item);
+  const cartItem = {
+    ...item,
+    price: finalPrice,
+    getPriceWithDiscount: () => finalPrice,
+    id: item.id,
   };
+  addToCart(cartItem, qty);
+};
+
 
   useEffect(() => {
     // Get recently added products
@@ -95,7 +101,8 @@ const RecentlyAddedProducts: React.FC = () => {
                 speed={2000}
                 autoplay={{
                   delay: 3000,
-                  pauseOnMouseEnter: false,
+                  pauseOnMouseEnter: true,
+                  
                 }}
                 className="mySwiper-category-1 swiper-data"
                 breakpoints={appConfig.mediaQueries}
@@ -104,17 +111,16 @@ const RecentlyAddedProducts: React.FC = () => {
                 {recentProducts.map((product: Product) => (
                   <SwiperSlide key={product.id}>
                     <ProductBox
-                      id={Number(product.id)}
-                      name={product.name}
-                      img={product.img}
-                      price={product.getPrice()}
+                      layout="layout-one"
+                      data={product}
+                      item={product}
+                      price={getPrice(product)}
                       hoverEffect={"icon-inline"}
-                      discount={product.discount?.discount || 0}
+                      discount={product.discount?.discount}
                       rating={product.rating?.calculateRating() || 0}
                       addCart={handleAddToCart}
                       addCompare={() => addToCompare(product)}
-                      addWish={() => addToWish(product)}
-                      data={product}
+                      addWish={() => addToWish(product)}                      
                     />
                   </SwiperSlide>
                 ))}
