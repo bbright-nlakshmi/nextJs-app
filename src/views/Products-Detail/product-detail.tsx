@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Modal, ModalHeader, ModalBody, Input } from "reactstrap";
 import ImageGroup from "./common/ImageGroup";
 import CountDownComponent from "@/views/layouts/widgets/CountDownComponent";
@@ -9,6 +9,9 @@ import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import ImageSwatch from "./common/ImageSwatch";
 import { Discount, Product, searchController } from "@/app/globalProvider";
+import { useRouter} from "next/navigation";
+import { getProductFinalPrice } from "@/utils/price.helper";
+import { set } from "react-hook-form";
 
 interface ProductRightProps {
   item: Product | Discount;
@@ -23,15 +26,27 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   bundle,
   swatch,
 }) => {
-
+  const router = useRouter();
   const [modal, setModal] = useState(false);
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState<number>(1);
   const [stock, setStock] = useState("InStock");
   const [activesize, setSize] = useState("");
+  const uniqueColor: any[] = [];
+  const uniqueSize: string[] = item?.sellingDisplayOptions || [];
+  const sizePrices: number[] = item?.sellingPrices || [];
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
+  const [warning, setWarning] = useState<string>("");
+  const activeIndex = activesize ? uniqueSize.indexOf(activesize) : null;
+
+  const finalPrice = getProductFinalPrice({
+  price: item.getProductPrice(),
+  discount: item.discount ? item.getDiscount() : 0,
+  sellingPrices: sizePrices,
+  activeIndex: activeIndex,
+});
 
   // Ensure product details persist after refresh
   React.useEffect(() => {
@@ -53,58 +68,97 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   };
 
   const minusQty = () => {
-    if (qty > 1) {
+    if (qty > (item.minCount || 1)) {
       setStock("InStock");
       setQty(qty - 1);
+      } else {
+    setStock(`Minimum quantity is ${item.minCount}`); 
     }
   };
 
   const plusQty = () => {
-    if (item.stock >= qty) {
+    if (qty < (item.maxCount || item.stock)) {
       setQty(qty + 1);
     } else {
-      setStock("Out of Stock !");
+      setStock(`Maximum quantity is ${item.maxCount || item.stock}`); 
     }
   };
 
   const changeQty = (e: any) => {
-    const newQty = parseInt(e.target.value);
-    if (newQty >= 1 && !isNaN(newQty)) {
+  const newQty = parseInt(e.target.value);
+  if (!isNaN(newQty)) {
+    if (newQty < (item.minCount || 1)) {
+      setQty(item.minCount || 1);
+      setStock(`Minimum quantity is ${item.minCount}`);
+    } else if (newQty > (item.maxCount || item.stock)) {
+      setQty(item.maxCount || item.stock);
+      setStock(`Maximum quantity is ${item.maxCount || item.stock}`);
+    } else {
       setQty(newQty);
-      // Check stock availability
-      if (item.stock && newQty > item.stock) {
-        setStock("Out of Stock !");
-      } else {
-        setStock("InStock");
-      }
+      setStock("InStock");
     }
-  };
+  }
+};
 
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (uniqueSize.length && !activesize) {
+    setWarning("⚠️ Please select a size before adding to cart.");
+    return;
+  }
     // Check stock before adding
     if (item.stock && qty > item.stock) {
       setStock("Out of Stock !");
       return;
     }
-    addToCart(item, qty);
+
+
+    addToCart(
+      {
+        ...item,
+        selectedSize: activesize,
+        price: finalPrice,
+        getPriceWithDiscount: () => finalPrice,
+      },
+      qty
+    );
+    setWarning("");
   };
 
   // Buy Now handler: store product in sessionStorage and set checkout mode
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (uniqueSize.length && !activesize) {
+    setWarning("⚠️ Please select a size before proceeding to checkout.");
+    return;
+  }
+
     try {
-      sessionStorage.setItem("buyNowProduct", JSON.stringify({ ...item, qty }));
+      sessionStorage.setItem(
+        "buyNowProduct",
+         JSON.stringify({
+          ...item,
+          qty,
+          selectedSize: activesize,
+          price: finalPrice,
+          getPriceWithDiscount: () => finalPrice 
+        })
+      );
       sessionStorage.setItem("checkoutMode", "buyNow");
     } catch {}
-    window.location.href = "/pages/account/checkout";
+    setWarning("");
+    router.push("/pages/account/checkout"); 
   };
 
   // const { id } = router.query;
+  
+  // update price when size changes
+  const handleSelectSize = (size: string, index: number) => {
+    setSize(size);
+    setWarning("");
+  };
 
-  const uniqueColor: any[] = [];
-  const uniqueSize: any[] = [];
   return (
     <div className="product-right contents">
       <div className="product-status">
@@ -126,21 +180,27 @@ const ProductDetail: React.FC<ProductRightProps> = ({
         </div>                              
       </div>
       <h2>{item.name}</h2>
-      {item.discount ? (
-        <h2>
-          <span className="text-danger me-3">-{item.getDiscount()}%</span>
-          <del className="text-muted ">
-            M.R.P:{symbol}
-            {item.getProductPrice() * value}
-          </del>
-        </h2>
-      ) : (
-        ""
-      )}
-      <h3 className="product-price mb--15 d-block">
-        {symbol}
-        {(item.getPriceWithDiscount() * value).toFixed(2)}
-      </h3>{" "}
+      <div className="product-price-section">
+        {item.discount ? (
+          <div>
+            <h2>
+              <span className="text-danger me-3">-{item.getDiscount()}%</span>
+              <del className="text-muted">
+                M.R.P: {symbol}{activeIndex !== null
+                  ? (sizePrices[activeIndex] * value).toFixed(2)
+                  : (item.getProductPrice() * value).toFixed(2)}
+              </del>
+            </h2>
+            <h3 className="product-price mb--15 d-block">
+              {symbol}{(finalPrice * value).toFixed(2)}
+            </h3>
+          </div>
+        ) : (
+          <h3 className="product-price mb--15 d-block">
+            {symbol}{(finalPrice * value).toFixed(2)}
+          </h3>
+        )}
+      </div>
       {/* {item.variants &&
         item.variants.map((vari:any) => {
           var findItem = uniqueColor.find((x) => x.color === vari.color);
@@ -169,20 +229,20 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                   return <li className={vari.color} key={i} title={vari.color} onClick={() => changeColorVar(i)}></li>;
                 })}
               </ul>
-            )}
+            )} */}
         {!!uniqueSize.length && (
           <>
             <h6 className="product-title size-text">
               select size{" "}
               <span>
                 <a data-toggle="modal" data-target="#sizemodal" onClick={onOpenModal}>
-                  size chart
+
                 </a>
               </span>
             </h6>
             <Modal isOpen={modal} centered={true} toggle={onCloseModal}>
               <ModalHeader>
-                Sheer Straight Kurta <i className="fa fa-close modal-close" onClick={onCloseModal}></i>
+                {" "} <i className="fa fa-close modal-close"onClick={onCloseModal}></i>
               </ModalHeader>
               <ModalBody>
                 <div className="modal-body">
@@ -199,7 +259,8 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        setSize(size);
+                        handleSelectSize(size, i);
+                        setWarning(""); 
                       }}>
                       {size}
                     </a>
@@ -207,9 +268,14 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 ))}
               </ul>
             </div>
+            {warning && (
+              <p className="warning-message text-danger">
+                {warning}
+              </p>
+            )}
           </>
         )}
-      </div> */}
+
       <div className="product-description border-product">
         {stock !== "InStock" ? (
           <span className="instock-cls">{stock}</span>
@@ -228,6 +294,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 data-type="minus"
                 data-field=""
                 onClick={minusQty}
+                disabled={qty <= (item.minCount || 1)}
               >
                 <i className="ti-angle-left"></i>
               </button>
@@ -246,6 +313,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 data-type="plus"
                 data-field=""
                 onClick={plusQty}
+                disabled={qty >= (item.maxCount || item.stock)}
               >
                 <i className="ti-angle-right"></i>
               </button>
@@ -293,10 +361,10 @@ const ProductDetail: React.FC<ProductRightProps> = ({
           ""
         )}
         <span className="tags product-unipue mb--10">
-          <strong>LIFE:</strong> 6 Months
+          {/* <strong>LIFE:</strong> 6 Months */}
         </span>
         <span className="tags product-unipue mb--10">
-          <strong>Type:</strong> original
+          {/* <strong>Type:</strong> original */}
         </span>
         {item.brandName ? (
           <span className="tags product-unipue mb--10">
