@@ -8,7 +8,7 @@ import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import { CartContext } from "@/helpers/cart/cart.context";
 import { CompareContext } from "@/helpers/compare/compare.context";
 import PostLoader from "@/common/postLoader";
-//const localSearch = new SearchPageControl();
+
 const ITEMS_PER_PAGE = 50;
 
 const ProductList: React.FC<{ item: any }> = ({ item }) => {
@@ -18,7 +18,7 @@ const ProductList: React.FC<{ item: any }> = ({ item }) => {
   const price = item.getBasePriceInCart?.() ?? item.price ?? "$0.00";
   const discount = item.getDiscount?.() ?? item.discount ?? "$0.00";
 
-  const isKit = item?.type === "kit"; // Ensure this is set in your data
+  const isKit = item?.type === "kit";
   const detailPath = isKit
     ? "/product-details"
     : "/product-details/thumbnail-left";
@@ -87,6 +87,7 @@ const SearchPage: NextPage = () => {
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
+  
   const cols = "col-xl-2 col-md-4 col-6 col-grid-box";
   const [grid, setGrid] = useState(cols);
   const [layout, setLayout] = useState("");
@@ -174,7 +175,6 @@ const SearchPage: NextPage = () => {
   const handleRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedIndex = e.target.selectedIndex;
     const selectedRange = rangeOptions[selectedIndex].value;
-
     setCurrentRange(selectedRange);
   };
 
@@ -203,7 +203,6 @@ const SearchPage: NextPage = () => {
     }
   };
 
-  // Apply sorting and pagination
   const sortedItems = useMemo(() => {
     return sortProducts(filteredItems, sortBy);
   }, [filteredItems, sortBy]);
@@ -214,49 +213,28 @@ const SearchPage: NextPage = () => {
 
   return (
     <>
-      <section className="authentication-page ptb--20 ">
+      <section className="enhanced-search-section">
         <div className="custom-container">
-          <section className="search-block">
-            <Container>
-              <Row>
-                <Col lg="6" className="offset-lg-3">
-                  <form className="form-header">
-                    <div className="input-group">
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search Products......"
-                        value={query}
-                        onChange={handleSearch}
-                      />
-                      {/* <div className="input-group-append">
-                        <button className="btn btn-normal" type="button">
-                          <i className="fa fa-search" /> Search
-                        </button>
-                      </div> */}
-                    </div>
-                  </form>
-                </Col>
-              </Row>
-            </Container>
-          </section>
+          <div className="search-container">
+            <form className="enhanced-search-form">
+              <div className="enhanced-search-group">
+                <input
+                  type="text"
+                  className="enhanced-search-input"
+                  placeholder="Search for products, brands, categories..."
+                  value={query}
+                  onChange={handleSearch}
+                  autoComplete="off"
+                />
+                <i className="fa fa-search search-icon" />
+              </div>
+            </form>
+          </div>
         </div>
       </section>
 
       <div className="product-top-filter">
         <Row>
-          {/* <Col xs="12">
-                  <div className="filter-main-btn">
-                    <span
-                      className="filter-btn"
-                      onClick={() => {
-                        setLeftSidebarOpen(!leftSidebarOpen);
-                      }}
-                    >
-                      <i className="fa fa-filter" aria-hidden="true"></i> Filter
-                    </span>
-                  </div>
-                </Col> */}
           <Col xs="12">
             <div className="product-filter-content">
               <div className="search-count">
@@ -390,52 +368,6 @@ const SearchPage: NextPage = () => {
                   </Row>
                 </div>
               </div>
-
-              {/* {filteredItems.length > ITEMS_PER_PAGE && (
-            <div className="pagination-bar text-center mt-4">
-              <ul className="pagination justify-content-center">
-                <li
-                  className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  >
-                    Previous
-                  </button>
-                </li>
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <li
-                    key={i}
-                    className={`page-item ${
-                      currentPage === i + 1 ? "active" : ""
-                    }`}
-                  >
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(i + 1)}
-                    >
-                      {i + 1}
-                    </button>
-                  </li>
-                ))}
-                <li
-                  className={`page-item ${
-                    currentPage === totalPages ? "disabled" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(p + 1, totalPages))
-                    }
-                  >
-                    Next
-                  </button>
-                </li>
-              </ul>
-            </div>
-          )} */}              
             </>
           )}
         </div>
