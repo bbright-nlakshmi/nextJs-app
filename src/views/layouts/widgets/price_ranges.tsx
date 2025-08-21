@@ -41,6 +41,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const [loadingFilter, setLoadingFilter] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false); // New state to track initialization
 
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
@@ -192,22 +193,38 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     if (mounted) fetchAllProducts();
   }, [mounted, fetchAllProducts]);
 
-  // Set default active range on mount
+  // Set default active range and initialize products
   useEffect(() => {
-    if (ranges.length > 0 && activeRange === null) {
+    if (ranges.length > 0 && allProducts.length > 0 && !hasInitialized) {
       const defaultRange = ranges[0];
       setActiveRange(defaultRange);
-      // Filter products for default range
-      if (allProducts.length > 0) {
-        filterByRange(defaultRange);
-      }
+      setHasInitialized(true); // Mark as initialized
+      
+      // Immediately filter for the default range
+      const currentIndex = ranges.findIndex((r) => r === defaultRange);
+      const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
+
+      const filtered = allProducts
+        .filter((item) => {
+          const price = getPrice(item);
+          return price > 0 && price > previousPrice && price <= defaultRange;
+        })
+        .sort((a, b) => getPrice(a) - getPrice(b));
+
+      setFilteredProducts(filtered);
     }
-  }, [ranges, activeRange, allProducts.length, filterByRange]);
+  }, [ranges, allProducts, hasInitialized, getPrice]);
 
   // Listen for product updates
   useEffect(() => {
-    const handleProductsUpdate = () => fetchAllProducts();
-    const handleKitsUpdate = () => fetchAllProducts();
+    const handleProductsUpdate = () => {
+      fetchAllProducts();
+      setHasInitialized(false); // Reset initialization when products update
+    };
+    const handleKitsUpdate = () => {
+      fetchAllProducts();
+      setHasInitialized(false); // Reset initialization when kits update
+    };
 
     objCache.on('updateAllProducts', handleProductsUpdate);
     objCache.on('updateKits', handleKitsUpdate);
@@ -230,8 +247,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
 
   if (!ranges.length) return null;
 
-  // Show products for selected range
-  const shouldShowProducts = filteredProducts.length > 0 || loadingFilter;
+  // Show products for selected range - modified condition
+  const shouldShowProducts = (filteredProducts.length > 0 || loadingFilter) && hasInitialized;
 
   return (
     <>
@@ -332,7 +349,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         </section>
       )}
 
-      {activeRange !== null && filteredProducts.length === 0 && !loadingFilter && (
+      {hasInitialized && activeRange !== null && filteredProducts.length === 0 && !loadingFilter && (
         <section className="section-py-space">
           <div className="product-box single-shopping-card-one">
             <div className="text-center py-4">
@@ -343,6 +360,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                 onClick={() => {
                   setActiveRange(null);
                   setFilteredProducts([]);
+                  setHasInitialized(false);
                 }}
               >
                 Clear Selection
@@ -356,4 +374,3 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
 };
 
 export default PriceRanges;
-

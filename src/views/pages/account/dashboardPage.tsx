@@ -11,11 +11,10 @@ import Breadcrumb from "../../Containers/Breadcrumb";
 import { API } from "@/app/services/api.service";
 import { OrderModel } from "@/app/models/order/order";
 import { OrderItemsModel } from "@/app/models/order_item_model/order_item_model";
-import { useWishlistStore } from "../../../helpers/wishlist/wishlistStore";
+import { useWishlistStore } from "../../../helpers/wishlist/wishlistStore";   
 import { CartContext } from "../../../helpers/cart/cart.context";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { searchController } from "@/app/globalProvider";
-
 
 interface UserInfo {
   name: string;
@@ -359,6 +358,148 @@ const Dashboard: NextPage = () => {
 
   const renderDashboardContent = () => {
     switch (activeTab) {
+      case "dashboard":
+        return (
+          <div>
+            <div className="page-title mb-4">
+              <h2>Welcome back, {userInfo.name.split(' ')[0]}!</h2>
+              <p className="text-muted">Here's what's happening with your account</p>
+            </div>
+
+            {/* Stats Cards */}
+            <Row className="mb-4">
+              <Col md="4">
+                <Card className="shadow-sm border-0 stats-card">
+                  <CardBody className="text-center">
+                    <div className="stat-icon mb-3">
+                      <i className="fa fa-shopping-bag fa-2x" style={{ color: '#00baf2' }}></i>
+                    </div>
+                    <h3 className="mb-1" style={{ color: '#333' }}>{stats.totalOrders}</h3>
+                    <p className="text-muted mb-0">Total Orders</p>
+                  </CardBody>
+                </Card>
+              </Col>
+              <Col md="4">
+                <Card className="shadow-sm border-0 stats-card">
+                  <CardBody className="text-center">
+                    <div className="stat-icon mb-3">
+                      <i className="fa fa-check-circle fa-2x" style={{ color: '#28a745' }}></i>
+                    </div>
+                    <h3 className="mb-1" style={{ color: '#333' }}>{stats.deliveredOrders}</h3>
+                    <p className="text-muted mb-0">Delivered Orders</p>
+                  </CardBody>
+                </Card>
+              </Col>
+              <Col md="4">
+                <Card className="shadow-sm border-0 stats-card">
+                  <CardBody className="text-center">
+                    <div className="stat-icon mb-3">
+                      <i className="fa fa-heart fa-2x" style={{ color: '#dc3545' }}></i>
+                    </div>
+                    <h3 className="mb-1" style={{ color: '#333' }}>{stats.wishlistItems}</h3>
+                    <p className="text-muted mb-0">Wishlist Items</p>
+                  </CardBody>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Recent Orders */}
+            <Card className="shadow-sm mb-4">
+              <CardBody>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="mb-0">Recent Orders</h5>
+                  <Button 
+                    color="link" 
+                    onClick={() => setActiveTab("orders")}
+                    className="text-decoration-none"
+                    style={{ color: '#00baf2' }}
+                  >
+                    View All <i className="fa fa-arrow-right ms-1"></i>
+                  </Button>
+                </div>
+                
+                {orders.length > 0 ? (
+                  <div>
+                    {orders.slice(0, 3).map((order) => (
+                      <div key={order.id} className="d-flex justify-content-between align-items-center border-bottom py-3">
+                        <div>
+                          <h6 className="mb-1">Order #{order.id}</h6>
+                          <small className="text-muted">{formatDate(order.creationTime)}</small>
+                        </div>
+                        <div className="d-flex align-items-center gap-3">
+                          <div className="text-end">
+                            <div className="fw-bold" style={{ color: '#00baf2' }}>₹{order.finalOrderTotal.toFixed(2)}</div>
+                            <small className="text-muted">{Object.keys(order.orderItems).length} items</small>
+                          </div>
+                          <Badge color={getStatusColor(order.orderAcceptStatus || "Pending")}>
+                            {order.orderAcceptStatus || "Pending"}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <i className="fa fa-shopping-bag fa-3x mb-3" style={{ color: '#ddd' }}></i>
+                    <h6 className="text-muted">No orders yet</h6>
+                    <p className="text-muted small">Start shopping to see your orders here</p>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="shadow-sm">
+              <CardBody>
+                <h5 className="mb-3">Quick Actions</h5>
+                <Row>
+                  <Col md="3" className="mb-3">
+                    <div 
+                      className="quick-action-card p-3 text-center border rounded cursor-pointer"
+                      onClick={() => setActiveTab("orders")}
+                      style={{ transition: 'all 0.3s ease' }}
+                    >
+                      <i className="fa fa-list-alt fa-2x mb-2" style={{ color: '#00baf2' }}></i>
+                      <h6 className="mb-0">View Orders</h6>
+                    </div>
+                  </Col>
+                  <Col md="3" className="mb-3">
+                    <div 
+                      className="quick-action-card p-3 text-center border rounded cursor-pointer"
+                      onClick={() => setActiveTab("wishlist")}
+                      style={{ transition: 'all 0.3s ease' }}
+                    >
+                      <i className="fa fa-heart fa-2x mb-2" style={{ color: '#dc3545' }}></i>
+                      <h6 className="mb-0">My Wishlist</h6>
+                    </div>
+                  </Col>
+                  <Col md="3" className="mb-3">
+                    <div 
+                      className="quick-action-card p-3 text-center border rounded cursor-pointer"
+                      onClick={() => setActiveTab("account")}
+                      style={{ transition: 'all 0.3s ease' }}
+                    >
+                      <i className="fa fa-user fa-2x mb-2" style={{ color: '#28a745' }}></i>
+                      <h6 className="mb-0">Edit Profile</h6>
+                    </div>
+                  </Col>
+                  <Col md="3" className="mb-3">
+                    <Link href="/">
+                      <div 
+                        className="quick-action-card p-3 text-center border rounded cursor-pointer"
+                        style={{ transition: 'all 0.3s ease' }}
+                      >
+                        <i className="fa fa-shopping-cart fa-2x mb-2" style={{ color: '#ffc107' }}></i>
+                        <h6 className="mb-0">Continue Shopping</h6>
+                      </div>
+                    </Link>
+                  </Col>
+                </Row>
+              </CardBody>
+            </Card>
+          </div>
+        );
+
       case "wishlist":
         return (
           <div>
@@ -725,3 +866,124 @@ const Dashboard: NextPage = () => {
                               No billing address added yet
                             </span>
                           )}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col md="6">
+                      <div className="address-card">
+                        <div className="address-header">
+                          <i className="fa fa-truck me-2" style={{ color: '#00baf2' }}></i>
+                          <strong>Shipping Address</strong>
+                        </div>
+                        <div className="address-content">
+                          {userInfo.shippingAddress || (
+                            <span className="text-muted">
+                              <i className="fa fa-plus-circle me-2"></i>
+                              No shipping address added yet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Container fluid>
+      <Breadcrumb title="Dashboard" parent="Pages" />
+      
+      {/* Toast Container */}
+      <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1050 }}>
+        {toasts.map(toast => (
+          <Toast key={toast.id} isOpen={true}>
+            <ToastHeader 
+              icon={toast.type === 'success' ? 'success' : toast.type === 'error' ? 'danger' : 'info'}
+              toggle={() => removeToast(toast.id)}
+            >
+              {toast.title}
+            </ToastHeader>
+            <ToastBody>{toast.message}</ToastBody>
+          </Toast>
+        ))}
+      </div>
+
+      <Row>
+        {/* Sidebar */}
+        <Col lg="3">
+          <Card className="shadow-sm dashboard-sidebar">
+            <CardBody>
+              {/* User Profile Section */}
+              <div className="text-center mb-4 pb-4 border-bottom">
+                <ProfileAvatar name={userInfo.name} size={80} />
+                <h5 className="mt-3 mb-1">{userInfo.name}</h5>
+                <p className="text-muted small mb-0">{userInfo.email}</p>
+              </div>
+
+              {/* Navigation Menu */}
+              <div className="dashboard-nav">
+                <div 
+                  className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
+                  onClick={() => setActiveTab("dashboard")}
+                >
+                  <i className="fa fa-tachometer-alt me-3"></i>
+                  Dashboard
+                </div>
+                <div 
+                  className={`nav-item ${activeTab === "orders" ? "active" : ""}`}
+                  onClick={() => setActiveTab("orders")}
+                >
+                  <i className="fa fa-shopping-bag me-3"></i>
+                  My Orders
+                  {stats.totalOrders > 0 && (
+                    <Badge color="primary" className="ms-auto">{stats.totalOrders}</Badge>
+                  )}
+                </div>
+                <div 
+                  className={`nav-item ${activeTab === "wishlist" ? "active" : ""}`}
+                  onClick={() => setActiveTab("wishlist")}
+                >
+                  <i className="fa fa-heart me-3"></i>
+                  Wishlist
+                  {stats.wishlistItems > 0 && (
+                    <Badge color="danger" className="ms-auto">{stats.wishlistItems}</Badge>
+                  )}
+                </div>
+                <div 
+                  className={`nav-item ${activeTab === "account" ? "active" : ""}`}
+                  onClick={() => setActiveTab("account")}
+                >
+                  <i className="fa fa-user me-3"></i>
+                  Account Details
+                </div>
+                <Link href="/" className="nav-item">
+                  <i className="fa fa-arrow-left me-3"></i>
+                  Back to Shop
+                </Link>
+              </div>
+            </CardBody>
+          </Card>
+        </Col>
+
+        {/* Main Content */}
+        <Col lg="9">
+          <div className="dashboard-content">
+            {renderDashboardContent()}
+          </div>
+        </Col>
+      </Row>
+
+
+    </Container>
+  );
+};
+
+export default Dashboard;
