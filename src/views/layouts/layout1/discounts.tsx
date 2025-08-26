@@ -127,7 +127,7 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
                             <div className="custom-product-card d-flex align-items-center p-3 mb-4 shadow-sm rounded bg-white border position-relative">
                               <div className="discount-badge">{item.discount}% Off</div>
                               <div
-                                className="product-thumbnail me-3 flex-shrink-0"
+                                className="product-thumbnail me-3 flex-shrink-0 pt-3"
                                 style={{ cursor: "pointer" }}
                                 onClick={() => router.push(`/product-details/${item.id}`)}
                               >

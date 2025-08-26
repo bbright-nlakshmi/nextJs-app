@@ -29404,8 +29404,8 @@ select {
 .product-thumbnail img {
   border: 2px solid silver;
   border-radius: 0.5rem ;
-  width: 100px ;
-  height: 100px ;
+  width: 140px ;
+  height: 140px ;
   padding: 5px ;
   object-fit: cover;
 }
@@ -33999,5 +33999,12 @@ li a:hover .category-name {
   overflow: hidden;          /* Hide overflowing text */
   text-overflow: ellipsis;   /* Add "..." at the end */
   max-width: 180px;          /* Adjust width as needed */
+  display: block;
+}
+.truncate-text-1 {
+  white-space: nowrap;       /* Keep text in one line */
+  overflow: hidden;          /* Hide overflowing text */
+  text-overflow: ellipsis;   /* Add "..." at the end */
+  max-width: 190px;          /* Adjust width as needed */
   display: block;
 }
