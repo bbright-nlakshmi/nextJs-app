@@ -125,8 +125,14 @@ export class OrderPayloadService {
     const orderItems: OrderItemsModel[] = [];
 
     cartItems.forEach(item => {
-      const basePrice = item.price * item.cartItemCount;
-      const discountedPrice = item.discountPrice 
+      // Use the actual price from the cart item (which should already be calculated correctly)
+      // The checkout page calculates the correct price using getPrice() function
+      // and stores it in the item.price field
+      const actualPrice = item.price; // This should be the correctly calculated price
+      const basePrice = actualPrice * item.cartItemCount;
+      
+      // Use discountPrice if it exists and is lower than the actual price
+      const discountedPrice = item.discountPrice && item.discountPrice < actualPrice
         ? item.discountPrice * item.cartItemCount 
         : basePrice;
 
@@ -136,7 +142,7 @@ export class OrderPayloadService {
         baseChoosedPrice: basePrice,
         choosedPrice: discountedPrice,
         collectedTax: item.taxAmount ? item.taxAmount * item.cartItemCount : 0,
-        costPrice: item.price,
+        costPrice: actualPrice, // Use the actual calculated price
         saleQuantityStr: item.cartPurchaseOptionStr,
         saleQuantity: item.cartItemCount,
         isProduct: true,

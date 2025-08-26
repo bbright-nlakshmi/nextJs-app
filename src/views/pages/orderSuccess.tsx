@@ -16,6 +16,10 @@ interface OrderItem {
   discountPrice?: number;
   taxAmount?: number;
   categoryName?: string;
+  selectedSize?: string;
+  costPrice?: number;
+  choosedPrice?: number;
+  baseChoosedPrice?: number;
 }
 
 interface OrderData {
@@ -68,16 +72,28 @@ const OrderSuccessPage: NextPage = () => {
         // Map orderDetails to OrderData format expected by this page
         const mappedOrderData: OrderData = {
           orderId: orderDetails.id,
-          items: (orderDetails.orderItems || []).map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            img: item.url ? [item.url] : [],
-            cartItemCount: item.cartItemCount,
-            price: item.costPrice,
-            discountPrice: item.choosedPrice < item.baseChoosedPrice ? item.choosedPrice / item.cartItemCount : undefined,
-            taxAmount: item.taxAmount,
-            categoryName: item.categoryName
-          })),
+          items: (orderDetails.orderItems || []).map((item: any) => {
+            // Use the correct price mapping from the order payload
+            const unitPrice = item.costPrice || item.price || 0; // This is the actual calculated price per unit
+            const finalPricePerUnit = item.choosedPrice && item.choosedPrice < item.baseChoosedPrice 
+              ? item.choosedPrice / item.cartItemCount 
+              : unitPrice;
+
+            return {
+              id: item.id,
+              name: item.name,
+              img: item.url ? [item.url] : [],
+              cartItemCount: item.cartItemCount,
+              price: unitPrice, // The calculated price per unit (includes variations)
+              discountPrice: finalPricePerUnit !== unitPrice ? finalPricePerUnit : undefined,
+              taxAmount: item.taxAmount,
+              categoryName: item.categoryName,
+              selectedSize: item.selectedSize,
+              costPrice: item.costPrice,
+              choosedPrice: item.choosedPrice,
+              baseChoosedPrice: item.baseChoosedPrice
+            };
+          }),
           cartTotal: orderDetails.cartTotal,
           finalTotal: orderDetails.finalOrderTotal,
           discountAmount: orderDetails.discountAmount,
@@ -110,9 +126,35 @@ const OrderSuccessPage: NextPage = () => {
     }
   }, []);
 
-  // Get effective price for an item (considering discount)
+  // Get effective price for an item (the actual price paid)
   const getEffectivePrice = (item: OrderItem): number => {
-    return item.discountPrice && item.discountPrice > 0 ? item.discountPrice : item.price;
+    // If there's a choosedPrice that's different from baseChoosedPrice, use per-unit choosedPrice
+    if (item.choosedPrice && item.baseChoosedPrice && item.choosedPrice < item.baseChoosedPrice) {
+      return item.choosedPrice / item.cartItemCount;
+    }
+    // If there's a discountPrice, use it
+    if (item.discountPrice && item.discountPrice > 0 && item.discountPrice < item.price) {
+      return item.discountPrice;
+    }
+    // Otherwise use the regular price (which should already include variation adjustments)
+    return item.price;
+  };
+
+  // Get original price for comparison (before discount)
+  const getOriginalPrice = (item: OrderItem): number => {
+    // If baseChoosedPrice exists, use it per unit
+    if (item.baseChoosedPrice) {
+      return item.baseChoosedPrice / item.cartItemCount;
+    }
+    // Otherwise use the item price
+    return item.price;
+  };
+
+  // Check if item has a discount
+  const hasDiscount = (item: OrderItem): boolean => {
+    const effectivePrice = getEffectivePrice(item);
+    const originalPrice = getOriginalPrice(item);
+    return effectivePrice < originalPrice;
   };
 
   // Format billing address for display
@@ -147,6 +189,15 @@ const OrderSuccessPage: NextPage = () => {
   // Navigate to order history
   const handleViewAllOrders = () => {
     router.push("/views/pages/OrderHistory");
+  };
+
+  // Format size/variation display
+  const formatVariation = (item: OrderItem): string | null => {
+    if (item.selectedSize) {
+      // You can customize this based on how you want to display variations
+      return item.selectedSize;
+    }
+    return null;
   };
 
   if (isLoading) {
@@ -249,15 +300,25 @@ const OrderSuccessPage: NextPage = () => {
                   {/* Product Items */}
                   {orderData.items.map((item: OrderItem, i: number) => {
                     const effectivePrice = getEffectivePrice(item);
+                    const originalPrice = getOriginalPrice(item);
+                    const itemHasDiscount = hasDiscount(item);
                     const itemTotal = effectivePrice * item.cartItemCount;
+                    const variation = formatVariation(item);
                     
                     return (
                       <Fragment key={`${item.id}_${i}`}>
                         <Col xs="4" className="order-success-detail-cell">
                           <div className="order-success-product-text-info">
                             <h6 className="mb-0 order-success-item-name">{item.name}</h6>
+                            {variation && (
+                              <small className="text-info order-success-item-variation">
+                                Size/Option: {variation}
+                              </small>
+                            )}
                             {item.categoryName && (
-                              <small className="text-muted order-success-item-category">{item.categoryName}</small>
+                              <small className="text-muted order-success-item-category d-block">
+                                {item.categoryName}
+                              </small>
                             )}
                           </div>
                         </Col>
@@ -269,9 +330,9 @@ const OrderSuccessPage: NextPage = () => {
                             <h6 className="mb-0 order-success-price-text">
                               {symbol}{(effectivePrice * value).toFixed(2)}
                             </h6>
-                            {item.discountPrice && item.discountPrice < item.price && (
+                            {itemHasDiscount && (
                               <small className="text-muted text-decoration-line-through order-success-original-price">
-                                {symbol}{(item.price * value).toFixed(2)}
+                                {symbol}{(originalPrice * value).toFixed(2)}
                               </small>
                             )}
                           </div>
@@ -280,6 +341,11 @@ const OrderSuccessPage: NextPage = () => {
                           <h5 className="order-success-total-text">
                             {symbol}{(itemTotal * value).toFixed(2)}
                           </h5>
+                          {itemHasDiscount && (
+                            <small className="text-success d-block">
+                              Saved: {symbol}{((originalPrice - effectivePrice) * item.cartItemCount * value).toFixed(2)}
+                            </small>
+                          )}
                         </Col>
                       </Fragment>
                     );

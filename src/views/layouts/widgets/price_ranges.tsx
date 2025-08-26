@@ -1,3 +1,7 @@
+//price ranges 
+
+
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { NextPage } from "next";
 import { Col, Row } from "reactstrap";
@@ -17,7 +21,29 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 
+// Define proper types
 type ProductItem = Product | Kit;
+
+interface ExtendedProduct extends Product {
+  productId?: number;
+  id?: number;
+  sellingPrice?: number;
+  price?: number;
+  name?: string;
+  title?: string;
+}
+
+interface ExtendedKit extends Kit {
+  id?: number;
+  sellingPrice?: number;
+  price?: number;
+  name?: string;
+  title?: string;
+  getProductPrice?: () => number;
+  getPrice?: () => number;
+}
+
+type ExtendedProductItem = ExtendedProduct | ExtendedKit;
 
 interface Props {
   priceRanges: StorePriceRanges;
@@ -34,14 +60,15 @@ const Spinner = () => (
 );
 
 const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
-  const [allProducts, setAllProducts] = useState<ProductItem[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
+  const [allProducts, setAllProducts] = useState<ExtendedProductItem[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ExtendedProductItem[]>([]);
   const [activeRange, setActiveRange] = useState<number | null>(null);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingFilter, setLoadingFilter] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false); // New state to track initialization
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
@@ -50,54 +77,99 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const ranges = priceRanges?.price_ranges || [];
   const processingRef = useRef(false);
 
-  const getPrice = (item: ProductItem): number => {
-    if ('sellingPrice' in item && item.sellingPrice) return item.sellingPrice;
-    if ('getProductPrice' in item && typeof item.getProductPrice === 'function') return item.getProductPrice();
-    if ('price' in item && item.price) return item.price;
-    if ('getPrice' in item && typeof item.getPrice === 'function') return item.getPrice();
-    return 0;
-  };
+  const getPrice = useCallback((item: ExtendedProductItem): number => {
+    try {
+      // Check for sellingPrice first
+      if (item.sellingPrice && typeof item.sellingPrice === 'number' && item.sellingPrice > 1) {
+        return item.sellingPrice;
+      }
+      
+      // Check for price property
+      if (item.price && typeof item.price === 'number' && item.price > 1) {
+        return item.price;
+      }
+      
+      // Check for method-based prices (for Kits)
+      if ('getProductPrice' in item && typeof item.getProductPrice === 'function') {
+        const price = item.getProductPrice();
+        if (typeof price === 'number' && price > 1) return price;
+      }
+      
+      if ('getPrice' in item && typeof item.getPrice === 'function') {
+        const price = item.getPrice();
+        if (typeof price === 'number' && price > 1) return price;
+      }
+      
+      return 0;
+    } catch (error) {
+      console.error('Error getting price for item:', item, error);
+      return 0;
+    }
+  }, []);
 
-  const getName = (item: ProductItem): string => {
-    if ('name' in item && item.name) return item.name;
-    if ('title' in item && item.title) return item.title;
-    return `Product ${(item as Product)?.productId || item.id || "Unknown"}`;
-  };
+  const getName = useCallback((item: ExtendedProductItem): string => {
+    try {
+      if (item.name && typeof item.name === 'string') return item.name;
+      if (item.title && typeof item.title === 'string') return item.title;
+      
+      const id = item.productId || item.id || 'Unknown';
+      return `Product ${id}`;
+    } catch (error) {
+      return 'Unknown Product';
+    }
+  }, []);
+
+  const getId = useCallback((item: ExtendedProductItem): string | number => {
+    return item.productId || item.id || Math.random().toString(36);
+  }, []);
 
   const fetchAllProducts = useCallback(async () => {
     try {
       setLoadingInitial(true);
-      let fetchedProducts: ProductItem[] = [];
+      let fetchedProducts: ExtendedProductItem[] = [];
 
       try {
-        const products = objCache.getAllProducts();
-        if (Array.isArray(products)) fetchedProducts = [...products];
+        const products = objCache.getAllProducts() as ExtendedProduct[];
+        if (Array.isArray(products)) {
+          fetchedProducts = [...products];
+        }
       } catch (error) {
-        // Silent fail
+        console.warn('Failed to fetch products:', error);
       }
 
       try {
-        const kits = objCache.getAllKits();
-        if (Array.isArray(kits)) fetchedProducts = [...fetchedProducts, ...kits];
+        const kits = objCache.getAllKits() as ExtendedKit[];
+        if (Array.isArray(kits)) {
+          fetchedProducts = [...fetchedProducts, ...kits];
+        }
       } catch (error) {
-        // Silent fail
+        console.warn('Failed to fetch kits:', error);
       }
 
-      // Remove duplicates
+      // Remove duplicates and filter out items with invalid prices
       const uniqueProducts = fetchedProducts.filter((item, index, self) => {
-        const id = (item as Product)?.productId || item.id;
-        return id && self.findIndex((p) => ((p as Product)?.productId || p.id) === id) === index;
+        const id = getId(item);
+        const price = getPrice(item);
+        
+        // Only include items with valid prices and unique IDs
+        if (!id || price <= 1) return false;
+        
+        return self.findIndex((p) => getId(p) === id) === index;
       });
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Fetched ${uniqueProducts.length} valid products with prices`);
+      }
       setAllProducts(uniqueProducts);
     } catch (err) {
+      console.error('Error fetching products:', err);
       setAllProducts([]);
     } finally {
       setLoadingInitial(false);
     }
-  }, []);
+  }, [getPrice, getId]);
 
-  // Memoized filtering function for better performance
+  // Fixed filtering function with correct price range logic
   const filterByRange = useCallback(
     (range: number) => {
       if (!range || !allProducts.length) {
@@ -105,23 +177,63 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         return;
       }
 
-      if (processingRef.current) return; // Prevent multiple simultaneous operations
+      if (processingRef.current) return;
       
       processingRef.current = true;
       setLoadingFilter(true);
       
-      // Use requestAnimationFrame for smooth UI updates
       requestAnimationFrame(() => {
         try {
           const currentIndex = ranges.findIndex((r) => r === range);
           const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
 
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`\n=== Filtering for range: ₹${range} ===`);
+            console.log(`Current index: ${currentIndex}`);
+            console.log(`Previous price: ${previousPrice}`);
+            console.log(`Total products to filter: ${allProducts.length}`);
+          }
+
           const filtered = allProducts
             .filter((item) => {
               const price = getPrice(item);
-              return price > 0 && price > previousPrice && price <= range;
+              const name = getName(item);
+              
+              if (price <= 1) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log(`❌ Excluded: ${name} - Invalid price: ${price}`);
+                }
+                return false;
+              }
+              
+              let isIncluded = false;
+              
+              // For the first range (e.g., "₹100 & below")
+              if (currentIndex === 0) {
+                isIncluded = price <= range;
+                if (process.env.NODE_ENV === 'development') {
+                  console.log(`✅ First range: ${name} (₹${price}) <= ₹${range} = ${isIncluded}`);
+                }
+              } else {
+                // For other ranges (e.g., "₹101 - ₹200")
+                isIncluded = price > previousPrice && price <= range;
+                if (process.env.NODE_ENV === 'development') {
+                  console.log(`✅ Range check: ${name} (₹${price}) > ₹${previousPrice} && <= ₹${range} = ${isIncluded}`);
+                }
+              }
+              
+              return isIncluded;
             })
             .sort((a, b) => getPrice(a) - getPrice(b));
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`\n📊 Final Results:`);
+            console.log(`Filtered products count: ${filtered.length}`);
+            console.log('Filtered products:', filtered.map(item => 
+              `${getName(item)}: ₹${getPrice(item)}`
+            ));
+          }
 
           setFilteredProducts(filtered);
         } catch (error) {
@@ -133,7 +245,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         }
       });
     },
-    [allProducts, ranges]
+    [allProducts, ranges, getPrice, getName]
   );
 
   const getRangeText = useCallback((range: number) => {
@@ -145,7 +257,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     return currentIndex === 0
       ? { main: `₹${range.toLocaleString("en-IN")}`, sub: "& below" }
       : {
-          main: `₹${previousPrice.toLocaleString("en-IN")} - ₹${range.toLocaleString("en-IN")}`,
+          main: `₹${(previousPrice + 1).toLocaleString("en-IN")} - ₹${range.toLocaleString("en-IN")}`,
           sub: "range",
         };
   }, [ranges]);
@@ -156,74 +268,75 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
     return currentIndex === 0
       ? `Products under ₹${activeRange.toLocaleString("en-IN")}`
-      : `Products ₹${previousPrice.toLocaleString("en-IN")} - ₹${activeRange.toLocaleString("en-IN")}`;
+      : `Products ₹${(previousPrice + 1).toLocaleString("en-IN")} - ₹${activeRange.toLocaleString("en-IN")}`;
   }, [activeRange, ranges]);
 
-  const handleAddToCart = useCallback((item: any, qty = 1) => {
+  const handleAddToCart = useCallback((item: ExtendedProductItem, qty = 1) => {
     try {
       const cartItem = {
         ...item,
         price: getPrice(item),
-        id: item.productId || item.id,
+        id: getId(item),
       };
       addToCart(cartItem, qty);
     } catch (error) {
-      // Silent fail
+      console.error('Error adding to cart:', error);
     }
-  }, [addToCart]);
+  }, [addToCart, getPrice, getId]);
 
-  // Handle price range selection with debouncing
   const handleRangeSelect = useCallback((range: number) => {
-    if (activeRange === range || isProcessing) return; // Prevent unnecessary re-filtering
+    if (activeRange === range || isProcessing) return;
     
+    console.log(`\n🔄 Range selected: ₹${range}`);
     setIsProcessing(true);
     setActiveRange(range);
     filterByRange(range);
     
-    // Reset processing state after a short delay
     setTimeout(() => setIsProcessing(false), 300);
   }, [activeRange, filterByRange, isProcessing]);
 
   useEffect(() => {
     setMounted(true);
+    setIsClient(true);
     return () => setMounted(false);
   }, []);
 
   useEffect(() => {
-    if (mounted) fetchAllProducts();
-  }, [mounted, fetchAllProducts]);
+    if (mounted && isClient) fetchAllProducts();
+  }, [mounted, isClient, fetchAllProducts]);
 
   // Set default active range and initialize products
   useEffect(() => {
     if (ranges.length > 0 && allProducts.length > 0 && !hasInitialized) {
       const defaultRange = ranges[0];
       setActiveRange(defaultRange);
-      setHasInitialized(true); // Mark as initialized
+      setHasInitialized(true);
       
-      // Immediately filter for the default range
-      const currentIndex = ranges.findIndex((r) => r === defaultRange);
-      const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
-
-      const filtered = allProducts
-        .filter((item) => {
-          const price = getPrice(item);
-          return price > 0 && price > previousPrice && price <= defaultRange;
-        })
-        .sort((a, b) => getPrice(a) - getPrice(b));
-
-      setFilteredProducts(filtered);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`\n🚀 Initializing with default range: ₹${defaultRange}`);
+        console.log(`Total products available: ${allProducts.length}`);
+      }
+      
+      // Use the same filtering logic
+      filterByRange(defaultRange);
     }
-  }, [ranges, allProducts, hasInitialized, getPrice]);
+  }, [ranges, allProducts, hasInitialized, filterByRange]);
 
   // Listen for product updates
   useEffect(() => {
     const handleProductsUpdate = () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Products updated, refetching...');
+      }
       fetchAllProducts();
-      setHasInitialized(false); // Reset initialization when products update
+      setHasInitialized(false);
     };
     const handleKitsUpdate = () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Kits updated, refetching...');
+      }
       fetchAllProducts();
-      setHasInitialized(false); // Reset initialization when kits update
+      setHasInitialized(false);
     };
 
     objCache.on('updateAllProducts', handleProductsUpdate);
@@ -235,7 +348,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     };
   }, [fetchAllProducts]);
 
-  if (loadingInitial) {
+  if (loadingInitial || !isClient) {
     return (
       <div className="section-py-space">
         <div className="product-box single-shopping-card-one">
@@ -247,7 +360,6 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
 
   if (!ranges.length) return null;
 
-  // Show products for selected range - modified condition
   const shouldShowProducts = (filteredProducts.length > 0 || loadingFilter) && hasInitialized;
 
   return (
@@ -266,17 +378,18 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     prevEl: ".swiper-button-prev",
                   }}
                   spaceBetween={15}
-                  slidesPerView={6}
-                  autoplay={true}
+                  slidesPerView={ranges.length >= 6 ? 6 : ranges.length}
+                  autoplay={false}
+                  loop={false}
                   breakpoints={{
                     0: { slidesPerView: 1, spaceBetween: 10 },
                     350: { slidesPerView: 2, spaceBetween: 10 },
                     480: { slidesPerView: 3, spaceBetween: 12 },
                     640: { slidesPerView: 4, spaceBetween: 15 },
-                    840: { slidesPerView: 5, spaceBetween: 15 },
-                    1140: { slidesPerView: 6, spaceBetween: 15 },
+                    840: { slidesPerView: Math.min(5, ranges.length), spaceBetween: 15 },
+                    1140: { slidesPerView: Math.min(6, ranges.length), spaceBetween: 15 },
                   }}
-                  modules={[Navigation, Autoplay, Keyboard]}
+                  modules={[Navigation, Keyboard]}
                 >
                   {ranges.map((range, i) => {
                     const { main, sub } = getRangeText(range);
@@ -319,17 +432,18 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     </div>
                   ) : (
                     <Swiper
-                      slidesPerView={6}
+                      slidesPerView={Math.min(6, filteredProducts.length)}
                       spaceBetween={30}
-                      autoplay={{ delay: 1000, pauseOnMouseEnter: true }}
+                      autoplay={{ delay: 3000, pauseOnMouseEnter: true }}
+                      loop={filteredProducts.length > 6}
                       breakpoints={appConfig.mediaQueries}
                       modules={[Autoplay, Navigation, Keyboard]}
                     >
-                      {filteredProducts.map((product: any, i: number) => (
-                        <SwiperSlide key={`${product.id || product.productId || i}-${activeRange}`}>
+                      {filteredProducts.map((product, i) => (
+                        <SwiperSlide key={`${getId(product)}-${activeRange}-${i}`}>
                           <ProductBox
                             layout="layout-one"
-                            newLabel={product.new}
+                            newLabel={(product as any).new}
                             item={product}
                             hoverEffect={"icon-inline"}
                             price={getPrice(product)}
