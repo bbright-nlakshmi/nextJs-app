@@ -10,8 +10,8 @@ import { FilterContext } from "../../helpers/filter/filter.context";
 import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import ProductBox from "../layouts/widgets/Product-Box/productbox";
 import { useRouter, useSearchParams } from "next/navigation";
-import { objCache, searchController ,Category, Discount, CategoryProducts} from "@/app/globalProvider";
-
+import { objCache, searchController ,Category, Discount, CategoryProducts, Product} from "@/app/globalProvider";
+import { getProductFinalPrice } from "@/utils/price.helper";
 import CollectionBanner from "./CollectionBanner";
 
 type CollectionProps = {
@@ -48,20 +48,27 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
   const categoryId = searchParams.get("id");
   const categoryType = searchParams.get("type");
 
-  const getPrice = (item: any) => {
-    return (categoryType === "discount")
-      ? searchController.getDetails(item.id, "getPrice")
-      : searchController.getDetails(item.productId, "getPrice");
-  };
+  // const getPrice = (item: any) => {
+  //   return (categoryType === "discount")
+  //     ? searchController.getDetails(item.id, "getPrice")
+  //     : searchController.getDetails(item.productId, "getPrice");
+  // };
+  const getPrice = (product: Product) =>
+    getProductFinalPrice({
+      price: product.sellingPrice,
+      discount: product.discount,
+      sellingPrices: product.sellingPrices,
+      activeIndex: 0,
+    });
 
   // Function to handle adding item to cart with price included
   const handleAddToCart = (item: any, qty = 1) => {
-    const price = (categoryType === "discount")
-      ? searchController.getDetails(item.id, "getPrice")
-      : searchController.getDetails(item.productId, "getPrice");
+    const finalPrice = getPrice(item);
     const cartItem = {
       ...item,
-      price: price,
+      price: finalPrice,
+      cartItemCount: qty,
+      getPriceWithDiscount: () => finalPrice,
       id: categoryType === "discount" ? item.id : item.productId,
     };
     addToCart(cartItem, qty);
@@ -126,6 +133,7 @@ const Collection: NextPage<CollectionProps> = ({ cols, layoutList, categoryProdu
                             data={item}
                             hoverEffect={'icon-inline'}
                             newLabel={item.new}
+                            discount={item.discount?.discount}
                             item={item}
                             price={getPrice(item)}
                             addCart={handleAddToCart}

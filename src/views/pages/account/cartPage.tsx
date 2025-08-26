@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { NextPage } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CartContext, CartItem } from "../../../helpers/cart/cart.context";
 import Breadcrumb from "../../../views/Containers/Breadcrumb";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
@@ -15,35 +14,10 @@ interface KitRaw {
 }
 
 const CartPage: NextPage = () => {
-  const router = useRouter();
-  const { cartItems, updateQty, removeFromCart, isProductInCart, updateCartItemVariation } = React.useContext(CartContext);
+  const { cartItems, updateQty, removeFromCart, isProductInCart } = React.useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
   const [quantityErrorKey, setQuantityErrorKey] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [isNavigating, setIsNavigating] = useState<boolean>(false);
-
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = () => {
-      if (typeof window !== 'undefined') {
-        const loginStatus = localStorage.getItem("Login");
-        setIsLoggedIn(!!loginStatus);
-      }
-    };
-
-    checkAuth();
-    
-    // Listen for storage changes (logout from other tabs)
-    const handleStorageChange = () => {
-      checkAuth();
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
-  }, []);
 
   const getProductById = (productId: string): any => {
     if (!productId) return null;
@@ -71,7 +45,7 @@ const CartPage: NextPage = () => {
         }
       }
     } catch (error) {
-      // Error handled silently
+      console.error("Error finding product:", error);
     }
 
     return null;
@@ -131,7 +105,7 @@ const CartPage: NextPage = () => {
               return price;
             }
           } catch (methodError) {
-            // Method error handled silently
+            console.warn("Kit getPrice method failed:", methodError);
           }
         }
         
@@ -145,7 +119,7 @@ const CartPage: NextPage = () => {
               return price;
             }
           } catch (methodError) {
-            // Method error handled silently
+            console.warn("Product getPrice method failed:", methodError);
           }
         }
       }
@@ -189,6 +163,7 @@ const CartPage: NextPage = () => {
 
       return 0;
     } catch (err) {
+      console.error("Price extraction error:", err);
       return item.price || 0;
     }
   };
@@ -240,7 +215,7 @@ const CartPage: NextPage = () => {
     
     if (qty >= 1 && !isNaN(qty)) {
       setQuantityErrorKey(null);
-      updateQty(item, qty);
+      updateQty(item, qty); // Pass the full CartItem object
     } else {
       setQuantityErrorKey(itemKey);
     }
@@ -272,6 +247,7 @@ const CartPage: NextPage = () => {
         return sum + (isNaN(itemTotal) ? 0 : itemTotal);
       }, 0);
     } catch (error) {
+      console.error("Subtotal calculation error:", error);
       return 0;
     }
   };
@@ -308,69 +284,6 @@ const CartPage: NextPage = () => {
       window.sessionStorage.setItem('checkoutMode', 'cart');
     }
   };
-
-  // Handle checkout redirect with authentication check
-  const handleCheckout = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    if (isNavigating) return;
-    
-    if (!cartItems || cartItems.length === 0) {
-      alert('Your cart is empty. Please add items before checkout.');
-      return;
-    }
-
-    setIsNavigating(true);
-
-    try {
-      clearCheckoutModeData();
-      
-      if (typeof window !== 'undefined') {
-        const cartData = {
-          items: cartItems,
-          timestamp: Date.now()
-        };
-        window.sessionStorage.setItem('cartCheckoutData', JSON.stringify(cartData));
-      }
-
-      if (!isLoggedIn) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('redirectAfterLogin', '/pages/account/checkout');
-          localStorage.setItem('checkoutType', 'cart');
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 100));
-        router.push('/pages/account/login');
-      } else {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        router.push('/pages/account/checkout');
-      }
-    } catch (error) {
-      console.error('Error navigating to checkout:', error);
-      alert('Error navigating to checkout. Please try again.');
-    } finally {
-      setTimeout(() => setIsNavigating(false), 2000);
-    }
-  };
-
-  // Effect to handle navigation after login
-  useEffect(() => {
-    if (typeof window !== 'undefined' && isLoggedIn) {
-      const checkoutType = localStorage.getItem('checkoutType');
-      const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
-      
-      if (checkoutType === 'cart' && redirectAfterLogin === '/pages/account/checkout') {
-        localStorage.removeItem('redirectAfterLogin');
-        localStorage.removeItem('checkoutType');
-        
-        clearCheckoutModeData();
-        
-        setTimeout(() => {
-          router.push('/pages/account/checkout');
-        }, 100);
-      }
-    }
-  }, [isLoggedIn, router]);
 
   return (
     <>
@@ -712,37 +625,19 @@ const CartPage: NextPage = () => {
                       <i className="fa fa-arrow-left mr-2"></i>
                       Continue Shopping
                     </Link>
-                    <button 
-                      onClick={handleCheckout}
-                      className="btn btn-primary btn-lg checkout-btn"
-                      disabled={isNavigating || !cartItems || cartItems.length === 0}
-                    >
-                      {isNavigating 
-                        ? 'Processing...' 
-                        : !isLoggedIn 
-                          ? 'Login to Checkout' 
-                          : 'Check Out'
-                      }
-                      {!isNavigating && <i className="fa fa-arrow-right ml-2"></i>}
-                    </button>
+                    <Link href="/pages/account/checkout" className="btn btn-primary btn-lg checkout-btn">
+                      Check Out
+                      <i className="fa fa-arrow-right ml-2"></i>
+                    </Link>
                   </div>
 
                   {/* Mobile - Vertical Stack */}
                   <div className="d-block d-md-none">
                     <div className="d-grid gap-3">
-                      <button 
-                        onClick={handleCheckout}
-                        className="btn btn-primary btn-lg checkout-btn-mobile"
-                        disabled={isNavigating || !cartItems || cartItems.length === 0}
-                      >
-                        {isNavigating 
-                          ? 'Processing...' 
-                          : !isLoggedIn 
-                            ? 'Login to Checkout' 
-                            : 'Check Out'
-                        }
-                        {!isNavigating && <i className="fa fa-arrow-right ml-2"></i>}
-                      </button>
+                      <Link href="/pages/account/checkout" className="btn btn-primary btn-lg checkout-btn-mobile">
+                        Check Out
+                        <i className="fa fa-arrow-right ml-2"></i>
+                      </Link>
                       <Link href="/" className="btn btn-outline-primary btn-lg continue-shopping-btn-mobile">
                         <i className="fa fa-arrow-left mr-2"></i>
                         Continue Shopping
