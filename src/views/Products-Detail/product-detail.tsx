@@ -12,6 +12,7 @@ import { Discount, Product, searchController } from "@/app/globalProvider";
 import { useRouter} from "next/navigation";
 import { getProductFinalPrice } from "@/utils/price.helper";
 import { set } from "react-hook-form";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductRightProps {
   item: Product | Discount;
@@ -40,6 +41,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   const { symbol, value } = selectedCurr;
   const [warning, setWarning] = useState<string>("");
   const activeIndex = activesize ? uniqueSize.indexOf(activesize) : null;
+  const [isAddedToCart, setIsAddedToCart] = useState(false);
 
   const finalPrice = getProductFinalPrice({
   price: item.getProductPrice(),
@@ -104,7 +106,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     if (uniqueSize.length && !activesize) {
-    setWarning("⚠️ Please select a size before adding to cart.");
+    setWarning("⚠️ Please select an option before adding to cart.");
     return;
   }
     // Check stock before adding
@@ -116,33 +118,46 @@ const ProductDetail: React.FC<ProductRightProps> = ({
 
     addToCart(
       {
-        ...item,
+        id: item.id,
+        name: item.name,
+        img:item.img,
         selectedSize: activesize,
         price: finalPrice,
+        cartItemCount: qty, 
+        cartPurchaseOptionStr: activesize || "",
         getPriceWithDiscount: () => finalPrice,
       },
       qty
     );
     setWarning("");
+    setIsAddedToCart(true);
+  };
+  const handleGoToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/pages/account/cart");   
   };
 
   // Buy Now handler: store product in sessionStorage and set checkout mode
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
     if (uniqueSize.length && !activesize) {
-    setWarning("⚠️ Please select a size before proceeding to checkout.");
+    setWarning("⚠️ Please select an option before proceeding to checkout.");
     return;
   }
-
     try {
       sessionStorage.setItem(
         "buyNowProduct",
          JSON.stringify({
-          ...item,
+          id: item.id,
+          name: item.name,
+          img:item.img,
           qty,
           selectedSize: activesize,
           price: finalPrice,
-          getPriceWithDiscount: () => finalPrice 
+          cartItemCount: qty, 
+          cartPurchaseOptionStr: activesize || "",
+          getPriceWithDiscount: () => finalPrice,
+          
         })
       );
       sessionStorage.setItem("checkoutMode", "buyNow");
@@ -322,15 +337,37 @@ const ProductDetail: React.FC<ProductRightProps> = ({
         </div>
 
         <div className="product-buttons">
-          <a
-            href="#"
-            data-toggle="modal"
-            data-target="#addtocart"
-            className="btn btn-normal"
-            onClick={handleAddToCart}
-          >
+          <AnimatePresence mode="wait">
+          {!isAddedToCart ? (
+          <motion.a
+        key="add-to-cart"
+        href="#"
+        data-toggle="modal"
+        data-target="#addtocart"
+        className="btn btn-normal"
+        onClick={handleAddToCart}
+        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+      >
             add to cart
-          </a>
+          </motion.a>
+          ) : (
+          <motion.a
+        key="go-to-cart"
+        href="#"
+        className="btn btn-normal"
+        onClick={handleGoToCart}
+        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+      >
+            GO TO CART
+          </motion.a>
+          )}
+          </AnimatePresence>
           <a
             href="#"
             className="btn btn-normal"

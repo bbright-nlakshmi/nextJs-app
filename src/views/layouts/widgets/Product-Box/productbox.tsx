@@ -6,7 +6,7 @@ import React, { Fragment, useContext, useRef, useState } from "react";
 import { Media, Modal, ModalBody } from "reactstrap";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import Slider from "react-slick";
-import { objCache } from "@/app/globalProvider";
+import { objCache, Product } from "@/app/globalProvider";
 import { CartContext } from "@/helpers/cart/cart.context";
 import { getProductFinalPrice } from "@/utils/price.helper";
 import { getSizeLabel } from "@/utils/Labels";
@@ -52,13 +52,14 @@ const ProductBox: NextPage<productType> = ({
   const [nav1, setNav1] = useState<Slider | null>();
   const router = useRouter();
   const [modal, setModal] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(data?.minCount || 1);
   const [stockState, setStockState] = useState("InStock");
   const titleProps = data?.name.split(" ").join("");
   const [warning, setWarning] = useState<string>("");
   const productInfo = objCache.getProductById(data?.productId);
   const uniqueSize: string[] = data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
   const sizePrices: number[] = data?.sellingPrices || productInfo?.sellingPrices || [];
+  const sizePrice: number = data?.sellingPrice || productInfo?.sellingPrice || [];
   const uniqueColor: any[] = [];
   const [activesize, setActiveSize] = useState<string | null>(
     uniqueSize.length ? uniqueSize[0] : null
@@ -80,21 +81,37 @@ const ProductBox: NextPage<productType> = ({
     setModal(false);
   };
   const minusQty = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-      setStockState("InStock");
-    }
-  };
+  if (quantity > (data?.minCount || item?.minCount || productInfo?.minCount || 1)) {
+    setQuantity(quantity - 1);
+    setStockState("InStock");
+  } else {
+    setStockState("Minimum limit reached");
+  }
+};
 
-  const plusQty = () => {
-    if (data.stock && quantity < data.stock) setQuantity(quantity + 1);
-    else setStockState("Out of Stock !");
-  };
+const plusQty = () => {
+  if (quantity < (data?.maxCount || item?.maxCount|| productInfo?.maxCount)) {
+    setQuantity(quantity + 1);
+    setStockState("InStock");
+  } else {
+    setStockState("Maximum limit reached");
+  }
+};
 
   const changeQty = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value) || 1;
-    setQuantity(val);
-  };
+  let val = parseInt(e.target.value) || 1;
+  if (val < (data?.minCount || item?.minCount || productInfo?.minCount || 1)) {
+    val = (data.minCount || item?.minCount || productInfo?.minCount || 1);
+    setStockState("Minimum limit reached");
+  } else if (val > (data?.maxCount || item?.maxCount || productInfo?.maxCount)) {
+    val = (data.maxCount || item?.maxCount || productInfo?.maxCount);
+    setStockState("Maximum limit reached");
+  } else {
+    setStockState("InStock");
+  }
+  setQuantity(val);
+};
+
 
   const QuickView = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -102,16 +119,16 @@ const ProductBox: NextPage<productType> = ({
   };
   const getFinalPrice = () => {
     return getProductFinalPrice({
-      price: data?.price || price,
+      price: sizePrice,
       discount: data?.discount,
       sellingPrices: sizePrices,
       activeIndex: activesize ? uniqueSize.indexOf(activesize) : 0,
     }); 
   };
-  const handleAddToCart = (e: React.MouseEvent) => {
+   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     if (uniqueSize.length && !activesize) {
-      setWarning("⚠️ Please select a size before adding to cart.");
+      setWarning("⚠️ Please select an option before adding to cart.");
       return;
     }
       // Check stock before adding
@@ -125,8 +142,11 @@ const ProductBox: NextPage<productType> = ({
     addToCart(
       {
         ...data,
+        id: data.productId ?? data.id, 
         selectedSize: activesize,
         price: finalPrice,
+        cartItemCount: quantity, 
+        cartPurchaseOptionStr: activesize || "",
         getPriceWithDiscount: () => finalPrice,
       },
       quantity
@@ -134,6 +154,47 @@ const ProductBox: NextPage<productType> = ({
     setWarning("");
     setModal(false);
   };
+  const handleBuyNow = (e: React.MouseEvent) => {
+  e.preventDefault();
+  if (uniqueSize.length && !activesize) {
+    setWarning("⚠️ Please select an option before Buy Now.");
+    setModal(true);
+    return;
+  }
+
+  // stock check
+  if (data.stock && quantity > data.stock) {
+    setStockState("Out of Stock !");
+    return;
+  }
+
+  const finalPrice = getFinalPrice();
+
+  try {
+    sessionStorage.setItem(
+      "buyNowProduct",
+      JSON.stringify({
+        id:data.id,
+        name: data.name,
+        img: data.img,        
+        quantity,
+        selectedSize: activesize,
+        price: finalPrice,
+        cartItemCount: quantity,
+        cartPurchaseOptionStr: activesize || "",
+        getPriceWithDiscount: () => finalPrice,
+      })
+    );
+    sessionStorage.setItem("checkoutMode", "buyNow");
+  } catch (err) {
+    console.error("Session storage error:", err);
+  }
+
+  setWarning("");
+  setModal(false);
+  router.push("/pages/account/checkout");
+};
+
   // update price when size changes
   const handleSelectSize = (size: string) => {
     setActiveSize(size);
@@ -200,7 +261,7 @@ const ProductBox: NextPage<productType> = ({
                 handleAddToCart(e);
               }}
             >
-              <i className="ti-bag"></i>
+              <i className="ti-shopping-cart"></i>
             </button>
             <a
               title="Add to Wishlist"
@@ -226,26 +287,7 @@ const ProductBox: NextPage<productType> = ({
                 // }
                 // ✅ Use getFinalPrice to ensure correct price calculation     
                 // ✅ Always use `data`, not `item`
-                const finalPrice = getFinalPrice();
-
-                try {
-                  sessionStorage.setItem(
-                    "buyNowProduct",
-                    JSON.stringify({
-                      ...data,
-                      quantity: 1, // make sure it's not undefined
-                      selectedSize: activesize,
-                      price: finalPrice,
-                      getPriceWithDiscount: () => finalPrice,
-                    })
-                  );
-                  sessionStorage.setItem("checkoutMode", "buyNow");
-                } catch (err) {
-                  console.error("Session storage error:", err);
-                }
-
-                setWarning("");
-                router.push("/pages/account/checkout");
+                handleBuyNow(e);
               }}
               >
               <i className="ti-credit-card" aria-hidden="true"></i>
@@ -458,6 +500,7 @@ const ProductBox: NextPage<productType> = ({
                           type="button"
                           className="btn quantity-left-minus"
                           onClick={minusQty}
+                          disabled={quantity <= (data?.minCount || item?.minCount || productInfo?.minCount || 1)}
                         >
                           <i className="ti-angle-left"></i>
                         </button>
@@ -474,6 +517,7 @@ const ProductBox: NextPage<productType> = ({
                           type="button"
                           className="btn quantity-right-plus"
                           onClick={plusQty}
+                          disabled={quantity >= (data?.maxCount || item?.maxCount || productInfo?.maxCount)}
                         >
                           <i className="ti-angle-right"></i>
                         </button>

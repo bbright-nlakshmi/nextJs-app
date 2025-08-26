@@ -9,6 +9,7 @@ import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import { CompareContext } from "../../helpers/compare/compare.context";
 import { appConfig, objCache, Product, searchController, centralDataCollector } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { getProductFinalPrice } from "@/utils/price.helper";
 import "swiper/css";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 interface RelatedProductsProps {
@@ -118,13 +119,25 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({
       objCache.off("dataLoaded", handleUpdate);
     };
   }, [categoryId, productId]);
-  
+
+  const getPrice = (item: Product) => {
+    return getProductFinalPrice({
+      price: item.sellingPrice,
+      discount: item.discount,
+      sellingPrices: item.sellingPrices,
+      activeIndex: 0,
+    });
+  };
+
   const handleAddToCart = (item: any, qty = 1) => {
-    const price = searchController.getDetails(item.productId, "getPrice");
+    const price = getPrice(item);
     const cartItem = {
       ...item,
       price: price,
+      cartItemCount: qty,
+      getPriceWithDiscount: () => price,
       id: item.productId,
+      cartPurchaseOptionStr: item.selectedSize || "",
     };
     addToCart(cartItem, qty);
   };
@@ -173,7 +186,8 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({
                           layout="layout-one"
                           data={item}
                           item={item}
-                          price={item.getPrice()}
+                          price={getPrice(item)}
+                          discount={item.discount?.discount}
                           addCart={handleAddToCart}
                           addCompare={() => addToCompare(item)}
                           addWish={() => addToWish(item)}

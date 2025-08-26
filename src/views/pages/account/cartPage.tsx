@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { NextPage } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CartContext, CartItem } from "../../../helpers/cart/cart.context";
 import Breadcrumb from "../../../views/Containers/Breadcrumb";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
@@ -13,34 +12,10 @@ interface KitRaw {
 }
 
 const CartPage: NextPage = () => {
-  const router = useRouter();
   const { cartItems, updateQty, removeFromCart, isProductInCart } = React.useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
   const [quantityErrorKey, setQuantityErrorKey] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = () => {
-      if (typeof window !== 'undefined') {
-        const loginStatus = localStorage.getItem("Login");
-        setIsLoggedIn(!!loginStatus);
-      }
-    };
-
-    checkAuth();
-    
-    // Listen for storage changes (logout from other tabs)
-    const handleStorageChange = () => {
-      checkAuth();
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
-  }, []);
 
   const getProductById = (productId: string): any => {
     if (!productId) return null;
@@ -64,7 +39,7 @@ const CartPage: NextPage = () => {
         }
       }
     } catch (error) {
-      // Error handled silently
+      console.error("Error finding product:", error);
     }
 
     return null;
@@ -84,7 +59,7 @@ const CartPage: NextPage = () => {
               return price;
             }
           } catch (methodError) {
-            // Method error handled silently
+            console.warn("Kit getPrice method failed:", methodError);
           }
         }
         
@@ -98,7 +73,7 @@ const CartPage: NextPage = () => {
               return price;
             }
           } catch (methodError) {
-            // Method error handled silently
+            console.warn("Product getPrice method failed:", methodError);
           }
         }
       }
@@ -142,6 +117,7 @@ const CartPage: NextPage = () => {
 
       return 0;
     } catch (err) {
+      console.error("Price extraction error:", err);
       return item.price || 0;
     }
   };
@@ -150,7 +126,7 @@ const CartPage: NextPage = () => {
     const qty = parseInt(quantity);
     if (qty >= 1 && !isNaN(qty)) {
       setQuantityErrorKey(null);
-      updateQty(item, qty);
+      updateQty(item, qty); // Pass the full CartItem object
     } else {
       setQuantityErrorKey(item.cartItemId || item.key || item.id);
     }
@@ -164,6 +140,7 @@ const CartPage: NextPage = () => {
         return sum + (isNaN(itemTotal) ? 0 : itemTotal);
       }, 0);
     } catch (error) {
+      console.error("Subtotal calculation error:", error);
       return 0;
     }
   };
@@ -171,21 +148,6 @@ const CartPage: NextPage = () => {
   // Helper function to get unique identifier for item
   const getItemKey = (item: CartItem): string => {
     return item.cartItemId || item.key || item.id || item.productId || Math.random().toString();
-  };
-
-  // Handle checkout redirect with authentication check
-  const handleCheckout = (e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    if (!isLoggedIn) {
-      // Store intended destination for redirect after login
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('redirectAfterLogin', '/pages/account/checkout');
-      }
-      router.push('/pages/account/login');
-    } else {
-      router.push('/pages/account/checkout');
-    }
   };
 
   return (
@@ -450,25 +412,19 @@ const CartPage: NextPage = () => {
                       <i className="fa fa-arrow-left mr-2"></i>
                       Continue Shopping
                     </Link>
-                    <button 
-                      onClick={handleCheckout}
-                      className="btn btn-primary btn-lg checkout-btn"
-                    >
-                      {!isLoggedIn ? 'Login to Checkout' : 'Check Out'}
+                    <Link href="/pages/account/checkout" className="btn btn-primary btn-lg checkout-btn">
+                      Check Out
                       <i className="fa fa-arrow-right ml-2"></i>
-                    </button>
+                    </Link>
                   </div>
 
                   {/* Mobile - Vertical Stack */}
                   <div className="d-block d-md-none">
                     <div className="d-grid gap-3">
-                      <button 
-                        onClick={handleCheckout}
-                        className="btn btn-primary btn-lg checkout-btn-mobile"
-                      >
-                        {!isLoggedIn ? 'Login to Checkout' : 'Check Out'}
+                      <Link href="/pages/account/checkout" className="btn btn-primary btn-lg checkout-btn-mobile">
+                        Check Out
                         <i className="fa fa-arrow-right ml-2"></i>
-                      </button>
+                      </Link>
                       <Link href="/" className="btn btn-outline-primary btn-lg continue-shopping-btn-mobile">
                         <i className="fa fa-arrow-left mr-2"></i>
                         Continue Shopping

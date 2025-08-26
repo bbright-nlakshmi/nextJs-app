@@ -35,6 +35,7 @@ const RecentlyAddedProducts: React.FC = () => {
   const cartItem = {
     ...item,
     price: finalPrice,
+    cartItemCount: qty,
     getPriceWithDiscount: () => finalPrice,
     id: item.id,
   };
@@ -45,7 +46,6 @@ const RecentlyAddedProducts: React.FC = () => {
   useEffect(() => {
     // Get recently added products
     const products = objCache.getRecentlyAddedProducts(8);
-    console.log("Recently added products:", products);
     setRecentProducts(products);
     setLoading(false);
 
@@ -67,9 +67,7 @@ const RecentlyAddedProducts: React.FC = () => {
   }
 
   if (recentProducts.length === 0) {
-    return (
-      <div className="text-center py-4">No recently added products found.</div>
-    );
+    return null
   }
 
   return (
