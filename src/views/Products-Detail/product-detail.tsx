@@ -33,14 +33,15 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   const [stock, setStock] = useState("InStock");
   const [activesize, setSize] = useState("");
   const uniqueColor: any[] = [];
-  const uniqueSize: string[] = item?.sellingDisplayOptions || [];
+  const uniqueSizes: string[] = item?.sellingDisplayOptions || [];
+  const uniqueSize: string[] = item?.sellingDisplayOption || [];
   const sizePrices: number[] = item?.sellingPrices || [];
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
   const [warning, setWarning] = useState<string>("");
-  const activeIndex = activesize ? uniqueSize.indexOf(activesize) : null;
+  const activeIndex = activesize ? uniqueSizes.indexOf(activesize) : null;
   const [isAddedToCart, setIsAddedToCart] = useState(false);
 
   const finalPrice = getProductFinalPrice({
@@ -105,7 +106,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (uniqueSize.length && !activesize) {
+    if (uniqueSizes.length && !activesize) {
     setWarning("⚠️ Please select an option before adding to cart.");
     return;
   }
@@ -140,7 +141,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   // Buy Now handler: store product in sessionStorage and set checkout mode
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (uniqueSize.length && !activesize) {
+    if (uniqueSizes.length && !activesize) {
     setWarning("⚠️ Please select an option before proceeding to checkout.");
     return;
   }
@@ -245,19 +246,16 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 })}
               </ul>
             )} */}
-        {!!uniqueSize.length && (
+        {(!!uniqueSizes.length || uniqueSize.length) && (
           <>
             <h6 className="product-title size-text">
-              select size{" "}
               <span>
-                <a data-toggle="modal" data-target="#sizemodal" onClick={onOpenModal}>
-
-                </a>
+                <a data-toggle="modal" data-target="#sizemodal" onClick={onOpenModal}></a>
               </span>
             </h6>
             <Modal isOpen={modal} centered={true} toggle={onCloseModal}>
               <ModalHeader>
-                {" "} <i className="fa fa-close modal-close"onClick={onCloseModal}></i>
+                {" "} <i className="fa fa-close modal-close" onClick={onCloseModal}></i>
               </ModalHeader>
               <ModalBody>
                 <div className="modal-body">
@@ -266,30 +264,37 @@ const ProductDetail: React.FC<ProductRightProps> = ({
               </ModalBody>
             </Modal>
 
-            <div className="size-box">
-              <ul>
-                {uniqueSize.map((size, i) => (
-                  <li className={`${size === activesize ? "active" : ""}`} key={i}>
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleSelectSize(size, i);
-                        setWarning(""); 
-                      }}>
-                      {size}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+            <div className="your-size-list">
+              {(item.saleMode !== "range") ? (
+                <>
+                  <ul>
+                    {uniqueSizes.map((size, i) => (
+                      <li className={`${size === activesize ? "active" : ""}`} key={i}>
+                        <a
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleSelectSize(size, i);
+                            setWarning(""); 
+                          }}>
+                          {size}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* warning only for multiple sizes */}
+                  {warning && (
+                    <p className="warning-message text-danger">{warning}</p>
+                  )}
+                </>
+              ) : (
+                <div className="title-font mb-4">{uniqueSize}</div>
+              )}
             </div>
-            {warning && (
-              <p className="warning-message text-danger">
-                {warning}
-              </p>
-            )}
           </>
         )}
+
 
       <div className="product-description border-product">
         {stock !== "InStock" ? (
@@ -309,7 +314,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 data-type="minus"
                 data-field=""
                 onClick={minusQty}
-                disabled={qty <= (item.minCount || 1)}
+                disabled={item.saleMode === "custom" || qty <= (item.minCount || 1)}
               >
                 <i className="ti-angle-left"></i>
               </button>
@@ -318,8 +323,9 @@ const ProductDetail: React.FC<ProductRightProps> = ({
               type="text"
               name="quantity"
               className="form-control input-number"
-              value={qty}
+              value={item.saleMode === "custom" ? 1 : qty}
               onChange={changeQty}
+              readOnly={item.saleMode === "custom"} // prevent manual typing
             />
             <span className="input-group-prepend">
               <button
@@ -328,7 +334,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 data-type="plus"
                 data-field=""
                 onClick={plusQty}
-                disabled={qty >= (item.maxCount || item.stock)}
+                disabled={item.saleMode === "custom" || qty >= (item.maxCount)}
               >
                 <i className="ti-angle-right"></i>
               </button>
@@ -338,43 +344,47 @@ const ProductDetail: React.FC<ProductRightProps> = ({
 
         <div className="product-buttons">
           <AnimatePresence mode="wait">
-          {!isAddedToCart ? (
-          <motion.a
-        key="add-to-cart"
-        href="#"
-        data-toggle="modal"
-        data-target="#addtocart"
-        className="btn btn-normal"
-        onClick={handleAddToCart}
-        initial={{ opacity: 0, scale: 0.8, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.8, y: -20 }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
-      >
-            add to cart
-          </motion.a>
-          ) : (
-          <motion.a
-        key="go-to-cart"
-        href="#"
-        className="btn btn-normal"
-        onClick={handleGoToCart}
-        initial={{ opacity: 0, scale: 0.8, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.8, y: -20 }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
-      >
-            GO TO CART
-          </motion.a>
-          )}
+            {!isAddedToCart ? (
+              <motion.a
+                key="add-to-cart"
+                href="#"
+                data-toggle="modal"
+                data-target="#addtocart"
+                className="btn btn-normal"
+                onClick={handleAddToCart}
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                add to cart
+              </motion.a>
+            ) : (
+              <motion.a
+                key="go-to-cart"
+                href="#"
+                className="btn btn-normal"
+                onClick={handleGoToCart}
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                GO TO CART
+              </motion.a>
+            )}
           </AnimatePresence>
-          <a
+          {/* Keep Buy Now separate so it animates only on page load */}
+          <motion.a
             href="#"
             className="btn btn-normal"
             onClick={handleBuyNow}
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
           >
             buy now
-          </a>
+          </motion.a>
         </div>
       </div>
       {/* <div className="border-product"> */}

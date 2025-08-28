@@ -1,9 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Slider from "react-slick";
 import { Media } from "reactstrap";
 import { useRouter } from "next/navigation"; // ✅ For client-side navigation
 import { objCache, Product } from "@/app/globalProvider";
+import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 
 const bestSellerSetting = {
   dots: false,
@@ -52,6 +53,8 @@ const bestSellerSetting = {
 const NewProduct: React.FC = () => {
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const router = useRouter();
+  const currencyContext = useContext(CurrencyContext);
+  const { selectedCurr } = useContext(CurrencyContext);
 
   useEffect(() => {
     const products = objCache.getRecentlyAddedProducts(8);
@@ -121,7 +124,7 @@ const NewProduct: React.FC = () => {
                         ></i>
                       ))}
                     </div>
-                    <h5 className="mb-0 ">${product.sellingPrice.toFixed(2)}</h5>
+                    <h5 className="mb-0 ">{selectedCurr.symbol}{product.sellingPrice.toFixed(2)}</h5>
                   </div>
                 </div>
               ))}

@@ -168,11 +168,9 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
                                       data-toggle="modal"
                                       data-target="#addtocart"
                                       className="btn btn-normal"
-                                      onClick={() =>
-                                        handleAddToCart(item)
-                                      }
+                                      onClick={() =>router.push(`/product-details/${item.id}`)}                                      
                                     >
-                                      add to cart
+                                      View Detail
                                     </a>
                                   </div>
                                 </div>
