@@ -121,7 +121,7 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
                             <div className="product">
                               <ProductBox
                                 layout="layout-one"
-                                price= {priceWithDiscount}
+                                price= {getFinalPrice(item)}
                                 hoverEffect="icon-inline"
                                 data={item}
                                 newLabel={item.name}
