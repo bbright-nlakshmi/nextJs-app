@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { NextPage } from "next";
 import { Col, Row } from "reactstrap";
 import {
@@ -14,16 +14,46 @@ import { CartContext } from "@/helpers/cart/cart.context";
 import { CompareContext } from "@/helpers/compare/compare.context";
 import { Navigation, Autoplay, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { getProductFinalPrice } from "@/utils/price.helper";
 import "swiper/css";
 import "swiper/css/navigation";
 
-type ProductItem = Product | Kit;
+// Optimized type definitions
+interface ExtendedProduct extends Omit<Product, 'id' | 'name'> {
+  id: string;
+  name: string;
+  sellingPrice?: number;
+  price?: number;
+  title?: string;
+  sellingPrices?: number[];
+  sellingDisplayOptions?: string[];
+  discount?: number;
+  getProductPrice?: () => number;
+  getDiscount?: () => number;
+}
+
+interface ExtendedKit extends Omit<Kit, 'id' | 'name'> {
+  id: string;
+  name: string;
+  sellingPrice?: number;
+  price?: number;
+  title?: string;
+  sellingPrices?: number[];
+  sellingDisplayOptions?: string[];
+  discount?: number;
+  getProductPrice?: () => number;
+  getPrice?: () => number;
+  getDiscount?: () => number;
+}
+
+type ExtendedProductItem = ExtendedProduct | ExtendedKit;
 
 interface Props {
   priceRanges: StorePriceRanges;
 }
 
-const Spinner = () => (
+// Memoized spinner component
+const Spinner = React.memo(() => (
   <div className="price-range-spinner-overlay">
     <div className="price-range-spinner">
       <div className="spinner-border text-primary" role="status">
@@ -31,211 +61,239 @@ const Spinner = () => (
       </div>
     </div>
   </div>
-);
+));
 
 const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
-  const [allProducts, setAllProducts] = useState<ProductItem[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ProductItem[]>([]);
+  const [allProducts, setAllProducts] = useState<ExtendedProductItem[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ExtendedProductItem[]>([]);
   const [activeRange, setActiveRange] = useState<number | null>(null);
-  const [loadingInitial, setLoadingInitial] = useState(true);
-  const [loadingFilter, setLoadingFilter] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false); // New state to track initialization
 
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
 
   const ranges = priceRanges?.price_ranges || [];
-  const processingRef = useRef(false);
+  const isProcessingRef = useRef(false);
 
-  const getPrice = (item: ProductItem): number => {
-    if ('sellingPrice' in item && item.sellingPrice) return item.sellingPrice;
-    if ('getProductPrice' in item && typeof item.getProductPrice === 'function') return item.getProductPrice();
-    if ('price' in item && item.price) return item.price;
-    if ('getPrice' in item && typeof item.getPrice === 'function') return item.getPrice();
-    return 0;
-  };
-
-  const getName = (item: ProductItem): string => {
-    if ('name' in item && item.name) return item.name;
-    if ('title' in item && item.title) return item.title;
-    return `Product ${(item as Product)?.productId || item.id || "Unknown"}`;
-  };
-
-  const fetchAllProducts = useCallback(async () => {
+  // Optimized price calculation with memoization
+  const getPrice = useCallback((item: ExtendedProductItem): number => {
+    if (!item) return 0;
+    
     try {
-      setLoadingInitial(true);
-      let fetchedProducts: ProductItem[] = [];
-
-      try {
-        const products = objCache.getAllProducts();
-        if (Array.isArray(products)) fetchedProducts = [...products];
-      } catch (error) {
-        // Silent fail
+      let basePrice = 0;
+      
+      // Get base price using priority order
+      if ('getProductPrice' in item && typeof item.getProductPrice === 'function') {
+        basePrice = item.getProductPrice();
+      } else if (typeof item.sellingPrice === 'number' && item.sellingPrice > 1) {
+        basePrice = item.sellingPrice;
+      } else if (typeof item.price === 'number' && item.price > 1) {
+        basePrice = item.price;
+      } else if ('getPrice' in item && typeof item.getPrice === 'function') {
+        const price = item.getPrice();
+        if (typeof price === 'number' && price > 1) basePrice = price;
       }
 
-      try {
-        const kits = objCache.getAllKits();
-        if (Array.isArray(kits)) fetchedProducts = [...fetchedProducts, ...kits];
-      } catch (error) {
-        // Silent fail
-      }
+      if (basePrice <= 1) return 0;
 
-      // Remove duplicates
-      const uniqueProducts = fetchedProducts.filter((item, index, self) => {
-        const id = (item as Product)?.productId || item.id;
-        return id && self.findIndex((p) => ((p as Product)?.productId || p.id) === id) === index;
+      // Apply pricing logic from ProductDetail
+      const sizePrices = item.sellingPrices || [];
+      const uniqueSize = item.sellingDisplayOptions || [];
+      const activeIndex = uniqueSize.length > 0 ? 0 : null;
+      
+      return getProductFinalPrice({
+        price: basePrice,
+        discount: (item.discount && 'getDiscount' in item && typeof item.getDiscount === 'function') 
+          ? item.getDiscount() : 0,
+        sellingPrices: sizePrices,
+        activeIndex: activeIndex,
       });
-
-      setAllProducts(uniqueProducts);
-    } catch (err) {
-      setAllProducts([]);
-    } finally {
-      setLoadingInitial(false);
+    } catch {
+      return 0;
     }
   }, []);
 
-  // Memoized filtering function for better performance
-  const filterByRange = useCallback(
-    (range: number) => {
-      if (!range || !allProducts.length) {
-        setFilteredProducts([]);
-        return;
-      }
+  // Optimized utility functions
+  const getName = useCallback((item: ExtendedProductItem): string => 
+    item?.name || item?.title || `Product ${item?.id || 'Unknown'}`, []);
 
-      if (processingRef.current) return; // Prevent multiple simultaneous operations
+  const getId = useCallback((item: ExtendedProductItem): string => 
+    item?.id || (item as any)?.productId || Math.random().toString(36), []);
+
+  // Optimized product fetching
+  const fetchAllProducts = useCallback(async () => {
+    try {
+      const fetchedProducts: ExtendedProductItem[] = [];
+
+      // Fetch and convert products
+      try {
+        const products = objCache.getAllProducts() as unknown as Product[];
+        if (Array.isArray(products)) {
+          products.forEach(product => {
+            fetchedProducts.push({
+              ...product,
+              id: product.id || (product as any).productId || Math.random().toString(36),
+              name: product.name || `Product ${product.id || 'Unknown'}`
+            } as ExtendedProduct);
+          });
+        }
+      } catch {}
+
+      // Fetch and convert kits
+      try {
+        const kits = objCache.getAllKits() as unknown as Kit[];
+        if (Array.isArray(kits)) {
+          kits.forEach(kit => {
+            fetchedProducts.push({
+              ...kit,
+              id: kit.id || (kit as any).productId || Math.random().toString(36),
+              name: kit.name || `Kit ${kit.id || 'Unknown'}`
+            } as unknown as ExtendedKit);
+          });
+        }
+      } catch {}
+
+      // Filter valid products and remove duplicates in one pass
+      const validProducts = new Map<string, ExtendedProductItem>();
       
-      processingRef.current = true;
-      setLoadingFilter(true);
-      
-      // Use requestAnimationFrame for smooth UI updates
-      requestAnimationFrame(() => {
-        try {
-          const currentIndex = ranges.findIndex((r) => r === range);
-          const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
-
-          const filtered = allProducts
-            .filter((item) => {
-              const price = getPrice(item);
-              return price > 0 && price > previousPrice && price <= range;
-            })
-            .sort((a, b) => getPrice(a) - getPrice(b));
-
-          setFilteredProducts(filtered);
-        } catch (error) {
-          console.error('Error filtering products:', error);
-          setFilteredProducts([]);
-        } finally {
-          setLoadingFilter(false);
-          processingRef.current = false;
+      fetchedProducts.forEach(item => {
+        const id = getId(item);
+        const price = getPrice(item);
+        
+        if (id && price > 1 && !validProducts.has(id)) {
+          validProducts.set(id, item);
         }
       });
-    },
-    [allProducts, ranges]
-  );
 
+      return Array.from(validProducts.values());
+    } catch {
+      return [];
+    }
+  }, [getPrice, getId]);
+
+  // Optimized filtering with batch processing
+  const filterByRange = useCallback((range: number, products: ExtendedProductItem[]) => {
+    if (!range || !products.length) return [];
+
+    const currentIndex = ranges.findIndex(r => r === range);
+    const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
+
+    return products
+      .filter(item => {
+        const price = getPrice(item);
+        return price > 1 && (currentIndex === 0 ? price <= range : price > previousPrice && price <= range);
+      })
+      .sort((a, b) => getPrice(a) - getPrice(b));
+  }, [ranges, getPrice]);
+
+  // Range text generation
   const getRangeText = useCallback((range: number) => {
     if (!range) return { main: "", sub: "" };
     
-    const currentIndex = ranges.findIndex((r) => r === range);
+    const currentIndex = ranges.findIndex(r => r === range);
     const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
     
     return currentIndex === 0
       ? { main: `₹${range.toLocaleString("en-IN")}`, sub: "& below" }
       : {
-          main: `₹${previousPrice.toLocaleString("en-IN")} - ₹${range.toLocaleString("en-IN")}`,
+          main: `₹${(previousPrice + 1).toLocaleString("en-IN")} - ₹${range.toLocaleString("en-IN")}`,
           sub: "range",
         };
   }, [ranges]);
 
+  // Header text generation
   const getHeaderText = useCallback(() => {
     if (!activeRange) return "";
-    const currentIndex = ranges.findIndex((r) => r === activeRange);
+    const currentIndex = ranges.findIndex(r => r === activeRange);
     const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
     return currentIndex === 0
       ? `Products under ₹${activeRange.toLocaleString("en-IN")}`
-      : `Products ₹${previousPrice.toLocaleString("en-IN")} - ₹${activeRange.toLocaleString("en-IN")}`;
+      : `Products ₹${(previousPrice + 1).toLocaleString("en-IN")} - ₹${activeRange.toLocaleString("en-IN")}`;
   }, [activeRange, ranges]);
 
-  const handleAddToCart = useCallback((item: any, qty = 1) => {
+  // Optimized cart handler
+  const handleAddToCart = useCallback((item: ExtendedProductItem, qty = 1) => {
     try {
-      const cartItem = {
+      addToCart({
         ...item,
         price: getPrice(item),
-        id: item.productId || item.id,
-      };
-      addToCart(cartItem, qty);
-    } catch (error) {
-      // Silent fail
-    }
-  }, [addToCart]);
+        id: getId(item),
+      } as any, qty);
+    } catch {}
+  }, [addToCart, getPrice, getId]);
 
-  // Handle price range selection with debouncing
+  // Optimized range selection
   const handleRangeSelect = useCallback((range: number) => {
-    if (activeRange === range || isProcessing) return; // Prevent unnecessary re-filtering
+    if (activeRange === range || isProcessingRef.current) return;
     
-    setIsProcessing(true);
+    isProcessingRef.current = true;
     setActiveRange(range);
-    filterByRange(range);
     
-    // Reset processing state after a short delay
-    setTimeout(() => setIsProcessing(false), 300);
-  }, [activeRange, filterByRange, isProcessing]);
+    requestAnimationFrame(() => {
+      const filtered = filterByRange(range, allProducts);
+      setFilteredProducts(filtered);
+      isProcessingRef.current = false;
+    });
+  }, [activeRange, filterByRange, allProducts]);
 
+  // Initialize component
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
+  // Load products and set default range
   useEffect(() => {
-    if (mounted) fetchAllProducts();
-  }, [mounted, fetchAllProducts]);
+    if (!mounted || !ranges.length) return;
 
-  // Set default active range and initialize products
-  useEffect(() => {
-    if (ranges.length > 0 && allProducts.length > 0 && !hasInitialized) {
-      const defaultRange = ranges[0];
-      setActiveRange(defaultRange);
-      setHasInitialized(true); // Mark as initialized
-      
-      // Immediately filter for the default range
-      const currentIndex = ranges.findIndex((r) => r === defaultRange);
-      const previousPrice = currentIndex > 0 ? ranges[currentIndex - 1] : 0;
+    const initializeProducts = async () => {
+      setLoading(true);
+      try {
+        const products = await fetchAllProducts();
+        setAllProducts(products);
+        
+        // Set first range as default and filter products
+        if (ranges.length > 0) {
+          const defaultRange = ranges[0];
+          setActiveRange(defaultRange);
+          const filtered = filterByRange(defaultRange, products);
+          setFilteredProducts(filtered);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const filtered = allProducts
-        .filter((item) => {
-          const price = getPrice(item);
-          return price > 0 && price > previousPrice && price <= defaultRange;
-        })
-        .sort((a, b) => getPrice(a) - getPrice(b));
-
-      setFilteredProducts(filtered);
-    }
-  }, [ranges, allProducts, hasInitialized, getPrice]);
+    initializeProducts();
+  }, [mounted, ranges, fetchAllProducts, filterByRange]);
 
   // Listen for product updates
   useEffect(() => {
-    const handleProductsUpdate = () => {
-      fetchAllProducts();
-      setHasInitialized(false); // Reset initialization when products update
-    };
-    const handleKitsUpdate = () => {
-      fetchAllProducts();
-      setHasInitialized(false); // Reset initialization when kits update
+    if (!mounted) return;
+
+    const handleUpdate = () => {
+      fetchAllProducts().then(products => {
+        setAllProducts(products);
+        if (activeRange) {
+          const filtered = filterByRange(activeRange, products);
+          setFilteredProducts(filtered);
+        }
+      });
     };
 
-    objCache.on('updateAllProducts', handleProductsUpdate);
-    objCache.on('updateKits', handleKitsUpdate);
+    objCache.on('updateAllProducts', handleUpdate);
+    objCache.on('updateKits', handleUpdate);
 
     return () => {
-      objCache.off('updateAllProducts', handleProductsUpdate);
-      objCache.off('updateKits', handleKitsUpdate);
+      objCache.off('updateAllProducts', handleUpdate);
+      objCache.off('updateKits', handleUpdate);
     };
-  }, [fetchAllProducts]);
+  }, [mounted, activeRange, fetchAllProducts, filterByRange]);
 
-  if (loadingInitial) {
+  // Loading state
+  if (loading || !mounted) {
     return (
       <div className="section-py-space">
         <div className="product-box single-shopping-card-one">
@@ -245,10 +303,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
     );
   }
 
+  // No ranges available
   if (!ranges.length) return null;
-
-  // Show products for selected range - modified condition
-  const shouldShowProducts = (filteredProducts.length > 0 || loadingFilter) && hasInitialized;
 
   return (
     <>
@@ -266,27 +322,33 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     prevEl: ".swiper-button-prev",
                   }}
                   spaceBetween={15}
-                  slidesPerView={6}
-                  autoplay={true}
+                  slidesPerView={Math.min(6, ranges.length)}
+                  autoplay={false}
+                  loop={false}
                   breakpoints={{
                     0: { slidesPerView: 1, spaceBetween: 10 },
                     350: { slidesPerView: 2, spaceBetween: 10 },
                     480: { slidesPerView: 3, spaceBetween: 12 },
                     640: { slidesPerView: 4, spaceBetween: 15 },
-                    840: { slidesPerView: 5, spaceBetween: 15 },
-                    1140: { slidesPerView: 6, spaceBetween: 15 },
+                    840: { slidesPerView: Math.min(5, ranges.length), spaceBetween: 15 },
+                    1140: { slidesPerView: Math.min(6, ranges.length), spaceBetween: 15 },
                   }}
-                  modules={[Navigation, Autoplay, Keyboard]}
+                  modules={[Navigation, Keyboard]}
                 >
                   {ranges.map((range, i) => {
                     const { main, sub } = getRangeText(range);
+                    const isActive = activeRange === range;
+                    
                     return (
                       <SwiperSlide key={i}>
                         <div className="single-category-one single-price-range">
                           <div
                             onClick={() => handleRangeSelect(range)}
-                            className={`price-range-card ${activeRange === range ? "active" : ""} ${isProcessing ? "processing" : ""}`}
-                            style={{ pointerEvents: isProcessing ? 'none' : 'auto' }}
+                            className={`price-range-card ${isActive ? "active" : ""}`}
+                            style={{ 
+                              pointerEvents: isProcessingRef.current ? 'none' : 'auto',
+                              cursor: 'pointer'
+                            }}
                           >
                             <div className="price-range-content">
                               <div className="price-main">{main}</div>
@@ -304,8 +366,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         </div>
       </section>
 
-      {shouldShowProducts && (
-        <section className="section-py-space ratio_asos product" style={{ position: 'relative' }}>
+      {filteredProducts.length > 0 && (
+        <section className="section-py-space ratio_asos product">
           <div className="custom-container title-area-between">
             <h2 className="title-left">{getHeaderText()}</h2>
           </div>
@@ -313,35 +375,30 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
             <div className="row">
               <div className="col-lg-12">
                 <div className="product product-slide-6 product-m no-arrow">
-                  {loadingFilter ? (
-                    <div className="text-center py-5">
-                      <Spinner />
-                    </div>
-                  ) : (
-                    <Swiper
-                      slidesPerView={6}
-                      spaceBetween={30}
-                      autoplay={{ delay: 1000, pauseOnMouseEnter: true }}
-                      breakpoints={appConfig.mediaQueries}
-                      modules={[Autoplay, Navigation, Keyboard]}
-                    >
-                      {filteredProducts.map((product: any, i: number) => (
-                        <SwiperSlide key={`${product.id || product.productId || i}-${activeRange}`}>
-                          <ProductBox
-                            layout="layout-one"
-                            newLabel={product.new}
-                            item={product}
-                            hoverEffect={"icon-inline"}
-                            price={getPrice(product)}
-                            addCart={handleAddToCart}
-                            addCompare={() => addToCompare(product)}
-                            addWish={() => addToWish(product)}
-                            data={product}
-                          />
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
-                  )}
+                  <Swiper
+                    slidesPerView={Math.min(6, filteredProducts.length)}
+                    spaceBetween={30}
+                    autoplay={{ delay: 3000, pauseOnMouseEnter: true }}
+                    loop={filteredProducts.length > 6}
+                    breakpoints={appConfig.mediaQueries}
+                    modules={[Autoplay, Navigation, Keyboard]}
+                  >
+                    {filteredProducts.map((product, i) => (
+                      <SwiperSlide key={`${getId(product)}-${activeRange}-${i}`}>
+                        <ProductBox
+                          layout="layout-one"
+                          newLabel={(product as any).new}
+                          item={product as any}
+                          hoverEffect="icon-inline"
+                          price={getPrice(product)}
+                          addCart={handleAddToCart}
+                          addCompare={() => addToCompare(product as any)}
+                          addWish={() => addToWish(product as any)}
+                          data={product}
+                        />
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
                 </div>
               </div>
             </div>
@@ -349,22 +406,12 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         </section>
       )}
 
-      {hasInitialized && activeRange !== null && filteredProducts.length === 0 && !loadingFilter && (
+      {activeRange !== null && filteredProducts.length === 0 && !loading && (
         <section className="section-py-space">
           <div className="product-box single-shopping-card-one">
             <div className="text-center py-4">
               <h5>No products found</h5>
               <p>No products available in the selected price range.</p>
-              <button
-                className="btn btn-outline-primary"
-                onClick={() => {
-                  setActiveRange(null);
-                  setFilteredProducts([]);
-                  setHasInitialized(false);
-                }}
-              >
-                Clear Selection
-              </button>
             </div>
           </div>
         </section>

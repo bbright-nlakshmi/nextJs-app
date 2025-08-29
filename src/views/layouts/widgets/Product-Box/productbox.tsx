@@ -1,4 +1,3 @@
-//import Img from "@/utils/BgImgRatio";
 import { NextPage } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,7 +9,7 @@ import { objCache, Product } from "@/app/globalProvider";
 import { CartContext } from "@/helpers/cart/cart.context";
 import { getProductFinalPrice } from "@/utils/price.helper";
 import { getSizeLabel } from "@/utils/Labels";
-
+ 
 interface productType {
   id?: number;
   title?: string;
@@ -77,7 +76,7 @@ const ProductBox: NextPage<productType> = ({
   const onOpenModal = () => {
     setModal(true);
   };
-
+ 
   const onCloseModal = () => {
     setModal(false);
   };
@@ -89,7 +88,7 @@ const ProductBox: NextPage<productType> = ({
     setStockState("Minimum limit reached");
   }
 };
-
+ 
 const plusQty = () => {
   if (quantity < (data?.maxCount || item?.maxCount|| productInfo?.maxCount)) {
     setQuantity(quantity + 1);
@@ -98,7 +97,7 @@ const plusQty = () => {
     setStockState("Maximum limit reached");
   }
 };
-
+ 
   const changeQty = (e: React.ChangeEvent<HTMLInputElement>) => {
   let val = parseInt(e.target.value) || 1;
   if (val < (data?.minCount || item?.minCount || productInfo?.minCount || 1)) {
@@ -112,8 +111,8 @@ const plusQty = () => {
   }
   setQuantity(val);
 };
-
-
+ 
+ 
   const QuickView = (e: React.MouseEvent) => {
     e.stopPropagation();
     setModal(true);
@@ -138,16 +137,16 @@ const plusQty = () => {
       setStockState("Out of Stock !");
       return;
     }
-
+ 
     const finalPrice = getFinalPrice();
-
+ 
     addToCart(
       {
         ...data,
-        id: data.productId ?? data.id, 
+        id: data.productId ?? data.id,
         selectedSize: activesize,
         price: finalPrice,
-        cartItemCount: quantity, 
+        cartItemCount: quantity,
         cartPurchaseOptionStr: activesize || "",
         getPriceWithDiscount: () => finalPrice,
       },
@@ -163,15 +162,15 @@ const plusQty = () => {
     setModal(true);
     return;
   }
-
+ 
   // stock check
   if (data.stock && quantity > data.stock) {
     setStockState("Out of Stock !");
     return;
   }
-
+ 
   const finalPrice = getFinalPrice();
-
+ 
   try {
     sessionStorage.setItem(
       "buyNowProduct",
@@ -191,23 +190,23 @@ const plusQty = () => {
   } catch (err) {
     console.error("Session storage error:", err);
   }
-
+ 
   setWarning("");
   setModal(false);
   router.push("/pages/account/checkout");
 };
-
+ 
   // update price when size changes
   const handleSelectSize = (size: string) => {
     setActiveSize(size);
     setWarning("");
   };
-
+ 
   const clickProductDetail = () => {
     const id = data?.productId ?? data?.id;
     router.push(data.type === "kit" ? `/product-details/thumbnail-left/${id}` : `/product-details/${id}`);
   };
-
+ 
   return (
     <Fragment>
       <div
@@ -254,7 +253,7 @@ const plusQty = () => {
             />
           </a>
           )}
-
+ 
           <div className={`product-icon ${hoverEffect}`}>
             <button
               title="Add to Cart"
@@ -287,7 +286,7 @@ const plusQty = () => {
                 //   setWarning("⚠️ Please select a size before checkout.");
                 //   return;
                 // }
-                // ✅ Use getFinalPrice to ensure correct price calculation     
+                // ✅ Use getFinalPrice to ensure correct price calculation    
                 // ✅ Always use `data`, not `item`
                 handleBuyNow(e);
               }}
@@ -312,7 +311,7 @@ const plusQty = () => {
                 </h6>
               </Link>
             </div>
-
+ 
             {/* <div className="check-price">
                 {selectedCurr.symbol}
                 {(getPrice(data.productId) * selectedCurr.value).toFixed(2)}{" "}
@@ -563,3 +562,4 @@ const plusQty = () => {
   );
 };
 export default ProductBox;
+ 

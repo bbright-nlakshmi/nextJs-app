@@ -55,6 +55,11 @@ export class OrderItemsModel {
   };
   
   selectedSubscription: {};
+  selectedVariation: unknown;
+  unitPrice: any;
+  displayPrice: any;
+  displayTotal: any;
+  savings: any;
 
   constructor(params: {
     id: string;
@@ -196,6 +201,10 @@ export class OrderModel {
   userNotificationSent: boolean;
   orderAcceptStatus: string;
   orderGst?: string;
+  finalTotal: number;
+  cartAmount: number;
+  taxAmount: any;
+  couponDiscount: any;
  
   constructor(params: {
     id: string;
