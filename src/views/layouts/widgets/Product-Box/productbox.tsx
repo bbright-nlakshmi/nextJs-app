@@ -57,18 +57,19 @@ const ProductBox: NextPage<productType> = ({
   const titleProps = data?.name.split(" ").join("");
   const [warning, setWarning] = useState<string>("");
   const productInfo = objCache.getProductById(data?.productId);
-  const uniqueSize: string[] = data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
+  const uniqueSizes: string[] = data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
+  const uniqueSize: string[] = data?.sellingDisplayOption || productInfo?.sellingDisplayOption || [];
   const sizePrices: number[] = data?.sellingPrices || productInfo?.sellingPrices || [];
   const sizePrice: number = data?.sellingPrice || productInfo?.sellingPrice || [];
   const uniqueColor: any[] = [];
   const [activesize, setActiveSize] = useState<string | null>(
-    uniqueSize.length ? uniqueSize[0] : null
+    uniqueSizes.length ? uniqueSizes[0] : null
   );
   React.useEffect(() => {
-  if (uniqueSize.length && !activesize) {
-    setActiveSize(uniqueSize[0]);
+  if (uniqueSizes.length && !activesize) {
+    setActiveSize(uniqueSizes[0]);
   }
-}, [uniqueSize]);
+}, [uniqueSizes]);
 
   const changeColorVar = (img_id: number) => {
     slider2.current?.slickGoTo(img_id);
@@ -118,16 +119,17 @@ const plusQty = () => {
     setModal(true);
   };
   const getFinalPrice = () => {
+    if (price) return price;
     return getProductFinalPrice({
       price: sizePrice,
       discount: data?.discount,
       sellingPrices: sizePrices,
-      activeIndex: activesize ? uniqueSize.indexOf(activesize) : 0,
+      activeIndex: activesize ? uniqueSizes.indexOf(activesize) : 0,
     }); 
   };
    const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (uniqueSize.length && !activesize) {
+    if (uniqueSizes.length && !activesize) {
       setWarning("⚠️ Please select an option before adding to cart.");
       return;
     }
@@ -156,7 +158,7 @@ const plusQty = () => {
   };
   const handleBuyNow = (e: React.MouseEvent) => {
   e.preventDefault();
-  if (uniqueSize.length && !activesize) {
+  if (uniqueSizes.length && !activesize) {
     setWarning("⚠️ Please select an option before Buy Now.");
     setModal(true);
     return;
@@ -322,7 +324,7 @@ const plusQty = () => {
                   {(getFinalPrice() * selectedCurr.value).toFixed(2)}
                 </div>
               </div>
-              {!!uniqueSize.length && (
+              {(data.saleMode || productInfo?.saleMode) !=='range' ? (
                 <div className="size-dropdown"
                 onClick={(e) => e.stopPropagation()}
                 >
@@ -330,13 +332,17 @@ const plusQty = () => {
                     value={activesize || ""}
                     onChange={(e) => e.target.value && handleSelectSize(e.target.value)}
                   >
-                    {uniqueSize.map((size, i) => (
+                    {uniqueSizes.map((size, i) => (
                       <option key={i} value={size}>
                         {getSizeLabel(size)}
                       </option>
                     ))}
                   </select>
                 </div>
+              ) : (
+              <div className="size-value">
+                {uniqueSize}
+              </div>
               )}
             </div>
             <div className="rating-star mt-2">
@@ -364,14 +370,14 @@ const plusQty = () => {
         centered
         size="lg"
       >
-        <ModalBody>
-          <button
+        <button
             type="button"
-            className="close"
+            className="quickview-close mb-2"
             onClick={() => setModal(!modal)}
           >
             <span>&times;</span>
           </button>
+        <ModalBody>
           <div className="row">
             <div className="col-lg-6 col-xs-12">
               {data?.img?.length > 1 ? (
@@ -465,30 +471,36 @@ const plusQty = () => {
                   </ul>
                 </div>
                 <div className="product-description border-product">
-                  {!!uniqueSize.length && (
-                    <div className="size-box">
-                      <h6 className="product-title">select size</h6>
-                      <ul>
-                      {uniqueSize.map((size, i) => (
-                        <li key={i} className={size === activesize ? "active" : ""}>
-                          <a
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleSelectSize(size);
-                            }}
-                          >
-                            {size}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                    {/* Show warning only if Add to Cart was clicked */}
-                    {warning && (
-                      <div className="warning-message text-danger mb-2 mt-1">
-                        {warning}
-                      </div>
-                    )}
+                  {(!!uniqueSizes.length || !!uniqueSize) && (
+                    <div className="display-options">
+                      {(data.saleMode || productInfo?.saleMode) !== "range" ? (
+                        <>
+                          <ul>
+                            {uniqueSizes.map((size, i) => (
+                              <li key={i} className={size === activesize ? "active" : ""}>
+                                <a
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleSelectSize(size);
+                                  }}
+                                >
+                                  {size}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+
+                          {/* Show warning only if Add to Cart was clicked and multiple sizes exist */}
+                          {warning && (
+                            <div className="warning-message text-danger mb-2 mt-1">
+                              {warning}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="size-value mb-4">{uniqueSize}</div>
+                      )}
                     </div>
                   )}
                   {stockState !== "InStock" && <span className="instock-cls">{stockState}</span>}
@@ -500,7 +512,7 @@ const plusQty = () => {
                           type="button"
                           className="btn quantity-left-minus"
                           onClick={minusQty}
-                          disabled={quantity <= (data?.minCount || item?.minCount || productInfo?.minCount || 1)}
+                          disabled={((item?.saleMode || data?.saleMode) === "custom") ||quantity <= (data?.minCount || item?.minCount || productInfo?.minCount || 1)}
                         >
                           <i className="ti-angle-left"></i>
                         </button>
@@ -509,15 +521,16 @@ const plusQty = () => {
                         type="text"
                         name="quantity"
                         className="form-control input-number"
-                        value={quantity}
+                        value={(item?.saleMode || data?.saleMode) === "custom" ? 1 : quantity}
                         onChange={changeQty}
+                        readOnly={(item?.saleMode || data?.saleMode) === "custom"}
                       />
                       <span className="input-group-prepend">
                         <button
                           type="button"
                           className="btn quantity-right-plus"
                           onClick={plusQty}
-                          disabled={quantity >= (data?.maxCount || item?.maxCount || productInfo?.maxCount)}
+                          disabled={((item?.saleMode|| data?.saleMode) === "custom") || quantity >= (item?.maxCount || data?.maxCount || productInfo?.maxCount)}
                         >
                           <i className="ti-angle-right"></i>
                         </button>
@@ -538,7 +551,7 @@ const plusQty = () => {
                     className="btn btn-normal"
                     onClick={() => clickProductDetail()}
                   >
-                    view detail
+                    view details
                   </a>
                 </div>
               </div>
