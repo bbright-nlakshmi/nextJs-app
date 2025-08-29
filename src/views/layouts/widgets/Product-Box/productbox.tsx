@@ -69,7 +69,7 @@ const ProductBox: NextPage<productType> = ({
     setActiveSize(uniqueSizes[0]);
   }
 }, [uniqueSizes]);
- 
+
   const changeColorVar = (img_id: number) => {
     slider2.current?.slickGoTo(img_id);
   };
@@ -118,12 +118,13 @@ const plusQty = () => {
     setModal(true);
   };
   const getFinalPrice = () => {
+    if (price) return price;
     return getProductFinalPrice({
       price: sizePrice,
       discount: data?.discount,
       sellingPrices: sizePrices,
       activeIndex: activesize ? uniqueSizes.indexOf(activesize) : 0,
-    });
+    }); 
   };
    const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -368,14 +369,14 @@ const plusQty = () => {
         centered
         size="lg"
       >
-        <ModalBody>
-          <button
+        <button
             type="button"
-            className="close"
+            className="quickview-close mb-2"
             onClick={() => setModal(!modal)}
           >
             <span>&times;</span>
           </button>
+        <ModalBody>
           <div className="row">
             <div className="col-lg-6 col-xs-12">
               {data?.img?.length > 1 ? (
@@ -469,29 +470,36 @@ const plusQty = () => {
                   </ul>
                 </div>
                 <div className="product-description border-product">
-                  {!!uniqueSizes.length && (
-                    <div className="your-size-list">
-                      <ul>
-                      {uniqueSizes.map((size, i) => (
-                        <li key={i} className={size === activesize ? "active" : ""}>
-                          <a
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleSelectSize(size);
-                            }}
-                          >
-                            {size}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                    {/* Show warning only if Add to Cart was clicked */}
-                    {warning && (
-                      <div className="warning-message text-danger mb-2 mt-1">
-                        {warning}
-                      </div>
-                    )}
+                  {(!!uniqueSizes.length || !!uniqueSize) && (
+                    <div className="display-options">
+                      {(data.saleMode || productInfo?.saleMode) !== "range" ? (
+                        <>
+                          <ul>
+                            {uniqueSizes.map((size, i) => (
+                              <li key={i} className={size === activesize ? "active" : ""}>
+                                <a
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleSelectSize(size);
+                                  }}
+                                >
+                                  {size}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+
+                          {/* Show warning only if Add to Cart was clicked and multiple sizes exist */}
+                          {warning && (
+                            <div className="warning-message text-danger mb-2 mt-1">
+                              {warning}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="size-value mb-4">{uniqueSize}</div>
+                      )}
                     </div>
                   )}
                   {stockState !== "InStock" && <span className="instock-cls">{stockState}</span>}
@@ -542,7 +550,7 @@ const plusQty = () => {
                     className="btn btn-normal"
                     onClick={() => clickProductDetail()}
                   >
-                    view detail
+                    view details
                   </a>
                 </div>
               </div>
