@@ -119,6 +119,7 @@ const plusQty = () => {
     setModal(true);
   };
   const getFinalPrice = () => {
+    if (price) return price;
     return getProductFinalPrice({
       price: sizePrice,
       discount: data?.discount,
@@ -471,7 +472,7 @@ const plusQty = () => {
                 </div>
                 <div className="product-description border-product">
                   {(!!uniqueSizes.length || !!uniqueSize) && (
-                    <div className="your-size-list">
+                    <div className="display-options">
                       {(data.saleMode || productInfo?.saleMode) !== "range" ? (
                         <>
                           <ul>
@@ -550,7 +551,7 @@ const plusQty = () => {
                     className="btn btn-normal"
                     onClick={() => clickProductDetail()}
                   >
-                    view detail
+                    view details
                   </a>
                 </div>
               </div>

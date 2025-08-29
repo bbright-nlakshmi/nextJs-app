@@ -15,6 +15,7 @@ import { WishlistContext } from "../../../helpers/wishlist/wish.context";
 import { CompareContext } from "../../../helpers/compare/compare.context";
 import ProductBox from "@/views/layouts/widgets/Product-Box/productbox";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
+import { getProductFinalPrice } from "@/utils/price.helper";
 
 interface Props {
   products?: Discount[];
@@ -49,7 +50,13 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
     const price = getPrice(productId);
     return price * (1 - discount / 100);
   };
-
+  const getFinalPrice = (product: Product) =>
+    getProductFinalPrice({
+      price: product.sellingPrice,
+      discount: product.discount,
+      sellingPrices: product.sellingPrices,
+      activeIndex: 0,
+    });
   const handleAddToCart = (item: any, qty = 1) => {
     const cartItem = {
       ...item,
@@ -170,7 +177,7 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
                                       className="btn btn-normal"
                                       onClick={() =>router.push(`/product-details/${item.id}`)}                                      
                                     >
-                                      View Detail
+                                      View Details
                                     </a>
                                   </div>
                                 </div>

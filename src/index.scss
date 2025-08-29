@@ -34583,7 +34583,7 @@ li a:hover .category-name {
   display: block;
 }
 /* Wrapper UL */
-.your-size-list {
+.display-options {
   display: flex;
   flex-wrap: wrap;
   gap: 10px; /* spacing between boxes */
@@ -34593,12 +34593,12 @@ li a:hover .category-name {
 }
 
 /* Each LI (box) */
-.your-size-list li {
+.display-options li {
   flex: 0 0 auto; /* don’t stretch full width */
 }
 
 /* Anchor (clickable box) */
-.your-size-list li a {
+.display-options li a {
   display: inline-block;
   padding: 8px 16px;  /* adjust padding for bigger boxes */
   border: 2px solid #ccc;
@@ -34613,13 +34613,13 @@ li a:hover .category-name {
 }
 
 /* Hover effect */
-.your-size-list li a:hover {
+.display-options li a:hover {
   border-color: #333;
   background-color: #f5f5f5;
 }
 
 /* Active (selected) */
-.your-size-list li.active a {
+.display-options li.active a {
   border-color: white;
   background-color: var(--theme-color1);
   color: #fff;

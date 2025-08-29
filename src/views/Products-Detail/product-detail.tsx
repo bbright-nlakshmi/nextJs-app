@@ -264,7 +264,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
               </ModalBody>
             </Modal>
 
-            <div className="your-size-list">
+            <div className="display-options">
               {(item.saleMode !== "range") ? (
                 <>
                   <ul>

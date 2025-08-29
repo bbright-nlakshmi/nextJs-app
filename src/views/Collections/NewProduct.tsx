@@ -5,6 +5,7 @@ import { Media } from "reactstrap";
 import { useRouter } from "next/navigation"; // ✅ For client-side navigation
 import { objCache, Product } from "@/app/globalProvider";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
+import { getProductFinalPrice } from "@/utils/price.helper";
 
 const bestSellerSetting = {
   dots: false,
@@ -70,7 +71,14 @@ const NewProduct: React.FC = () => {
       objCache.off("update", updateHandler);
     };
   }, []);
-
+  const getFinalPrice = (product: Product) =>
+      getProductFinalPrice({
+        price: product.sellingPrice,
+        discount: product.discount,
+        sellingPrices: product.sellingPrices,
+        activeIndex: 0,
+      });
+    
   // Group products into chunks of 3 for each slide
   const chunkedProducts = recentProducts.reduce<Product[][]>(
     (result, product, index) => {
@@ -124,7 +132,7 @@ const NewProduct: React.FC = () => {
                         ></i>
                       ))}
                     </div>
-                    <h5 className="mb-0 ">{selectedCurr.symbol}{product.sellingPrice.toFixed(2)}</h5>
+                    <h5 className="mb-0 theme-color ">{selectedCurr.symbol}{getFinalPrice(product)}</h5>
                   </div>
                 </div>
               ))}
