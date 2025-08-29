@@ -70,13 +70,30 @@ interface CartItem {
 // Mock contexts
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-// Constants
+// Constants - Updated phone validation
 const VALIDATION_RULES = {
   firstName: { required: "First name is required" },
   lastName: { required: "Last name is required" },
   phone: {
     required: "Phone number is required",
-    pattern: { value: /^[0-9]{10}$/, message: "Please enter a valid 10-digit phone number" }
+    pattern: { 
+      value: /^[0-9]{10}$/, 
+      message: "Phone number must be exactly 10 digits" 
+    },
+    minLength: {
+      value: 10,
+      message: "Phone number must be exactly 10 digits"
+    },
+    maxLength: {
+      value: 10,
+      message: "Phone number must be exactly 10 digits"
+    },
+    validate: (value: string) => {
+      if (!value) return "Phone number is required";
+      if (value.length !== 10) return "Phone number must be exactly 10 digits";
+      if (!/^[0-9]+$/.test(value)) return "Phone number must contain only digits";
+      return true;
+    }
   },
   email: {
     required: "Email is required",
@@ -362,6 +379,16 @@ const getCurrentLocation = (): Promise<LocationData> => {
   });
 };
 
+// Phone input handler to restrict to 10 digits only
+const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+  if (value.length <= 10) {
+    e.target.value = value;
+  } else {
+    e.target.value = value.slice(0, 10); // Keep only first 10 digits
+  }
+};
+
 // Components
 const EmptyCartView: React.FC<{ onContinueShopping: () => void }> = ({ onContinueShopping }) => (
   <section className="checkout-container">
@@ -529,64 +556,108 @@ const CartItemCard: React.FC<{
   );
 };
 
+// Updated CouponSection with hide used coupons functionality
 const CouponSection: React.FC<{
   coupons: any[];
   appliedCoupon: any;
   phoneNumber: string;
   couponError: string;
   onSelectCoupon: (coupon: any) => void;
-}> = ({ coupons, appliedCoupon, phoneNumber, couponError, onSelectCoupon }) => (
-  <div className="form-group mb-3">
-    <label className="field-label coupon-label">Available Coupons</label>
-    <div className="coupon-container">
-      {coupons.length === 0 && (
-        <div className="alert alert-info">
-          {phoneNumber ? "No coupons available for your account" : "Enter phone number to view available coupons"}
-        </div>
-      )}
-      {coupons.map((coupon) => (
-        <div
-          key={coupon.couponCode}
-          className={`coupon-item p-2 mb-2 border rounded ${appliedCoupon?.couponCode === coupon.couponCode ? 'border-success bg-light' : 'border-secondary'}`}
-          onClick={() => onSelectCoupon(coupon)}
-        >
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <div className="fw-bold">{coupon.couponCode}</div>
-              <small className="text-muted">
-                {coupon.isCouponPercentage 
-                  ? `${coupon.couponAmount}% off` 
-                  : `₹${coupon.couponAmount} off`
-                }
-                {coupon.maxCouponAmount > 0 && ` (Max ₹${coupon.maxCouponAmount})`}
-              </small>
-              {coupon.minimumCartValue > 0 && (
+}> = ({ coupons, appliedCoupon, phoneNumber, couponError, onSelectCoupon }) => {
+  // Filter out already applied coupon from available coupons list
+  const availableCoupons = useMemo(() => {
+    if (!appliedCoupon) return coupons;
+    return coupons.filter(coupon => coupon.couponCode !== appliedCoupon.couponCode);
+  }, [coupons, appliedCoupon]);
+
+  return (
+    <div className="form-group mb-3">
+      <label className="field-label coupon-label">
+        {appliedCoupon ? "Applied Coupon" : "Available Coupons"}
+      </label>
+      <div className="coupon-container">
+        {/* Show applied coupon first if exists */}
+        {appliedCoupon && (
+          <div className="applied-coupon-section mb-3">
+            <div className="coupon-item p-2 mb-2 border rounded border-success bg-light">
+              <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <small className="text-info">Min order: ₹{coupon.minimumCartValue}</small>
+                  <div className="fw-bold text-success">
+                    <i className="fa fa-check-circle me-2"></i>
+                    {appliedCoupon.couponCode}
+                  </div>
+                  <small className="text-muted">
+                    {appliedCoupon.isCouponPercentage 
+                      ? `${appliedCoupon.couponAmount}% off` 
+                      : `₹${appliedCoupon.couponAmount} off`
+                    }
+                    {appliedCoupon.maxCouponAmount > 0 && ` (Max ₹${appliedCoupon.maxCouponAmount})`}
+                  </small>
+                  <div>
+                    <small className="badge bg-success">Applied Successfully!</small>
+                  </div>
                 </div>
-              )}
-            </div>
-            <div>
-              {appliedCoupon?.couponCode === coupon.couponCode && (
-                <i className="fa fa-check-circle text-success"></i>
-              )}
+                <button 
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => onSelectCoupon(null)}
+                  title="Remove Coupon"
+                >
+                  <i className="fa fa-times"></i>
+                </button>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* Show available coupons only if no coupon is applied */}
+        {!appliedCoupon && (
+          <>
+            {availableCoupons.length === 0 && (
+              <div className="alert alert-info">
+                {phoneNumber ? "No coupons available for your account" : "Enter phone number to view available coupons"}
+              </div>
+            )}
+            {availableCoupons.map((coupon) => (
+              <div
+                key={coupon.couponCode}
+                className="coupon-item p-2 mb-2 border rounded border-secondary"
+                style={{ cursor: 'pointer' }}
+                onClick={() => onSelectCoupon(coupon)}
+              >
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div className="fw-bold">{coupon.couponCode}</div>
+                    <small className="text-muted">
+                      {coupon.isCouponPercentage 
+                        ? `${coupon.couponAmount}% off` 
+                        : `₹${coupon.couponAmount} off`
+                      }
+                      {coupon.maxCouponAmount > 0 && ` (Max ₹${coupon.maxCouponAmount})`}
+                    </small>
+                    {coupon.minimumCartValue > 0 && (
+                      <div>
+                        <small className="text-info">Min order: ₹{coupon.minimumCartValue}</small>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <i className="fa fa-plus-circle text-primary"></i>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+      {couponError && (
+        <div className="alert alert-danger mt-2">
+          {couponError}
         </div>
-      ))}
+      )}
     </div>
-    {couponError && (
-      <div className="alert alert-danger mt-2">
-        {couponError}
-      </div>
-    )}
-    {appliedCoupon && (
-      <div className="alert alert-success mt-2">
-        <strong>{appliedCoupon.couponCode}</strong> applied successfully!
-      </div>
-    )}
-  </div>
-);
+  );
+};
 
 const OrderTotals: React.FC<{ 
   totals: any; 
@@ -681,8 +752,12 @@ const CheckoutPage: React.FC = () => {
     apiConfig
   } = usePlaceOrder(cartContext?.cartItems || [], authContext?.user);
 
-  // Form
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormType>();
+  // Form with real-time validation enabled
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormType>({
+    mode: "onChange", // Enable real-time validation
+    reValidateMode: "onChange" // Re-validate on every change
+  });
+  
   const phoneNumber = watch("phone") || "";
 
   // Memoized values
@@ -1112,9 +1187,11 @@ const CheckoutPage: React.FC = () => {
                         <label className="field-label">Phone *</label>
                         <input
                           type="tel"
-                          placeholder="Enter phone number"
+                          placeholder="Enter 10-digit phone number"
                           className={`form-control ${errors.phone ? "error_border" : ""}`}
                           {...register("phone", VALIDATION_RULES.phone)}
+                          onInput={handlePhoneInput}
+                          maxLength={10}
                         />
                         {errors.phone && <span className="error-message">{errors.phone.message}</span>}
                       </div>
