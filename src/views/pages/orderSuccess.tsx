@@ -6,32 +6,52 @@ import Breadcrumb from "../../views/Containers/Breadcrumb";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
+import { getSizeLabel } from "@/utils/Labels";
 
 interface OrderItem {
   id: string;
   name: string;
   img: string[];
+  url?: string; // URL field from order payload
   cartItemCount: number;
+  saleQuantity?: number; // Alternative quantity field
   price: number;
+  unitPrice?: number; // Unit price from order payload
+  costPrice?: number; // Cost price from order payload
   discountPrice?: number;
+  choosedPrice?: number; // Chosen price from order payload
+  baseChoosedPrice?: number; // Base chosen price from order payload
+  baseCHoosedPrice?: number; // Alternative spelling from payload
   taxAmount?: number;
+  collectedTax?: number; // Tax collected from order payload
   categoryName?: string;
   selectedSize?: string;
-  costPrice?: number;
-  choosedPrice?: number;
-  baseChoosedPrice?: number;
+  selectedVariation?: string; // Variation from order payload
+  saleQuantityStr?: string; // Sale quantity string from order payload
+  purchaseOptionStr?: string; // Purchase option string from order payload
+  sellingDisplayOptions?: string[]; // Available variations
+  sellingPrices?: number[]; // Prices for variations
+  variationIndex?: number; // Index of selected variation
+  variationPrice?: number; // Price of selected variation
 }
 
 interface OrderData {
   orderId: string;
   items: OrderItem[];
   cartTotal: number;
+  cartAmount?: number; // Alternative field name
   finalTotal: number;
+  finalOrderTotal?: number; // Alternative field name
   discountAmount: number;
   packageCost: number;
   deliveryCost: number;
+  deliveryCharges?: number; // Alternative field name
   taxTotal: number;
+  taxAmount?: number; // Additional tax field
+  collectedTax?: number; // Collected tax field
   totalSavings: number;
+  couponDiscount?: number; // Coupon discount from order
+  couponAmount?: number; // Alternative coupon field
   billingAddress: {
     firstName: string;
     lastName: string;
@@ -44,12 +64,17 @@ interface OrderData {
     pincode: string;
   };
   paymentMethod: string;
+  paymentMode?: string; // Alternative field name
   orderDate: string;
+  orderTime?: string; // Alternative field name
   storeDetails?: {
     name: string;
     id: string;
   };
+  store?: string; // Alternative store field
+  storeId?: string; // Store ID field
   gstNumber?: string;
+  orderGst?: string; // Alternative GST field
 }
 
 const OrderSuccessPage: NextPage = () => {
@@ -63,60 +88,98 @@ const OrderSuccessPage: NextPage = () => {
 
   useEffect(() => {
     try {
-      // Try to get order data from sessionStorage (key: 'orderDetails')
       const storedOrderDetails = sessionStorage.getItem("orderDetails");
       const storedAddressDetails = sessionStorage.getItem("addressDetails");
 
       if (storedOrderDetails) {
         const orderDetails = JSON.parse(storedOrderDetails);
-        // Map orderDetails to OrderData format expected by this page
+        
+        // Enhanced mapping with proper price calculation
         const mappedOrderData: OrderData = {
           orderId: orderDetails.id,
           items: (orderDetails.orderItems || []).map((item: any) => {
-            // Use the correct price mapping from the order payload
-            const unitPrice = item.costPrice || item.price || 0; // This is the actual calculated price per unit
-            const finalPricePerUnit = item.choosedPrice && item.choosedPrice < item.baseChoosedPrice 
-              ? item.choosedPrice / item.cartItemCount 
-              : unitPrice;
+            // Get the actual unit price (this should match checkout calculations)
+            const unitPrice = item.unitPrice || item.costPrice || 0;
+            const choosedPrice = item.choosedPrice || 0;
+            const baseChoosedPrice = item.baseChoosedPrice || item.baseCHoosedPrice || 0;
+            const quantity = item.cartItemCount || item.saleQuantity || 1;
+            
+            // Calculate the effective price per unit (matching checkout logic)
+            let effectiveUnitPrice = unitPrice;
+            if (choosedPrice > 0 && baseChoosedPrice > 0 && choosedPrice < baseChoosedPrice) {
+              effectiveUnitPrice = choosedPrice / quantity;
+            }
+
+            // Get variation information
+            const selectedVariation = item.selectedVariation || item.selectedSize || "";
+            const saleQuantityStr = item.saleQuantityStr || item.purchaseOptionStr || selectedVariation || "";
 
             return {
               id: item.id,
-              name: item.name,
+              name: item.name || "Unknown Product",
               img: item.url ? [item.url] : [],
-              cartItemCount: item.cartItemCount,
-              price: unitPrice, // The calculated price per unit (includes variations)
-              discountPrice: finalPricePerUnit !== unitPrice ? finalPricePerUnit : undefined,
-              taxAmount: item.taxAmount,
-              categoryName: item.categoryName,
-              selectedSize: item.selectedSize,
+              url: item.url,
+              cartItemCount: quantity,
+              saleQuantity: item.saleQuantity,
+              price: unitPrice, // Original unit price
+              unitPrice: unitPrice,
               costPrice: item.costPrice,
               choosedPrice: item.choosedPrice,
-              baseChoosedPrice: item.baseChoosedPrice
+              baseChoosedPrice: baseChoosedPrice,
+              baseCHoosedPrice: item.baseCHoosedPrice,
+              discountPrice: effectiveUnitPrice !== unitPrice ? effectiveUnitPrice : undefined,
+              taxAmount: item.taxAmount || 0,
+              collectedTax: item.collectedTax || 0,
+              categoryName: item.categoryName || "",
+              selectedSize: item.selectedSize,
+              selectedVariation: selectedVariation,
+              saleQuantityStr: saleQuantityStr,
+              purchaseOptionStr: item.purchaseOptionStr,
+              sellingDisplayOptions: item.sellingDisplayOptions || [],
+              sellingPrices: item.sellingPrices || [],
+              variationIndex: item.variationIndex,
+              variationPrice: item.variationPrice
             };
           }),
-          cartTotal: orderDetails.cartTotal,
-          finalTotal: orderDetails.finalOrderTotal,
-          discountAmount: orderDetails.discountAmount,
-          packageCost: orderDetails.packageCost,
-          deliveryCost: orderDetails.deliveryCost,
-          taxTotal: orderDetails.taxTotal,
-          totalSavings: orderDetails.totalSavings,
+          cartTotal: orderDetails.cartTotal || orderDetails.cartAmount || 0,
+          cartAmount: orderDetails.cartAmount,
+          finalTotal: orderDetails.finalOrderTotal || orderDetails.finalTotal || 0,
+          finalOrderTotal: orderDetails.finalOrderTotal,
+          discountAmount: orderDetails.discountAmount || 0,
+          packageCost: orderDetails.packageCost || 0,
+          deliveryCost: orderDetails.deliveryCost || orderDetails.deliveryCharges || 0,
+          deliveryCharges: orderDetails.deliveryCharges,
+          taxTotal: orderDetails.taxTotal || ((orderDetails.taxAmount || 0) + (orderDetails.collectedTax || 0)) || 0,
+          taxAmount: orderDetails.taxAmount,
+          collectedTax: orderDetails.collectedTax,
+          totalSavings: orderDetails.totalSavings || 0,
+          couponDiscount: orderDetails.couponDiscount || orderDetails.couponAmount || 0,
+          couponAmount: orderDetails.couponAmount,
           billingAddress: storedAddressDetails ? JSON.parse(storedAddressDetails) : {
-            firstName: "",
-            lastName: "",
-            phone: "",
+            firstName: orderDetails.deliveryAddress?.firstName || "",
+            lastName: orderDetails.deliveryAddress?.lastName || "",
+            phone: orderDetails.phoneNumber || "",
             email: "",
             country: "",
             state: "",
-            city: "",
-            address: "",
-            pincode: ""
+            city: orderDetails.deliveryAddress?.city || "",
+            address: orderDetails.deliveryAddress?.address || "",
+            pincode: orderDetails.deliveryAddress?.pinCode || ""
           },
-          paymentMethod: orderDetails.paymentMode,
-          orderDate: orderDetails.orderTime,
-          storeDetails: orderDetails.store ? { name: orderDetails.store, id: orderDetails.storeId } : undefined,
-          gstNumber: orderDetails.orderGst
+          paymentMethod: orderDetails.paymentMode || orderDetails.paymentMethod || "",
+          paymentMode: orderDetails.paymentMode,
+          orderDate: orderDetails.orderTime || orderDetails.orderDate || "",
+          orderTime: orderDetails.orderTime,
+          storeDetails: {
+            name: orderDetails.store || "Store",
+            id: orderDetails.storeId || "default"
+          },
+          store: orderDetails.store,
+          storeId: orderDetails.storeId,
+          gstNumber: orderDetails.orderGst || orderDetails.gstNumber,
+          orderGst: orderDetails.orderGst
         };
+        
         setOrderData(mappedOrderData);
       }
     } catch (error) {
@@ -126,7 +189,7 @@ const OrderSuccessPage: NextPage = () => {
     }
   }, []);
 
-  // Get effective price for an item (the actual price paid)
+  // Get effective price for an item (matching checkout calculation logic)
   const getEffectivePrice = (item: OrderItem): number => {
     // If there's a choosedPrice that's different from baseChoosedPrice, use per-unit choosedPrice
     if (item.choosedPrice && item.baseChoosedPrice && item.choosedPrice < item.baseChoosedPrice) {
@@ -136,18 +199,18 @@ const OrderSuccessPage: NextPage = () => {
     if (item.discountPrice && item.discountPrice > 0 && item.discountPrice < item.price) {
       return item.discountPrice;
     }
-    // Otherwise use the regular price (which should already include variation adjustments)
-    return item.price;
+    // Otherwise use the unit price
+    return item.unitPrice || item.price;
   };
 
   // Get original price for comparison (before discount)
   const getOriginalPrice = (item: OrderItem): number => {
-    // If baseChoosedPrice exists, use it per unit
-    if (item.baseChoosedPrice) {
+    // If baseChoosedPrice exists and is higher, use it per unit
+    if (item.baseChoosedPrice && item.baseChoosedPrice > (item.choosedPrice || 0)) {
       return item.baseChoosedPrice / item.cartItemCount;
     }
-    // Otherwise use the item price
-    return item.price;
+    // Otherwise use the original unit price
+    return item.unitPrice || item.price;
   };
 
   // Check if item has a discount
@@ -155,6 +218,18 @@ const OrderSuccessPage: NextPage = () => {
     const effectivePrice = getEffectivePrice(item);
     const originalPrice = getOriginalPrice(item);
     return effectivePrice < originalPrice;
+  };
+
+  // Format variation display (matching checkout page logic)
+  const formatVariation = (item: OrderItem): string | null => {
+    // Priority order: selectedVariation -> selectedSize -> saleQuantityStr -> purchaseOptionStr
+    const variation = item.selectedVariation || item.selectedSize || item.saleQuantityStr || item.purchaseOptionStr;
+    
+    if (variation && variation !== "default") {
+      // Use getSizeLabel if available, otherwise return the variation as-is
+      return getSizeLabel ? getSizeLabel(variation) : variation;
+    }
+    return null;
   };
 
   // Format billing address for display
@@ -189,15 +264,6 @@ const OrderSuccessPage: NextPage = () => {
   // Navigate to order history
   const handleViewAllOrders = () => {
     router.push("/views/pages/OrderHistory");
-  };
-
-  // Format size/variation display
-  const formatVariation = (item: OrderItem): string | null => {
-    if (item.selectedSize) {
-      // You can customize this based on how you want to display variations
-      return item.selectedSize;
-    }
-    return null;
   };
 
   if (isLoading) {
@@ -370,6 +436,15 @@ const OrderSuccessPage: NextPage = () => {
                       </li>
                     )}
                     
+                    {(orderData.couponDiscount || orderData.couponAmount || 0) > 0 && (
+                      <li>
+                        Coupon Discount
+                        <span className="text-success">
+                          -{symbol}{((orderData.couponDiscount || orderData.couponAmount || 0) * value).toFixed(2)}
+                        </span>
+                      </li>
+                    )}
+                    
                     {orderData.taxTotal > 0 && (
                       <li>
                         Tax
@@ -401,7 +476,7 @@ const OrderSuccessPage: NextPage = () => {
                       <li className="order-success-text-success">
                         Total Savings
                         <span>
-                          {symbol}{(orderData.totalSavings * value).toFixed(2)}
+                          -{symbol}{(orderData.totalSavings * value).toFixed(2)}
                         </span>
                       </li>
                     )}
@@ -432,8 +507,8 @@ const OrderSuccessPage: NextPage = () => {
                     {orderData.storeDetails && (
                       <li><strong>Store:</strong> {orderData.storeDetails.name}</li>
                     )}
-                    {orderData.gstNumber && (
-                      <li><strong>GST Number:</strong> {orderData.gstNumber}</li>
+                    {(orderData.gstNumber || orderData.orderGst) && (
+                      <li><strong>GST Number:</strong> {orderData.gstNumber || orderData.orderGst}</li>
                     )}
                   </ul>
                 </div>
@@ -458,16 +533,16 @@ const OrderSuccessPage: NextPage = () => {
                   <h4 className="order-success-section-title">Payment Method</h4>
                   <p className="mb-0">
                     <i className="fa fa-credit-card me-2 order-success-payment-icon"></i>
-                    {getPaymentMethodText(orderData.paymentMethod)}
+                    {getPaymentMethodText(orderData.paymentMethod || orderData.paymentMode || "")}
                   </p>
                   
-                  {orderData.paymentMethod === 'COD' && (
+                  {(orderData.paymentMethod === 'COD' || orderData.paymentMode === 'COD') && (
                     <small className="text-muted">
                       Please keep the exact amount ready for cash on delivery
                     </small>
                   )}
                   
-                  {orderData.paymentMethod === 'PICK_AT_STORE' && (
+                  {(orderData.paymentMethod === 'PICK_AT_STORE' || orderData.paymentMode === 'PICK_AT_STORE') && (
                     <small className="text-muted">
                       Please visit our store to collect your order
                     </small>

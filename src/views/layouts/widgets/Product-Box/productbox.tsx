@@ -1,4 +1,3 @@
-//import Img from "@/utils/BgImgRatio";
 import { NextPage } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,7 +9,7 @@ import { objCache, Product } from "@/app/globalProvider";
 import { CartContext } from "@/helpers/cart/cart.context";
 import { getProductFinalPrice } from "@/utils/price.helper";
 import { getSizeLabel } from "@/utils/Labels";
-
+ 
 interface productType {
   id?: number;
   title?: string;
@@ -57,26 +56,27 @@ const ProductBox: NextPage<productType> = ({
   const titleProps = data?.name.split(" ").join("");
   const [warning, setWarning] = useState<string>("");
   const productInfo = objCache.getProductById(data?.productId);
-  const uniqueSize: string[] = data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
+  const uniqueSizes: string[] = data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
+  const uniqueSize: string[] = data?.sellingDisplayOption || productInfo?.sellingDisplayOption || [];
   const sizePrices: number[] = data?.sellingPrices || productInfo?.sellingPrices || [];
   const sizePrice: number = data?.sellingPrice || productInfo?.sellingPrice || [];
   const uniqueColor: any[] = [];
   const [activesize, setActiveSize] = useState<string | null>(
-    uniqueSize.length ? uniqueSize[0] : null
+    uniqueSizes.length ? uniqueSizes[0] : null
   );
   React.useEffect(() => {
-  if (uniqueSize.length && !activesize) {
-    setActiveSize(uniqueSize[0]);
+  if (uniqueSizes.length && !activesize) {
+    setActiveSize(uniqueSizes[0]);
   }
-}, [uniqueSize]);
-
+}, [uniqueSizes]);
+ 
   const changeColorVar = (img_id: number) => {
     slider2.current?.slickGoTo(img_id);
   };
   const onOpenModal = () => {
     setModal(true);
   };
-
+ 
   const onCloseModal = () => {
     setModal(false);
   };
@@ -88,7 +88,7 @@ const ProductBox: NextPage<productType> = ({
     setStockState("Minimum limit reached");
   }
 };
-
+ 
 const plusQty = () => {
   if (quantity < (data?.maxCount || item?.maxCount|| productInfo?.maxCount)) {
     setQuantity(quantity + 1);
@@ -97,7 +97,7 @@ const plusQty = () => {
     setStockState("Maximum limit reached");
   }
 };
-
+ 
   const changeQty = (e: React.ChangeEvent<HTMLInputElement>) => {
   let val = parseInt(e.target.value) || 1;
   if (val < (data?.minCount || item?.minCount || productInfo?.minCount || 1)) {
@@ -111,8 +111,8 @@ const plusQty = () => {
   }
   setQuantity(val);
 };
-
-
+ 
+ 
   const QuickView = (e: React.MouseEvent) => {
     e.stopPropagation();
     setModal(true);
@@ -122,12 +122,12 @@ const plusQty = () => {
       price: sizePrice,
       discount: data?.discount,
       sellingPrices: sizePrices,
-      activeIndex: activesize ? uniqueSize.indexOf(activesize) : 0,
-    }); 
+      activeIndex: activesize ? uniqueSizes.indexOf(activesize) : 0,
+    });
   };
    const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (uniqueSize.length && !activesize) {
+    if (uniqueSizes.length && !activesize) {
       setWarning("⚠️ Please select an option before adding to cart.");
       return;
     }
@@ -136,16 +136,16 @@ const plusQty = () => {
       setStockState("Out of Stock !");
       return;
     }
-
+ 
     const finalPrice = getFinalPrice();
-
+ 
     addToCart(
       {
         ...data,
-        id: data.productId ?? data.id, 
+        id: data.productId ?? data.id,
         selectedSize: activesize,
         price: finalPrice,
-        cartItemCount: quantity, 
+        cartItemCount: quantity,
         cartPurchaseOptionStr: activesize || "",
         getPriceWithDiscount: () => finalPrice,
       },
@@ -156,20 +156,20 @@ const plusQty = () => {
   };
   const handleBuyNow = (e: React.MouseEvent) => {
   e.preventDefault();
-  if (uniqueSize.length && !activesize) {
+  if (uniqueSizes.length && !activesize) {
     setWarning("⚠️ Please select an option before Buy Now.");
     setModal(true);
     return;
   }
-
+ 
   // stock check
   if (data.stock && quantity > data.stock) {
     setStockState("Out of Stock !");
     return;
   }
-
+ 
   const finalPrice = getFinalPrice();
-
+ 
   try {
     sessionStorage.setItem(
       "buyNowProduct",
@@ -189,23 +189,23 @@ const plusQty = () => {
   } catch (err) {
     console.error("Session storage error:", err);
   }
-
+ 
   setWarning("");
   setModal(false);
   router.push("/pages/account/checkout");
 };
-
+ 
   // update price when size changes
   const handleSelectSize = (size: string) => {
     setActiveSize(size);
     setWarning("");
   };
-
+ 
   const clickProductDetail = () => {
     const id = data?.productId ?? data?.id;
     router.push(data.type === "kit" ? `/product-details/thumbnail-left/${id}` : `/product-details/${id}`);
   };
-
+ 
   return (
     <Fragment>
       <div
@@ -252,7 +252,7 @@ const plusQty = () => {
             />
           </a>
           )}
-
+ 
           <div className={`product-icon ${hoverEffect}`}>
             <button
               title="Add to Cart"
@@ -285,7 +285,7 @@ const plusQty = () => {
                 //   setWarning("⚠️ Please select a size before checkout.");
                 //   return;
                 // }
-                // ✅ Use getFinalPrice to ensure correct price calculation     
+                // ✅ Use getFinalPrice to ensure correct price calculation    
                 // ✅ Always use `data`, not `item`
                 handleBuyNow(e);
               }}
@@ -310,7 +310,7 @@ const plusQty = () => {
                 </h6>
               </Link>
             </div>
-
+ 
             {/* <div className="check-price">
                 {selectedCurr.symbol}
                 {(getPrice(data.productId) * selectedCurr.value).toFixed(2)}{" "}
@@ -322,7 +322,7 @@ const plusQty = () => {
                   {(getFinalPrice() * selectedCurr.value).toFixed(2)}
                 </div>
               </div>
-              {!!uniqueSize.length && (
+              {(data.saleMode || productInfo?.saleMode) !=='range' ? (
                 <div className="size-dropdown"
                 onClick={(e) => e.stopPropagation()}
                 >
@@ -330,13 +330,17 @@ const plusQty = () => {
                     value={activesize || ""}
                     onChange={(e) => e.target.value && handleSelectSize(e.target.value)}
                   >
-                    {uniqueSize.map((size, i) => (
+                    {uniqueSizes.map((size, i) => (
                       <option key={i} value={size}>
                         {getSizeLabel(size)}
                       </option>
                     ))}
                   </select>
                 </div>
+              ) : (
+              <div className="size-value">
+                {uniqueSize}
+              </div>
               )}
             </div>
             <div className="rating-star mt-2">
@@ -465,11 +469,10 @@ const plusQty = () => {
                   </ul>
                 </div>
                 <div className="product-description border-product">
-                  {!!uniqueSize.length && (
-                    <div className="size-box">
-                      <h6 className="product-title">select size</h6>
+                  {!!uniqueSizes.length && (
+                    <div className="your-size-list">
                       <ul>
-                      {uniqueSize.map((size, i) => (
+                      {uniqueSizes.map((size, i) => (
                         <li key={i} className={size === activesize ? "active" : ""}>
                           <a
                             href="#"
@@ -500,7 +503,7 @@ const plusQty = () => {
                           type="button"
                           className="btn quantity-left-minus"
                           onClick={minusQty}
-                          disabled={quantity <= (data?.minCount || item?.minCount || productInfo?.minCount || 1)}
+                          disabled={((item?.saleMode || data?.saleMode) === "custom") ||quantity <= (data?.minCount || item?.minCount || productInfo?.minCount || 1)}
                         >
                           <i className="ti-angle-left"></i>
                         </button>
@@ -509,15 +512,16 @@ const plusQty = () => {
                         type="text"
                         name="quantity"
                         className="form-control input-number"
-                        value={quantity}
+                        value={(item?.saleMode || data?.saleMode) === "custom" ? 1 : quantity}
                         onChange={changeQty}
+                        readOnly={(item?.saleMode || data?.saleMode) === "custom"}
                       />
                       <span className="input-group-prepend">
                         <button
                           type="button"
                           className="btn quantity-right-plus"
                           onClick={plusQty}
-                          disabled={quantity >= (data?.maxCount || item?.maxCount || productInfo?.maxCount)}
+                          disabled={((item?.saleMode|| data?.saleMode) === "custom") || quantity >= (item?.maxCount || data?.maxCount || productInfo?.maxCount)}
                         >
                           <i className="ti-angle-right"></i>
                         </button>
@@ -550,3 +554,4 @@ const plusQty = () => {
   );
 };
 export default ProductBox;
+ 
