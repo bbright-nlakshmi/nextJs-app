@@ -9,7 +9,7 @@ interface RazorpayButtonProps {
   prepareOrderData: (formData: any) => {
     orderData: any;
     orderModel: any;
-    deliveryAddress: any;
+    // deliveryAddress: any;
   } | null; 
   finalTotal: number;     
   onSuccess: () => void;  
@@ -68,7 +68,7 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
         return;
       }
 
-      const { orderData, orderModel, deliveryAddress } = preparedData;
+      const { orderData, orderModel } = preparedData;
 
       // Load Razorpay script
       const isScriptLoaded = await loadRazorpayScript();
@@ -110,7 +110,7 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
                 orderId: orderData.orderId,
                 amount: orderData.amount,
                 billingDetails: orderData.billingDetails,
-                deliveryAddress: deliveryAddress,
+                // deliveryAddress: deliveryAddress,
                 paymentStatus: "success",
                 orderModel: orderModel
               })
