@@ -33,6 +33,7 @@ interface CartItem {
   selectedSize?: string;
   purchaseOptionStr?: string;
   sellingDisplayOptions?: string[];
+  sellingDisplayOption?: string[];
   sellingPrices?: number[];
   taxType?: string;
   taxAmount?: number;
@@ -69,6 +70,15 @@ interface KitRaw {
   [key: string]: any;
 }
 
+// FIXED: Add coupon interface
+interface AppliedCoupon {
+  couponCode: string;
+  couponAmount: number;
+  isCouponPercentage: boolean;
+  maxCouponAmount: number;
+  minimumCartValue: number;
+}
+
 interface CreateOrderPayloadParams {
   formData: FormType;
   cartItems: CartItem[];
@@ -78,6 +88,7 @@ interface CreateOrderPayloadParams {
   gstNumber?: string;
   appName?: string;
   defaultStoreId?: string;
+  appliedCoupon?: AppliedCoupon | null; // FIXED: Add coupon parameter
 }
 
 // Product lookup utilities (exact copy from checkout)
@@ -109,23 +120,25 @@ const getProductById = (productId: string): any => {
   return null;
 };
 
-const getProductVariations = (item: CartItem): { sizes: string[], sizePrices: number[] } => {
+const getProductVariations = (item: CartItem): { sizes: string[], sizePrices: number[], uniqueSize: string[] } => {
   try {
     const product = getProductById(item.productId || item.id);
     
     if (product) {
       return {
         sizes: Array.isArray(product?.sellingDisplayOptions) ? product.sellingDisplayOptions : [],
-        sizePrices: Array.isArray(product?.sellingPrices) ? product.sellingPrices : []
+        sizePrices: Array.isArray(product?.sellingPrices) ? product.sellingPrices : [],
+        uniqueSize: Array.isArray(product?.sellingDisplayOption) ? product.sellingDisplayOption : []
       };
     }
     
     return {
       sizes: item?.sellingDisplayOptions || [],
-      sizePrices: item?.sellingPrices || []
+      sizePrices: item?.sellingPrices || [],
+      uniqueSize: item?.sellingDisplayOption || []
     };
   } catch (error) {
-    return { sizes: [], sizePrices: [] };
+    return { sizes: [], sizePrices: [], uniqueSize: [] };
   }
 };
 
@@ -261,6 +274,7 @@ export class OrderPayloadService {
     });
   }
 
+  // FIXED: Enhanced createOrderPayload with coupon data
   static createOrderPayload(config: CreateOrderPayloadParams): OrderModel {
     const {
       formData,
@@ -270,7 +284,8 @@ export class OrderPayloadService {
       storeDetails,
       gstNumber,
       appName,
-      defaultStoreId
+      defaultStoreId,
+      appliedCoupon // FIXED: Include applied coupon
     } = config;
 
     // Validate and sanitize calculations
@@ -336,6 +351,7 @@ export class OrderPayloadService {
         // Variation fields for order history
         selectedSize: selectedVariation,
         sellingDisplayOptions: item.sellingDisplayOptions || [],
+        sellingDisplayOption: item.sellingDisplayOption || [],
         sellingPrices: item.sellingPrices || [],
         purchaseOptionStr: item.purchaseOptionStr || selectedVariation || "default",
         
@@ -368,7 +384,7 @@ export class OrderPayloadService {
       return acc;
     }, {} as Record<string, number>);
 
-    // Create order data with validated calculations
+    // Create order data with validated calculations and coupon data
     const orderData = {
       id: orderId,
       deliveryAddress: deliveryAddress,
@@ -387,9 +403,20 @@ export class OrderPayloadService {
       finalTotal: safeCalculations.finalTotal, // Alternative field name
       finalOrderTotalWithOutDelivery: Math.max(0, safeCalculations.finalTotal - safeCalculations.deliveryCharges),
       
-      couponCode: "",
+      // FIXED: Include complete coupon data in order
+      couponCode: appliedCoupon ? appliedCoupon.couponCode : "",
       couponAmount: safeCalculations.couponDiscount,
       couponDiscount: safeCalculations.couponDiscount, // Alternative field name
+      appliedCoupon: appliedCoupon ? {
+        couponCode: appliedCoupon.couponCode,
+        couponAmount: appliedCoupon.couponAmount,
+        isCouponPercentage: appliedCoupon.isCouponPercentage,
+        maxCouponAmount: appliedCoupon.maxCouponAmount,
+        minimumCartValue: appliedCoupon.minimumCartValue,
+        discountApplied: safeCalculations.couponDiscount,
+        appliedAt: currentTime
+      } : null,
+      
       discountAmount: safeCalculations.discountAmount,
       packageCost: safeCalculations.packageCost,
       deliveryCost: safeCalculations.deliveryCharges,
@@ -427,10 +454,15 @@ export class OrderPayloadService {
       orderData.finalTotal = orderData.finalOrderTotal;
     }
 
-    console.log('Order payload validation (PRICES MATCH CHECKOUT):', {
+    console.log('Order payload validation with COUPON DATA (PRICES MATCH CHECKOUT):', {
       cartTotal: orderData.cartTotal,
       finalOrderTotal: orderData.finalOrderTotal,
       itemCount: orderItems.length,
+      couponData: appliedCoupon ? {
+        code: appliedCoupon.couponCode,
+        discount: safeCalculations.couponDiscount,
+        type: appliedCoupon.isCouponPercentage ? 'percentage' : 'fixed'
+      } : null,
       priceValidation: orderItems.map(item => ({
         name: item.name,
         originalPrice: item.baseChoosedPrice,
@@ -447,7 +479,7 @@ export class OrderPayloadService {
   }
 }
 
-// Store order success data with enhanced pricing info
+// FIXED: Enhanced store order success data with coupon information
 export const storeOrderSuccessData = (
   formData: FormType,
   orderModel: OrderModel,
@@ -455,7 +487,8 @@ export const storeOrderSuccessData = (
   cartCalculations: CartCalculations,
   selectedPaymentMode: string,
   storeDetails?: StoreDetails,
-  gstNumber?: string
+  gstNumber?: string,
+  appliedCoupon?: AppliedCoupon | null // FIXED: Add coupon parameter
 ): void => {
   try {
     const orderSuccessData = {
@@ -494,6 +527,18 @@ export const storeOrderSuccessData = (
       collectedTax: cartCalculations.collectedTax,
       totalSavings: cartCalculations.totalSavings,
       couponDiscount: cartCalculations.couponDiscount,
+      
+      // FIXED: Include complete coupon information in stored data
+      appliedCoupon: appliedCoupon ? {
+        couponCode: appliedCoupon.couponCode,
+        couponAmount: appliedCoupon.couponAmount,
+        isCouponPercentage: appliedCoupon.isCouponPercentage,
+        maxCouponAmount: appliedCoupon.maxCouponAmount,
+        minimumCartValue: appliedCoupon.minimumCartValue,
+        discountApplied: cartCalculations.couponDiscount,
+        appliedAt: new Date().toISOString()
+      } : null,
+      
       billingAddress: {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -530,7 +575,7 @@ export const storeOrderSuccessData = (
   }
 };
 
-// Legacy export for compatibility
+// Legacy export for compatibility with coupon support
 export const createOrderPayload = (params: CreateOrderPayloadParams): OrderModel => {
   return OrderPayloadService.createOrderPayload(params);
 };

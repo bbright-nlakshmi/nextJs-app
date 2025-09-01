@@ -19,6 +19,7 @@ const CartPage: NextPage = () => {
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
   const [quantityErrorKey, setQuantityErrorKey] = useState<string | null>(null);
+  const [stockMessages, setStockMessages] = useState<{[key: string]: string}>({});
   const router = useRouter();
 
   const getProductById = (productId: string): any => {
@@ -108,14 +109,64 @@ const CartPage: NextPage = () => {
     }
   };
 
+  // Enhanced quantity update function similar to ProductDetail
   const handleQtyUpdate = (item: CartItem, quantity: string) => {
     const qty = parseInt(quantity);
-    if (qty >= 1 && !isNaN(qty)) {
-      setQuantityErrorKey(null);
-      updateQty(item, qty);
-    } else {
-      setQuantityErrorKey(item.cartItemId || item.key || item.id);
+    const itemKey = getItemKey(item);
+    const product = getProductById(item.productId || item.id);
+    
+    // Get product constraints
+    const minCount = product?.minCount || 1;
+    const maxCount = product?.maxCount || product?.stock || 999;
+    const stock = product?.stock || 999;
+    
+    // Clear previous messages
+    setQuantityErrorKey(null);
+    setStockMessages(prev => ({
+      ...prev,
+      [itemKey]: ""
+    }));
+
+    if (isNaN(qty) || qty < 1) {
+      setQuantityErrorKey(itemKey);
+      setStockMessages(prev => ({
+        ...prev,
+        [itemKey]: "Please enter a valid quantity"
+      }));
+      return;
     }
+
+    // Check minimum quantity
+    if (qty < minCount) {
+      setStockMessages(prev => ({
+        ...prev,
+        [itemKey]: `Minimum quantity is ${minCount}`
+      }));
+      updateQty(item, minCount);
+      return;
+    }
+
+    // Check maximum quantity and stock
+    if (qty > maxCount) {
+      setStockMessages(prev => ({
+        ...prev,
+        [itemKey]: `Maximum quantity is ${maxCount}`
+      }));
+      updateQty(item, maxCount);
+      return;
+    }
+
+    if (qty > stock) {
+      setStockMessages(prev => ({
+        ...prev,
+        [itemKey]: "Out of Stock!"
+      }));
+      updateQty(item, Math.min(stock, maxCount));
+      return;
+    }
+
+    // Valid quantity - update
+    updateQty(item, qty);
   };
 
   const getSubtotal = (): number => {
@@ -237,6 +288,8 @@ const CartPage: NextPage = () => {
                         const itemKey = getItemKey(item);
                         const errorKey = item.cartItemId || item.key || item.id;
                         const sizeDisplay = getProductSizeDisplay(item);
+                        const product = getProductById(item.productId || item.id);
+                        const stockMessage = stockMessages[itemKey] || "";
 
                         return (
                           <tr key={itemKey} className="cart-table-row">
@@ -277,6 +330,9 @@ const CartPage: NextPage = () => {
                                 onChange={(e) => handleQtyUpdate(item, e.target.value)}
                                 className={`form-control input-number cart-quantity-input ${quantityErrorKey === errorKey ? 'cart-quantity-input--error' : ''}`}
                               />
+                              {stockMessage && (
+                                <small className="text-danger d-block mt-1">{stockMessage}</small>
+                              )}
                             </td>
                             <td className="cart-table-cell cart-table-cell-center">
                               <button
@@ -328,6 +384,8 @@ const CartPage: NextPage = () => {
                     const itemKey = getItemKey(item);
                     const errorKey = item.cartItemId || item.key || item.id;
                     const sizeDisplay = getProductSizeDisplay(item);
+                    const product = getProductById(item.productId || item.id);
+                    const stockMessage = stockMessages[itemKey] || "";
 
                     return (
                       <div key={itemKey} className="card mb-3 shadow-sm cart-mobile-item">
