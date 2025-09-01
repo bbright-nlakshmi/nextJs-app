@@ -204,7 +204,7 @@ const CartPage: NextPage = () => {
     const saleMode = product?.saleMode || productInfo?.saleMode || item.saleMode;
     
     // Get the current selected size or fallback
-    const currentSize = item.selectedSize || item.cartPurchaseOptionStr || uniqueSizes[0] || uniqueSize[0] || '';
+    const currentSize = item.selectedSize || item.cartPurchaseOptionStr || uniqueSizes[0] || uniqueSize || '';
     
     return {
       uniqueSizes,
