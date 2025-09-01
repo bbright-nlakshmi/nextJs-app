@@ -414,9 +414,15 @@ export const usePlaceOrder = (contextCartItems: any[], authUser: any) => {
     }
   }, [apiConfig.tenantId, apiConfig.storeId]);
 
-  // Coupon selection with exact pricing match
-  const handleSelectCoupon = useCallback((coupon: Coupon) => {
+  // FIXED: Enhanced coupon selection with proper remove functionality
+  const handleSelectCoupon = useCallback((coupon: Coupon | null) => {
     setCouponError("");
+    
+    // Handle coupon removal
+    if (!coupon) {
+      setAppliedCoupon(null);
+      return;
+    }
     
     const now = new Date();
     if (coupon.expireDate && new Date(coupon.expireDate) < now) {
@@ -500,13 +506,10 @@ export const usePlaceOrder = (contextCartItems: any[], authUser: any) => {
       discountAmount,
       totalSavings,
       itemsWithVariations: cartItems.filter(item => item.selectedVariation || item.selectedSize).length,
-      priceBreakdown: cartItems.map(item => ({
-        name: item.name,
-        originalPrice: getPrice(item),
-        discountPrice: item.discountPrice,
-        finalPrice: item.discountPrice && item.discountPrice < getPrice(item) ? item.discountPrice : getPrice(item),
-        quantity: item.qty || item.cartItemCount || 1
-      }))
+      appliedCoupon: appliedCoupon ? {
+        code: appliedCoupon.couponCode,
+        discount: couponDiscount
+      } : null
     });
 
     return {
@@ -556,7 +559,7 @@ export const usePlaceOrder = (contextCartItems: any[], authUser: any) => {
   };
 };
 
-// Enhanced Order Payload Service with CORRECT pricing (same as checkout)
+// FIXED: Enhanced Order Payload Service with coupon data inclusion
 export class OrderPayloadService {
   static generateOrderId(): string {
     const timestamp = Date.now().toString();
@@ -617,6 +620,7 @@ export class OrderPayloadService {
     });
   }
 
+  // FIXED: Enhanced createOrderPayload with coupon data inclusion
   static createOrderPayload(config: any): OrderModel {
     const {
       formData,
@@ -626,7 +630,8 @@ export class OrderPayloadService {
       storeDetails,
       gstNumber,
       appName,
-      defaultStoreId
+      defaultStoreId,
+      appliedCoupon // FIXED: Include applied coupon in config
     } = config;
 
     // Validate and sanitize calculations
@@ -745,8 +750,20 @@ export class OrderPayloadService {
       finalOrderTotal: safeCalculations.finalTotal,
       finalOrderTotalWithOutDelivery: Math.max(0, safeCalculations.finalTotal - safeCalculations.deliveryCharges),
       
-      couponCode: "",
+      // FIXED: Include coupon data in order model
+      couponCode: appliedCoupon ? appliedCoupon.couponCode : "",
       couponAmount: safeCalculations.couponDiscount,
+      couponDiscount: safeCalculations.couponDiscount,
+      appliedCoupon: appliedCoupon ? {
+        couponCode: appliedCoupon.couponCode,
+        couponAmount: appliedCoupon.couponAmount,
+        isCouponPercentage: appliedCoupon.isCouponPercentage,
+        maxCouponAmount: appliedCoupon.maxCouponAmount,
+        minimumCartValue: appliedCoupon.minimumCartValue,
+        discountApplied: safeCalculations.couponDiscount,
+        appliedAt: currentTime
+      } : null,
+      
       discountAmount: safeCalculations.discountAmount,
       packageCost: safeCalculations.packageCost,
       deliveryCost: safeCalculations.deliveryCharges,
@@ -769,8 +786,7 @@ export class OrderPayloadService {
       finalTotal: safeCalculations.finalTotal, // Alternative field name
       deliveryCharges: safeCalculations.deliveryCharges, // Alternative field name
       taxAmount: safeCalculations.taxAmount, // Additional tax field
-      collectedTax: safeCalculations.collectedTax, // Collected tax field
-      couponDiscount: safeCalculations.couponDiscount // Coupon discount field
+      collectedTax: safeCalculations.collectedTax // Collected tax field
     };
 
     // Final validation
@@ -789,20 +805,22 @@ export class OrderPayloadService {
       orderData.finalTotal = orderData.finalOrderTotal;
     }
 
-    console.log('Order payload validation (PRICES MATCH CHECKOUT):', {
+    console.log('Order payload validation with COUPON DATA:', {
       cartTotal: orderData.cartTotal,
       finalOrderTotal: orderData.finalOrderTotal,
       itemCount: orderItems.length,
-      variationsIncluded: orderItems.filter(item => item.selectedVariation).length,
+      couponApplied: appliedCoupon ? {
+        code: appliedCoupon.couponCode,
+        discount: safeCalculations.couponDiscount,
+        type: appliedCoupon.isCouponPercentage ? 'percentage' : 'fixed'
+      } : null,
       priceValidation: orderItems.map(item => ({
         name: item.name,
-        originalPrice: item.baseChoosedPrice, // Original unit price
-        chargedPrice: item.unitPrice, // ACTUAL charged unit price (matches checkout)
-        displayPrice: item.displayPrice, // What customer sees
-        total: item.choosedPrice, // ACTUAL total charged (matches checkout)
-        displayTotal: item.displayTotal, // Total shown to customer
-        quantity: item.cartItemCount,
-        savings: item.savings
+        originalPrice: item.baseChoosedPrice,
+        chargedPrice: item.unitPrice,
+        displayPrice: item.displayPrice,
+        total: item.choosedPrice,
+        quantity: item.cartItemCount
       }))
     });
 

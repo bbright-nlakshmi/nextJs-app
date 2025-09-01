@@ -123,7 +123,7 @@ export const CartProvider = (props: any) => {
   };
 
   const emptyCart = () => {
-    toast.error("Cart is empty");
+    // toast.error("Cart is empty");
     setCartItems([]);
   };
 

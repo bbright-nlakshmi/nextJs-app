@@ -14,7 +14,6 @@ import RazorpayButton from "../../../app/(MainBody)/pages/account/checkout/compo
 import { storeOrderSuccessData } from "../../../utils/orderPayloadUtils";
 import { getSizeLabel } from "@/utils/Labels";
 
-
 // Types
 interface FormType {
   firstName: string;
@@ -63,6 +62,7 @@ interface CartItem {
   selectedSize?: string;
   purchaseOptionStr?: string;
   sellingDisplayOptions?: string[];
+  sellingDisplayOption?: string[];
   sellingPrices?: number[];
   [key: string]: any;
 }
@@ -252,8 +252,8 @@ const getProductSizeDisplay = (item: CartItem) => {
   const saleMode = product?.saleMode || item.saleMode;
   
   // Get the current selected size or fallback
-  const currentSize = item.selectedSize || item.cartPurchaseOptionStr || sizes[0] || uniqueSize[0] || '';
-  
+  const currentSize = item.selectedSize || item.cartPurchaseOptionStr || sizes[0] || uniqueSize || '';
+  console.log('currentsize',currentSize);
   return {
     uniqueSizes: sizes,
     uniqueSize,
@@ -379,6 +379,49 @@ const getCurrentLocation = (): Promise<LocationData> => {
   });
 };
 
+// Coupon management utilities
+const getUsedCoupons = (phoneNumber: string): string[] => {
+  if (!phoneNumber || typeof window === "undefined") return [];
+  
+  try {
+    const storedUsedCoupons = localStorage.getItem(`usedCoupons_${phoneNumber}`);
+    return storedUsedCoupons ? JSON.parse(storedUsedCoupons) : [];
+  } catch (error) {
+    console.error("Error getting used coupons:", error);
+    return [];
+  }
+};
+
+const markCouponAsUsed = async (phoneNumber: string, couponCode: string): Promise<void> => {
+  if (!phoneNumber || !couponCode) return;
+
+  try {
+    // Option 1: Try API call first if available
+    if (API && API.markCouponAsUsed && typeof API.markCouponAsUsed === 'function') {
+      await API.markCouponAsUsed(phoneNumber, couponCode);
+    }
+    
+    // Option 2: Always update localStorage as backup
+    if (typeof window !== "undefined") {
+      const existingUsedCoupons = getUsedCoupons(phoneNumber);
+      if (!existingUsedCoupons.includes(couponCode)) {
+        existingUsedCoupons.push(couponCode);
+        localStorage.setItem(`usedCoupons_${phoneNumber}`, JSON.stringify(existingUsedCoupons));
+      }
+    }
+  } catch (error) {
+    console.error("Error marking coupon as used:", error);
+    // Still update localStorage even if API fails
+    if (typeof window !== "undefined") {
+      const existingUsedCoupons = getUsedCoupons(phoneNumber);
+      if (!existingUsedCoupons.includes(couponCode)) {
+        existingUsedCoupons.push(couponCode);
+        localStorage.setItem(`usedCoupons_${phoneNumber}`, JSON.stringify(existingUsedCoupons));
+      }
+    }
+  }
+};
+
 // Phone input handler to restrict to 10 digits only
 const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
   const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
@@ -480,7 +523,7 @@ const CartItemCard: React.FC<{
     if (item.img && item.img.length > 0 && item.img[0]) {
       return item.img[0];
     }
-    return "/static/images/placeholder.png";
+    // return "/static/images/placeholder.png";
   }, [item.img]);
 
   return (
@@ -556,19 +599,43 @@ const CartItemCard: React.FC<{
   );
 };
 
-// Updated CouponSection with hide used coupons functionality
+// FIXED: Updated CouponSection with proper onClick handlers
 const CouponSection: React.FC<{
   coupons: any[];
   appliedCoupon: any;
   phoneNumber: string;
   couponError: string;
+  usedCoupons: string[];
   onSelectCoupon: (coupon: any) => void;
-}> = ({ coupons, appliedCoupon, phoneNumber, couponError, onSelectCoupon }) => {
-  // Filter out already applied coupon from available coupons list
+}> = ({ coupons, appliedCoupon, phoneNumber, couponError, usedCoupons, onSelectCoupon }) => {
+  // Filter out already applied and used coupons from available coupons list
   const availableCoupons = useMemo(() => {
-    if (!appliedCoupon) return coupons;
-    return coupons.filter(coupon => coupon.couponCode !== appliedCoupon.couponCode);
-  }, [coupons, appliedCoupon]);
+    let filtered = coupons;
+    
+    // Remove applied coupon
+    if (appliedCoupon) {
+      filtered = filtered.filter(coupon => coupon.couponCode !== appliedCoupon.couponCode);
+    }
+    
+    // Remove used coupons
+    filtered = filtered.filter(coupon => !usedCoupons.includes(coupon.couponCode));
+    
+    return filtered;
+  }, [coupons, appliedCoupon, usedCoupons]);
+
+  // FIXED: Proper remove coupon handler
+  const handleRemoveCoupon = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSelectCoupon(null);
+    toast.info("Coupon removed successfully");
+  }, [onSelectCoupon]);
+
+  // FIXED: Proper apply coupon handler
+  const handleApplyCoupon = useCallback((coupon: any) => {
+    onSelectCoupon(coupon);
+    toast.success(`Coupon ${coupon.couponCode} applied successfully!`);
+  }, [onSelectCoupon]);
 
   return (
     <div className="form-group mb-3">
@@ -597,10 +664,12 @@ const CouponSection: React.FC<{
                     <small className="badge bg-success">Applied Successfully!</small>
                   </div>
                 </div>
+                {/* FIXED: Proper remove button with explicit handlers */}
                 <button 
                   type="button"
                   className="btn btn-sm btn-outline-danger"
-                  onClick={() => onSelectCoupon(null)}
+                  onClick={handleRemoveCoupon}
+                  onMouseDown={(e) => e.preventDefault()} // Prevent form submission
                   title="Remove Coupon"
                 >
                   <i className="fa fa-times"></i>
@@ -615,7 +684,12 @@ const CouponSection: React.FC<{
           <>
             {availableCoupons.length === 0 && (
               <div className="alert alert-info">
-                {phoneNumber ? "No coupons available for your account" : "Enter phone number to view available coupons"}
+                {!phoneNumber 
+                  ? "Enter phone number to view available coupons"
+                  : usedCoupons.length > 0 
+                    ? "All available coupons have been used" 
+                    : "No coupons available for your account"
+                }
               </div>
             )}
             {availableCoupons.map((coupon) => (
@@ -623,7 +697,7 @@ const CouponSection: React.FC<{
                 key={coupon.couponCode}
                 className="coupon-item p-2 mb-2 border rounded border-secondary"
                 style={{ cursor: 'pointer' }}
-                onClick={() => onSelectCoupon(coupon)}
+                onClick={() => handleApplyCoupon(coupon)} // FIXED: Use proper handler
               >
                 <div className="d-flex justify-content-between align-items-center">
                   <div>
@@ -648,6 +722,23 @@ const CouponSection: React.FC<{
               </div>
             ))}
           </>
+        )}
+        
+        {/* Show used coupons section for reference */}
+        {usedCoupons.length > 0 && !appliedCoupon && phoneNumber && (
+          <div className="used-coupons-section mt-3">
+            <small className="text-muted mb-2 d-block">Previously Used Coupons:</small>
+            <div style={{ maxHeight: '120px', overflowY: 'auto' }}>
+              {usedCoupons.map((couponCode) => (
+                <div key={couponCode} className="used-coupon-item p-2 mb-1 border rounded bg-light">
+                  <small className="text-muted d-flex align-items-center">
+                    <i className="fa fa-check text-success me-2"></i>
+                    {couponCode} - Already Used
+                  </small>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
       {couponError && (
@@ -731,6 +822,7 @@ const CheckoutPage: React.FC = () => {
   const [gstNumber, setGstNumber] = useState<string>("");
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [locationData, setLocationData] = useState<LocationData | null>(null);
+  const [usedCoupons, setUsedCoupons] = useState<string[]>([]);
 
   // Use the optimized hook
   const {
@@ -766,6 +858,11 @@ const CheckoutPage: React.FC = () => {
   const emptyCart = cartContext?.emptyCart || (() => {});
   const appName = appConfig?.appName || "MyApp";
   const defaultStoreId = appConfig?.defaultStoreId || "default";
+
+  // Filter available coupons to exclude used ones
+  const availableCouponsFiltered = useMemo(() => {
+    return availableCoupons.filter(coupon => !usedCoupons.includes(coupon.couponCode));
+  }, [availableCoupons, usedCoupons]);
 
   // Centralized order totals calculation
   const orderTotals = useMemo(() => {
@@ -814,7 +911,7 @@ const CheckoutPage: React.FC = () => {
     }
   }, [authContext, setValue]);
 
-  // Fetch coupons when phone number changes
+  // Fetch coupons and used coupons when phone number changes
   useEffect(() => {
     let userPhone = phoneNumber;
     if (!userPhone && typeof window !== "undefined") {
@@ -828,12 +925,30 @@ const CheckoutPage: React.FC = () => {
         }
       }
     }
+    
+    // Fetch available coupons
     fetchCoupons(userPhone);
+    
+    // Fetch used coupons from localStorage
+    if (userPhone) {
+      const userUsedCoupons = getUsedCoupons(userPhone);
+      setUsedCoupons(userUsedCoupons);
+    } else {
+      setUsedCoupons([]);
+    }
   }, [phoneNumber, cartItems, fetchCoupons]);
 
-  // Order success handler
+  // Order success handler with coupon tracking
   const handleOrderSuccess = useCallback(async (orderModel: any, formData: FormType) => {
     toast.success("Order placed successfully!");
+    
+    // Mark applied coupon as used if exists
+    if (appliedCoupon && (formData.phone || phoneNumber)) {
+      const phone = formData.phone || phoneNumber;
+      await markCouponAsUsed(phone, appliedCoupon.couponCode);
+      // Update local state immediately
+      setUsedCoupons(prev => [...new Set([...prev, appliedCoupon.couponCode])]);
+    }
     
     if (typeof window !== "undefined") {
       const orderDetailsWithLocation = {
@@ -861,14 +976,21 @@ const CheckoutPage: React.FC = () => {
     }
     
     setTimeout(() => router.push("/pages/order-success"), 1500);
-  }, [router, emptyCart, checkoutMode, locationData]);
+  }, [router, emptyCart, checkoutMode, locationData, appliedCoupon, phoneNumber]);
 
-  // Razorpay success handler
+  // Razorpay success handler with coupon tracking
   const handleRazorpaySuccess = useCallback(async () => {
     try {
       const orderSuccessData = sessionStorage.getItem("order-success-data");
       if (orderSuccessData) {
         const orderData = JSON.parse(orderSuccessData);
+        
+        // Mark applied coupon as used if exists
+        if (appliedCoupon && orderData.billingDetails.phone) {
+          await markCouponAsUsed(orderData.billingDetails.phone, appliedCoupon.couponCode);
+          // Update local state immediately
+          setUsedCoupons(prev => [...new Set([...prev, appliedCoupon.couponCode])]);
+        }
        
         storeOrderSuccessData(
           {
@@ -914,9 +1036,9 @@ const CheckoutPage: React.FC = () => {
       console.error("Error handling Razorpay success:", error);
       toast.error("Error processing payment success");
     }
-  }, [cartItems, orderTotals, selectedPaymentMode, defaultStoreId, appName, gstNumber, emptyCart, router, checkoutMode, locationData]);
+  }, [cartItems, orderTotals, selectedPaymentMode, defaultStoreId, appName, gstNumber, emptyCart, router, checkoutMode, locationData, appliedCoupon]);
 
-  // Enhanced order payload creation with consistent pricing
+  // Enhanced order payload creation with consistent pricing and COUPON DATA
   const prepareOrderData = useCallback((formData: FormType) => {
     try {
       const enhancedFormData = {
@@ -933,7 +1055,9 @@ const CheckoutPage: React.FC = () => {
         storeDetails: { id: defaultStoreId, name: appName, active: true },
         gstNumber,
         appName,
-        defaultStoreId
+        defaultStoreId,
+        // FIXED: Include coupon data in order configuration
+        appliedCoupon: appliedCoupon
       };
 
       const orderModel = OrderPayloadService.createOrderPayload(orderConfig);
@@ -941,6 +1065,20 @@ const CheckoutPage: React.FC = () => {
       if (orderModel.deliveryAddress) {
         orderModel.deliveryAddress.lat = enhancedFormData.latitude;
         orderModel.deliveryAddress.lng = enhancedFormData.longitude;
+      }
+
+      // FIXED: Add coupon information to order model
+      if (appliedCoupon) {
+        orderModel.couponCode = appliedCoupon.couponCode;
+        orderModel.couponAmount = orderTotals.couponDiscount;
+        orderModel.appliedCoupon = {
+          couponCode: appliedCoupon.couponCode,
+          couponAmount: appliedCoupon.couponAmount,
+          isCouponPercentage: appliedCoupon.isCouponPercentage,
+          maxCouponAmount: appliedCoupon.maxCouponAmount,
+          minimumCartValue: appliedCoupon.minimumCartValue,
+          discountApplied: orderTotals.couponDiscount
+        };
       }
 
       // Update order items with correct pricing
@@ -987,7 +1125,9 @@ const CheckoutPage: React.FC = () => {
           latitude: enhancedFormData.latitude,
           longitude: enhancedFormData.longitude
         },
-        orderModel: orderModel
+        orderModel: orderModel,
+        // FIXED: Include coupon data in order data
+        appliedCoupon: appliedCoupon
       };
 
       return { orderData, orderModel };
@@ -996,9 +1136,9 @@ const CheckoutPage: React.FC = () => {
       toast.error("Failed to prepare order data");
       return null;
     }
-  }, [cartItems, selectedPaymentMode, orderTotals, gstNumber, appName, defaultStoreId, locationData]);
+  }, [cartItems, selectedPaymentMode, orderTotals, gstNumber, appName, defaultStoreId, locationData, appliedCoupon]);
 
-  // Form submission with enhanced pricing
+  // Form submission with enhanced pricing and coupon data
   const onSubmit = useCallback(async (formData: FormType) => {
     setIsProcessing(true);
     setShowValidationErrors(true);
@@ -1024,7 +1164,9 @@ const CheckoutPage: React.FC = () => {
         storeDetails: { id: defaultStoreId, name: appName, active: true },
         gstNumber,
         appName,
-        defaultStoreId
+        defaultStoreId,
+        // FIXED: Include coupon data in order creation
+        appliedCoupon: appliedCoupon
       };
 
       const orderModel = OrderPayloadService.createOrderPayload(orderConfig);
@@ -1032,6 +1174,20 @@ const CheckoutPage: React.FC = () => {
       if (orderModel.deliveryAddress) {
         orderModel.deliveryAddress.lat = enhancedFormData.latitude;
         orderModel.deliveryAddress.lng = enhancedFormData.longitude;
+      }
+
+      // FIXED: Add coupon information to order model
+      if (appliedCoupon) {
+        orderModel.couponCode = appliedCoupon.couponCode;
+        orderModel.couponAmount = orderTotals.couponDiscount;
+        orderModel.appliedCoupon = {
+          couponCode: appliedCoupon.couponCode,
+          couponAmount: appliedCoupon.couponAmount,
+          isCouponPercentage: appliedCoupon.isCouponPercentage,
+          maxCouponAmount: appliedCoupon.maxCouponAmount,
+          minimumCartValue: appliedCoupon.minimumCartValue,
+          discountApplied: orderTotals.couponDiscount
+        };
       }
 
       // Update order items with correct pricing from cart logic
@@ -1075,11 +1231,12 @@ const CheckoutPage: React.FC = () => {
           break;
           
         case "RAZORPAY":
-          // Store order data for Razorpay success callback
+          // Store order data for Razorpay success callback with coupon data
           if (typeof window !== "undefined") {
             sessionStorage.setItem("order-success-data", JSON.stringify({
               orderModel,
-              billingDetails: enhancedFormData
+              billingDetails: enhancedFormData,
+              appliedCoupon: appliedCoupon // FIXED: Include coupon in session storage
             }));
           }
           toast.success("Order created successfully! Please complete the payment.");
@@ -1097,7 +1254,7 @@ const CheckoutPage: React.FC = () => {
         setIsProcessing(false);
       }
     }
-  }, [selectedPaymentMode, cartItems, orderTotals, gstNumber, appName, defaultStoreId, handleOrderSuccess, checkoutMode, locationData, setIsProcessing]);
+  }, [selectedPaymentMode, cartItems, orderTotals, gstNumber, appName, defaultStoreId, handleOrderSuccess, checkoutMode, locationData, setIsProcessing, appliedCoupon]);
 
   // Payment button
   const getPaymentButton = useCallback(() => {
@@ -1313,12 +1470,13 @@ const CheckoutPage: React.FC = () => {
                         ))}
                       </div>
 
-                      {/* Coupon Section */}
+                      {/* Updated Coupon Section with Used Coupons Tracking */}
                       <CouponSection
-                        coupons={availableCoupons}
+                        coupons={availableCouponsFiltered}
                         appliedCoupon={appliedCoupon}
                         phoneNumber={phoneNumber}
                         couponError={couponError}
+                        usedCoupons={usedCoupons}
                         onSelectCoupon={handleSelectCoupon}
                       />
 
