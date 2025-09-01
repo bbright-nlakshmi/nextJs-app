@@ -253,11 +253,7 @@ const getProductSizeDisplay = (item: CartItem) => {
   
   // Get the current selected size or fallback
   const currentSize = item.selectedSize || item.cartPurchaseOptionStr || sizes[0] || uniqueSize || '';
-  console.log('currentsize',currentSize);
   return {
-    uniqueSizes: sizes,
-    uniqueSize,
-    saleMode,
     currentSize,
     displayLabel: getSizeLabel(currentSize) || currentSize || 'N/A'
   };
@@ -518,7 +514,7 @@ const CartItemCard: React.FC<{
   const quantity = item.qty || item.cartItemCount || 1;
   const finalPrice = item.discountPrice && item.discountPrice < price ? item.discountPrice : price;
   const sizeDisplay = getProductSizeDisplay(item);
-  
+
   const imageSrc = useMemo(() => {
     if (item.img && item.img.length > 0 && item.img[0]) {
       return item.img[0];
@@ -567,16 +563,14 @@ const CartItemCard: React.FC<{
           </div>
           
           {/* Enhanced Size/Variation Display - Same as Cart Page */}
-          {(sizeDisplay.uniqueSizes.length > 0 || sizeDisplay.uniqueSize.length > 0) && (
+          {(sizeDisplay.currentSize.length > 0 || sizeDisplay.displayLabel.length > 0) && (
             <div className="variation-display mb-2">
-              <label className="form-label mb-1">
+              <span className="form-label mb-1">
                 Size/Option:
-              </label>
-              <div className="selected-variation">
-                <span className="badge">
+              </span>
+                <span className="theme-color">
                   {sizeDisplay.displayLabel}
                 </span>
-              </div>
             </div>
           )}
           

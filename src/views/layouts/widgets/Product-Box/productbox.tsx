@@ -57,18 +57,22 @@ const ProductBox: NextPage<productType> = ({
   const [warning, setWarning] = useState<string>("");
   const productInfo = objCache.getProductById(data?.productId);
   const uniqueSizes: string[] = data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
-  const uniqueSize: string[] = data?.sellingDisplayOption || productInfo?.sellingDisplayOption || [];
+  const uniqueSize: string | null = data?.sellingDisplayOption || productInfo?.sellingDisplayOption || null;
   const sizePrices: number[] = data?.sellingPrices || productInfo?.sellingPrices || [];
   const sizePrice: number = data?.sellingPrice || productInfo?.sellingPrice || [];
   const uniqueColor: any[] = [];
   const [activesize, setActiveSize] = useState<string | null>(
-    uniqueSizes.length ? uniqueSizes[0] : null
-  );
+  uniqueSizes.length ? uniqueSizes[0] : uniqueSize
+);
   React.useEffect(() => {
-  if (uniqueSizes.length && !activesize) {
-    setActiveSize(uniqueSizes[0]);
+  if (!activesize) {
+    if (uniqueSizes.length) {
+      setActiveSize(uniqueSizes[0]);
+    } else if (uniqueSize) {
+      setActiveSize(uniqueSize);
+    }
   }
-}, [uniqueSizes]);
+}, [uniqueSizes, uniqueSize]);
 
   const changeColorVar = (img_id: number) => {
     slider2.current?.slickGoTo(img_id);
