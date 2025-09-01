@@ -331,14 +331,14 @@ const plusQty = () => {
                     onChange={(e) => e.target.value && handleSelectSize(e.target.value)}
                   >
                     {uniqueSizes.map((size, i) => (
-                      <option key={i} value={size}>
+                      <option key={i} value={size} className="dropdown-list">
                         {getSizeLabel(size)}
                       </option>
                     ))}
                   </select>
                 </div>
               ) : (
-              <div className="size-value">
+              <div className="size-value theme-color">
                 {uniqueSize}
               </div>
               )}

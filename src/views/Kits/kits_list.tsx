@@ -40,9 +40,9 @@ const Kits: NextPage<KitsProps> = ({ kits = [] }) => {
   if (kits.length)
     return (
       <>
-        <section className="w-full rts-category-area section-py-space">
+        <section className="w-full rts-category-area section-pt-space">
           <div className="custom-container">
-            <h2 className="title-left mb--0">Popular Kits</h2>
+            <h2 className="title-left">Popular Kits</h2>
             <div className="next-prev-swiper-wrapper">
               <div className="swiper-button-prev">
                 <i className="fa-regular fa-chevron-left"></i>
@@ -52,8 +52,8 @@ const Kits: NextPage<KitsProps> = ({ kits = [] }) => {
               </div>
             </div>
           </div>
-          <div className="custom-container">
-            <div className="cover-card-main-over kit-list">
+          <div className="container">
+            <div className="cover-card-main-over">
               <Swiper
                 mousewheel={true}
                 keyboard={true}
