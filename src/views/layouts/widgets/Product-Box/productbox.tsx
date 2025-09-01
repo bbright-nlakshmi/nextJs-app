@@ -118,7 +118,6 @@ const plusQty = () => {
     setModal(true);
   };
   const getFinalPrice = () => {
-    if (price) return price;
     return getProductFinalPrice({
       price: sizePrice,
       discount: data?.discount,
