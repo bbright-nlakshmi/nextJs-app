@@ -65,7 +65,7 @@ const Header: NextPage<header> = ({ cartPopupPosition, display, category, catego
                           <UserProfile />
                           <Whishlist />
                           <MobileSearch />
-                          <MobileSetting />
+                          {/* <MobileSetting /> */}
                         </ul>
                         <ShoppingCart position={cartPopupPosition} cartDisplay={display} layout="layout2" />
                       </div>

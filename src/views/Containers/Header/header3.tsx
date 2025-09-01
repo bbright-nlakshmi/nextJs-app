@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({ cartPopupPosition, display, category })
                         <Whishlist />
                         <ShoppingCart position={cartPopupPosition} cartDisplay={display} layout="layout3" />
                         <MobileSearch />
-                        <MobileSetting />
+                        {/* <MobileSetting /> */}
                       </ul>
                     </div>
                     <Gift />

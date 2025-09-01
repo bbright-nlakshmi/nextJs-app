@@ -23,6 +23,11 @@ const MenuBar1: NextPage<MenuBarState> = ({ menuData = data }) => {
   const [isSubNavOpen, setIsSubNavOpen] = useState();
   const path = usePathname();
 
+  const handleMenuClick = () => {
+  setMenuResponsive(false);
+  document.body.style.overflow = "visible";
+};
+
   return (
     <>
       {path !== "/Layouts/layout3" && (
@@ -55,7 +60,7 @@ const MenuBar1: NextPage<MenuBarState> = ({ menuData = data }) => {
               </a>
             )}
             {menuItem.type === "link" && (
-              <Link className="dark-menu-item" href={menuItem.path}>
+              <Link className="dark-menu-item" href={menuItem.path} onClick={handleMenuClick}>
                 {t(menuItem.title)}
               </Link>
             )}
@@ -78,7 +83,7 @@ const MenuBar1: NextPage<MenuBarState> = ({ menuData = data }) => {
                                   {megaMenuItem.children.map((subMegaMenuItem: any, i: any) => {
                                     return (
                                       <li key={i}>
-                                        <Link href={`${subMegaMenuItem.path}`}>{subMegaMenuItem.title}</Link>
+                                        <Link href={`${subMegaMenuItem.path}`} onClick={handleMenuClick}>{subMegaMenuItem.title}</Link>
 
                                       </li>
                                     );
@@ -133,7 +138,7 @@ const MenuBar1: NextPage<MenuBarState> = ({ menuData = data }) => {
                         <span className={`sub-arrow ${(path === "/Layouts/layout3" || mobileSize) && (isSubNavOpen === childrenItem.title ? "minus" : "plus")}`}></span>
                       </a>
                     )}
-                    {childrenItem.type === "link" && <Link href={`${childrenItem.path}`}>{childrenItem.title}</Link>}
+                    {childrenItem.type === "link" && <Link href={`${childrenItem.path}`} onClick={handleMenuClick}>{childrenItem.title}</Link>}
 
                     {childrenItem.children && (
                       <ul
@@ -143,7 +148,7 @@ const MenuBar1: NextPage<MenuBarState> = ({ menuData = data }) => {
                         {childrenItem.children.map((childrenSubItem: any, key: any) => (
                           <li key={key}>
                             {childrenSubItem.type === "link" && (
-                              <Link className="sub-menu-title" href={`${childrenSubItem.path}`}>
+                              <Link className="sub-menu-title" href={`${childrenSubItem.path}`} onClick={handleMenuClick}>
                                 {childrenSubItem.title}
                               </Link>
                             )}

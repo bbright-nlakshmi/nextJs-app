@@ -39,7 +39,7 @@ const ProductSlick: React.FC<ProductSlickProps> = ({
       <section className="rts-product-details-section rts-product-details-section2" style={{ overflow: "visible" }}>
         <div className="details-product-area w-full" style={{ overflow: "visible" }}>
           <Row className="w-full" style={{ margin: 0 }}>
-            <Col lg="6" md="6" sm="12">
+            <Col lg="6" md="12" sm="12" className="d-flex justify-content-center align-items-center">
               <div className="product-thumb-area" style={{ width: "100%", position: "relative" }}>
                 <div className="thumb-wrapper one filterd-items figure" style={{ width: "100%", minHeight: "400px" }}>
                   <div className="product-thumb" style={{ width: "100%", height: "100%" }}>
@@ -57,7 +57,7 @@ const ProductSlick: React.FC<ProductSlickProps> = ({
                                   style={{
                                     width: "100%",
                                     height: "auto",
-                                    display: "block",
+                                    // display: "block",
                                     maxHeight: "500px",
                                     objectFit: "contain",
                                   }}
@@ -76,7 +76,7 @@ const ProductSlick: React.FC<ProductSlickProps> = ({
                           style={{
                             width: "100%",
                             height: "auto",
-                            display: "block",
+                            // display: "block",
                             maxHeight: "500px",
                             objectFit: "contain",
                           }}
@@ -88,7 +88,7 @@ const ProductSlick: React.FC<ProductSlickProps> = ({
               </div>
             </Col>
 
-            <Col lg="6" className="rtl-text">
+            <Col lg="6" md="12" sm="12" className="rtl-text text-lg-start text-center">
               <ProductDetail
                 item={item}
                 changeColorVar={changeColorVar}
