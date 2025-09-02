@@ -116,9 +116,11 @@ const CartPage: NextPage = () => {
     const product = getProductById(item.productId || item.id);
     
     // Get product constraints
-    const minCount = product?.minCount || 1;
-    const maxCount = product?.maxCount || product?.stock || 999;
-    const stock = product?.stock || 999;
+    const stock = product?.stock;
+    const isCustom = product?.saleMode === "custom";
+    const minCount = isCustom ? 1 : (product?.minCount || 1);
+    const maxCount = isCustom ? 1 : product?.maxCount;
+
     
     // Clear previous messages
     setQuantityErrorKey(null);
@@ -127,6 +129,12 @@ const CartPage: NextPage = () => {
       [itemKey]: ""
     }));
 
+    if (isCustom) {
+      if (item.qty !== 1) {
+        updateQty(item, 1);
+      }
+      return;
+    }
     if (isNaN(qty) || qty < 1) {
       setQuantityErrorKey(itemKey);
       setStockMessages(prev => ({

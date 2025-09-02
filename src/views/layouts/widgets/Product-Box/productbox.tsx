@@ -342,7 +342,8 @@ const plusQty = () => {
                   </select>
                 </div>
               ) : (
-              <div className="size-value theme-color">
+              <div className="size-value theme-color truncate-text"
+              title={String(uniqueSize)}>
                 {uniqueSize}
               </div>
               )}

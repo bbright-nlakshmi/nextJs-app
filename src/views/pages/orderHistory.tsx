@@ -18,8 +18,10 @@ import Breadcrumb from "../../views/Containers/Breadcrumb";
 import { API } from "@/app/services/api.service";
 import { OrderModel } from "@/app/models/order/order";
 import { OrderItemsModel } from "@/app/models/order_item_model/order_item_model";
+import { useRouter } from "next/navigation";
 
 const OrderHistoryPage: NextPage = () => {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderModel[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<OrderModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,7 +184,7 @@ const OrderHistoryPage: NextPage = () => {
   };
 
   const handleLogin = () => {
-    window.location.href = '/';
+    router.push("/pages/account/login")
   };
 
   const calculateItemTotal = (item: OrderItemsModel) => {
