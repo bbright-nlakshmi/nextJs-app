@@ -58,9 +58,9 @@ interface SliderProps {
 const SliderBanner: NextPage<SliderProps> = ({ banners }) => {
   if (banners?.length)
     return (
-      <div className="background-light-gray-color ptb--30 bg_light-1 pt_sm--20">
+      <div className="ptb--30 bg_light-1 pt_sm--20">
         {/* rts banner area start */}
-        <div className="rts-banner-area-one mb--30">
+        <div className="rts-banner-area-one mb--45">
           <div className="container">
             <div className="row">
               <div className="col-lg-12">

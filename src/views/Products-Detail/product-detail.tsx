@@ -201,7 +201,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
           <div>
             <h2>
               <span className="text-danger me-3">-{item.getDiscount()}%</span>
-              <del className="text-muted">
+              <del className=" muted-text color-black ">
                 M.R.P: {symbol}{activeIndex !== null
                   ? (sizePrices[activeIndex] * value).toFixed(2)
                   : (item.getProductPrice() * value).toFixed(2)}
