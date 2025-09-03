@@ -13,6 +13,7 @@ export interface CartItem {
   stock?: number;
   categoryName?: string;
   purchaseOptionStr?: string;
+  saleMode?:string;
   [key: string]: any; // For additional properties
 }
 
@@ -25,7 +26,7 @@ interface ContextProps {
   emptyCart: () => void;
   isProductInCart: (productId: string) => boolean;
   getProductQuantity: (productId: string) => number;
-  findCartItem: (item: any) => CartItem | undefined;
+  findCartItem: (cartItemId: string) => CartItem | undefined;
 }
 
 export const CartContext = createContext({} as ContextProps);

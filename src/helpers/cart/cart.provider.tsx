@@ -64,11 +64,38 @@ export const CartProvider = (props: any) => {
   };
 
   const addToCart = (item: any, quantity: number = 1): boolean => {
-    console.log("Adding to cart:", item, "Quantity:", quantity);
-    const existingProduct = findExistingProduct(item);
+  console.log("Adding to cart:", item, "Quantity:", quantity);
 
+  const { productId, salemode, purchaseOptionStr } = item;
+  // Use composite key for uniqueness
+  const cartItemId = `${productId || item.id}-${purchaseOptionStr || ""}`;
+
+  const existingProduct = cartItems.find(
+    (ci) => ci.cartItemId === cartItemId
+  );
+
+  if (salemode === "custom") {
     if (existingProduct) {
-      // Product already exists, update quantity instead of adding new
+      // Already in cart, do nothing
+      toast.info("This item is already in your cart");
+      return false;
+    }
+
+    const newItem: CartItem = {
+      ...item,
+      qty: 1, // always 1
+      cartItemId,
+      id: productId || item.id,
+      purchaseOptionStr,
+      salemode,
+    };
+
+    setCartItems((prev) => [...prev, newItem]);
+    toast.success(" Item added to cart!");
+    return true;
+  } else {
+    if (existingProduct) {
+      // Normal mode → increase quantity
       const newQuantity = existingProduct.qty + quantity;
       updateQty(existingProduct, newQuantity);
       toast.success(
@@ -77,24 +104,25 @@ export const CartProvider = (props: any) => {
       return true;
     }
 
-    // Product doesn't exist, add it to cart with specified quantity
-
+    // Normal product, add new
     const newItem: CartItem = {
       ...item,
       qty: quantity,
-      cartItemId: item.id,
-      // Ensure we have a consistent identifier
-      id: item.id,
-      //key: item.key || item.id,
+      cartItemId,
+      id: productId || item.id,
     };
 
     setCartItems((prev) => [...prev, newItem]);
-    console.log(cartItems, existingProduct);
     toast.success(`${quantity} item(s) added to cart!`);
     return true;
+  }
   };
 
   const updateQty = (item: CartItem, quantity: number): boolean => {
+    if (item.salemode === "custom") {
+      toast.info("Custom items always have quantity = 1");
+      return false;
+    }
     if (quantity >= 1) {
       setCartItems((prev) =>
         prev.map((cartItem) =>

@@ -194,7 +194,7 @@ const Search: NextPage = () => {
               <DropdownToggle caret className="btn-light">
                 <span className="category-label">{t("All Category")}</span>
               </DropdownToggle>
-              <DropdownMenu>
+              <DropdownMenu className="custom-dropdown-menu">
                 {allCategories.map((cat) => (
                   <DropdownItem
                     key={cat.id}
