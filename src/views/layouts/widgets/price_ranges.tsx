@@ -17,7 +17,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { getProductFinalPrice } from "@/utils/price.helper";
 import "swiper/css";
 import "swiper/css/navigation";
-
+ 
 // Enhanced type definitions
 interface ExtendedProduct extends Omit<Product, 'id' | 'name'> {
   id: string;
@@ -31,7 +31,7 @@ interface ExtendedProduct extends Omit<Product, 'id' | 'name'> {
   getProductPrice?: () => number;
   getDiscount?: () => number;
 }
-
+ 
 interface ExtendedKit extends Omit<Kit, 'id' | 'name'> {
   id: string;
   name: string;
@@ -45,13 +45,13 @@ interface ExtendedKit extends Omit<Kit, 'id' | 'name'> {
   getPrice?: () => number;
   getDiscount?: () => number;
 }
-
+ 
 type ExtendedProductItem = ExtendedProduct | ExtendedKit;
-
+ 
 interface Props {
   priceRanges: StorePriceRanges;
 }
-
+ 
 // Loading spinner component
 const LoadingSpinner = React.memo(() => (
   <div className="price-range-loading">
@@ -62,7 +62,7 @@ const LoadingSpinner = React.memo(() => (
     </div>
   </div>
 ));
-
+ 
 // Empty state component
 const EmptyState = React.memo(({ message }: { message: string }) => (
   <div className="text-center py-5">
@@ -73,7 +73,7 @@ const EmptyState = React.memo(({ message }: { message: string }) => (
     <p className="text-muted">Try selecting a different price range</p>
   </div>
 ));
-
+ 
 const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   // State management
   const [allProducts, setAllProducts] = useState<ExtendedProductItem[]>([]);
@@ -83,44 +83,44 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
   const [filtering, setFiltering] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+ 
   // Context hooks
   const { addToWish } = React.useContext(WishlistContext);
   const { addToCart } = React.useContext(CartContext);
   const { addToCompare } = React.useContext(CompareContext);
-
+ 
   // Refs
   const isProcessingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
-
+ 
   // Memoized values
   const ranges = useMemo(() => {
     const rangeArray = priceRanges?.price_ranges || [];
     return rangeArray.sort((a, b) => a - b); // Ensure sorted order
   }, [priceRanges?.price_ranges]);
-
+ 
   const tenantConfig = useMemo(() => ({
     tenantId: appConfig.tenantId,
     storeId: appConfig.defaultStoreId,
     apiBaseUrl: appConfig.apiBaseUrl,
   }), []);
-
+ 
   // Utility functions
   const getProductId = useCallback((item: ExtendedProductItem): string => {
     return item?.id || (item as any)?.productId || `product-${Math.random().toString(36).substr(2, 9)}`;
   }, []);
-
+ 
   const getProductName = useCallback((item: ExtendedProductItem): string => {
     return item?.name || item?.title || `Product ${getProductId(item)}`;
   }, [getProductId]);
-
+ 
   // Enhanced price calculation
   const calculateProductPrice = useCallback((item: ExtendedProductItem): number => {
     if (!item) return 0;
-
+ 
     try {
       let basePrice = 0;
-
+ 
       // Priority-based price extraction
       if ('getProductPrice' in item && typeof item.getProductPrice === 'function') {
         basePrice = item.getProductPrice();
@@ -131,15 +131,15 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       } else if (typeof item.price === 'number' && item.price > 0) {
         basePrice = item.price;
       }
-
+ 
       if (basePrice <= 0) return 0;
-
+ 
       // Apply discount and size-based pricing
       const sizePrices = item.sellingPrices || [];
       const sizeOptions = item.sellingDisplayOptions || [];
-      const discount = ('getDiscount' in item && typeof item.getDiscount === 'function') 
+      const discount = ('getDiscount' in item && typeof item.getDiscount === 'function')
         ? item.getDiscount() : (item.discount || 0);
-
+ 
       return getProductFinalPrice({
         price: basePrice,
         discount: discount,
@@ -151,7 +151,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       return 0;
     }
   }, [getProductId]);
-
+ 
   // Enhanced product fetching
   const fetchAllProducts = useCallback(async (): Promise<ExtendedProductItem[]> => {
     try {
@@ -160,10 +160,10 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         abortControllerRef.current.abort();
       }
       abortControllerRef.current = new AbortController();
-
+ 
       const fetchedProducts: ExtendedProductItem[] = [];
       const productMap = new Map<string, ExtendedProductItem>();
-
+ 
       // Fetch products with error handling
       try {
         const products = objCache.getAllProducts() as unknown as Product[];
@@ -175,7 +175,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                 id: getProductId(product as ExtendedProduct),
                 name: getProductName(product as ExtendedProduct)
               };
-              
+             
               const price = calculateProductPrice(extendedProduct);
               if (price > 0) {
                 const id = getProductId(extendedProduct);
@@ -189,7 +189,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       } catch (error) {
         // console.warn('Error fetching products:', error);
       }
-
+ 
       // Fetch kits with error handling
       try {
         const kits = objCache.getAllKits() as unknown as Kit[];
@@ -201,7 +201,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                 id: getProductId(kit as ExtendedKit),
                 name: getProductName(kit as ExtendedKit)
               } as ExtendedKit;
-              
+             
               const price = calculateProductPrice(extendedKit);
               if (price > 0) {
                 const id = getProductId(extendedKit);
@@ -215,7 +215,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       } catch (error) {
         // console.warn('Error fetching kits:', error);
       }
-
+ 
       return Array.from(productMap.values()).sort((a, b) => {
         const priceA = calculateProductPrice(a);
         const priceB = calculateProductPrice(b);
@@ -227,21 +227,21 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       return [];
     }
   }, [getProductId, getProductName, calculateProductPrice]);
-
+ 
   // Enhanced filtering with performance optimization
   const filterProductsByRange = useCallback((
-    targetRange: number, 
+    targetRange: number,
     products: ExtendedProductItem[]
   ): ExtendedProductItem[] => {
     if (!targetRange || !products.length) return [];
-
+ 
     try {
       const rangeIndex = ranges.findIndex(r => r === targetRange);
       if (rangeIndex === -1) return [];
-
+ 
       const minPrice = rangeIndex > 0 ? ranges[rangeIndex - 1] : 0;
       const maxPrice = targetRange;
-
+ 
       return products.filter(item => {
         const price = calculateProductPrice(item);
         return price > minPrice && price <= maxPrice;
@@ -251,14 +251,14 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       return [];
     }
   }, [ranges, calculateProductPrice]);
-
+ 
   // Range display text generation
   const getRangeDisplayText = useCallback((range: number) => {
     const rangeIndex = ranges.findIndex(r => r === range);
     if (rangeIndex === -1) return { main: "", sub: "" };
-
+ 
     const previousPrice = rangeIndex > 0 ? ranges[rangeIndex - 1] : 0;
-    
+   
     if (rangeIndex === 0) {
       return {
         main: `₹${range.toLocaleString("en-IN")}`,
@@ -271,19 +271,19 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       };
     }
   }, [ranges]);
-
+ 
   // Header text for filtered products
   const getFilteredProductsHeader = useCallback(() => {
     if (!activeRange) return "Products";
-    
+   
     const rangeIndex = ranges.findIndex(r => r === activeRange);
     const previousPrice = rangeIndex > 0 ? ranges[rangeIndex - 1] : 0;
-    
+   
     return rangeIndex === 0
       ? `Products under ₹${activeRange.toLocaleString("en-IN")}`
       : `Products ₹${(previousPrice + 1).toLocaleString("en-IN")} - ₹${activeRange.toLocaleString("en-IN")}`;
   }, [activeRange, ranges]);
-
+ 
   // Event handlers
   const handleAddToCart = useCallback((item: ExtendedProductItem, quantity = 1) => {
     try {
@@ -298,7 +298,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       // console.error('Error adding to cart:', error);
     }
   }, [addToCart, calculateProductPrice, getProductId, getProductName]);
-
+ 
   const handleAddToWish = useCallback((item: ExtendedProductItem) => {
     try {
       addToWish({
@@ -310,7 +310,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       // console.error('Error adding to wishlist:', error);
     }
   }, [addToWish, getProductId, getProductName]);
-
+ 
   const handleAddToCompare = useCallback((item: ExtendedProductItem) => {
     try {
       addToCompare({
@@ -322,14 +322,14 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       // console.error('Error adding to compare:', error);
     }
   }, [addToCompare, getProductId, getProductName]);
-
+ 
   const handleRangeSelection = useCallback(async (range: number) => {
     if (activeRange === range || isProcessingRef.current || !allProducts.length) return;
-    
+   
     isProcessingRef.current = true;
     setFiltering(true);
     setError(null);
-
+ 
     try {
       // Use requestAnimationFrame for smooth UI updates
       await new Promise(resolve => {
@@ -348,7 +348,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       isProcessingRef.current = false;
     }
   }, [activeRange, allProducts, filterProductsByRange]);
-
+ 
   // Component initialization
   useEffect(() => {
     setMounted(true);
@@ -359,19 +359,19 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       }
     };
   }, []);
-
+ 
   // Load and initialize products
   useEffect(() => {
     if (!mounted || !ranges.length) return;
-
+ 
     const initializeProducts = async () => {
       setLoading(true);
       setError(null);
-
+ 
       try {
         const products = await fetchAllProducts();
         setAllProducts(products);
-
+ 
         // Set default range (first one) and filter products
         if (ranges.length > 0 && products.length > 0) {
           const defaultRange = ranges[0];
@@ -386,20 +386,20 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         setLoading(false);
       }
     };
-
+ 
     const timeoutId = setTimeout(initializeProducts, 100); // Small delay for smoother UX
     return () => clearTimeout(timeoutId);
   }, [mounted, ranges, fetchAllProducts, filterProductsByRange]);
-
+ 
   // Listen for cache updates
   useEffect(() => {
     if (!mounted) return;
-
+ 
     const handleCacheUpdate = async () => {
       try {
         const products = await fetchAllProducts();
         setAllProducts(products);
-        
+       
         if (activeRange && products.length > 0) {
           const filtered = filterProductsByRange(activeRange, products);
           setFilteredProducts(filtered);
@@ -408,28 +408,40 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
         // console.error('Cache update error:', error);
       }
     };
-
+ 
     // Listen to relevant cache events
     objCache.on('updateAllProducts', handleCacheUpdate);
     objCache.on('updateKits', handleCacheUpdate);
     objCache.on('dataLoaded', handleCacheUpdate);
-
+ 
     return () => {
       objCache.off('updateAllProducts', handleCacheUpdate);
       objCache.off('updateKits', handleCacheUpdate);
       objCache.off('dataLoaded', handleCacheUpdate);
     };
   }, [mounted, activeRange, fetchAllProducts, filterProductsByRange]);
-
+ 
   // Early returns for loading and error states
-  if (!mounted || loading) {
-    return (
-      <div className="section-py-space">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
+      if (!mounted) {
+      return null; // nothing until mounted
+    }
+   
+    if (!ranges.length) {
+      return (
+        <div className="section-py-space">
+          {/* <EmptyState message="No price ranges available" /> */}
+        </div>
+      );
+    }
+   
+    if (loading) {
+      return (
+        <div className="section-py-space">
+          <LoadingSpinner />
+        </div>
+      );
+    }
+ 
   if (error) {
     return (
       <div className="section-py-space">
@@ -437,7 +449,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
           <div className="alert alert-danger text-center">
             <i className="fas fa-exclamation-triangle mb-2"></i>
             <h5>{error}</h5>
-            <button 
+            <button
               className="btn btn-primary mt-2"
               onClick={() => window.location.reload()}
             >
@@ -448,7 +460,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       </div>
     );
   }
-
+ 
   if (!ranges.length) {
     return (
       <div className="section-py-space">
@@ -456,7 +468,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
       </div>
     );
   }
-
+ 
   // Main component render
   return (
     <>
@@ -471,7 +483,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                   Store: {tenantConfig.storeId} | Tenant: {tenantConfig.tenantId}
                 </small> */}
               </div>
-              
+             
               <div className="cover-card-main-over">
                 <Swiper
                   navigation={{
@@ -498,14 +510,14 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     const { main, sub } = getRangeDisplayText(range);
                     const isActive = activeRange === range;
                     const isDisabled = filtering || isProcessingRef.current;
-                    
+                   
                     return (
                       <SwiperSlide key={`range-${range}-${index}`}>
                         <div className="single-category-one single-price-range">
                           <div
                             onClick={() => !isDisabled && handleRangeSelection(range)}
                             className={`price-range-card ${isActive ? "active" : ""} ${isDisabled ? "disabled" : ""}`}
-                            style={{ 
+                            style={{
                               cursor: isDisabled ? 'not-allowed' : 'pointer',
                               opacity: isDisabled ? 0.6 : 1,
                               transition: 'all 0.3s ease'
@@ -533,7 +545,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     );
                   })}
                 </Swiper>
-                
+               
                 {/* Custom navigation buttons */}
                 <div className="swiper-button-prev price-range-prev"></div>
                 <div className="swiper-button-next price-range-next"></div>
@@ -542,14 +554,14 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
           </Row>
         </div>
       </section>
-
+ 
       {/* Filtered Products Section */}
       {activeRange !== null && (
         <section className="section-py-space ratio_asos product">
           <div className="custom-container title-area-between">
             <h2 className="title-left">{getFilteredProductsHeader()}</h2>
           </div>
-          
+         
           <div className="container">
             <div className="row">
               <div className="col-lg-12">
@@ -564,8 +576,8 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                     <Swiper
                       slidesPerView={Math.min(6, filteredProducts.length)}
                       spaceBetween={20}
-                      autoplay={{ 
-                        delay: 4000, 
+                      autoplay={{
+                        delay: 4000,
                         pauseOnMouseEnter: true,
                         disableOnInteraction: false
                       }}
@@ -578,7 +590,7 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
                       {filteredProducts.map((product, index) => {
                         const productId = getProductId(product);
                         const productPrice = calculateProductPrice(product);
-                        
+                       
                         return (
                           <SwiperSlide key={`${productId}-${activeRange}-${index}`}>
                             <ProductBox
@@ -605,10 +617,10 @@ const PriceRanges: NextPage<Props> = ({ priceRanges }) => {
           </div>
         </section>
       )}
-
-
+ 
+ 
     </>
   );
 };
-
+ 
 export default PriceRanges;
