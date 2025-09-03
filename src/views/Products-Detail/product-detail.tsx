@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useMemo } from "react";
 import { Modal, ModalHeader, ModalBody, Input } from "reactstrap";
 import ImageGroup from "./common/ImageGroup";
 import CountDownComponent from "@/views/layouts/widgets/CountDownComponent";
@@ -11,7 +11,6 @@ import ImageSwatch from "./common/ImageSwatch";
 import { Discount, Product, searchController } from "@/app/globalProvider";
 import { useRouter} from "next/navigation";
 import { getProductFinalPrice } from "@/utils/price.helper";
-import { set } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductRightProps {
@@ -29,20 +28,33 @@ const ProductDetail: React.FC<ProductRightProps> = ({
 }) => {
   const router = useRouter();
   const [modal, setModal] = useState(false);
-  const [qty, setQty] = useState<number>(1);
+  const [qty, setQty] = useState(item?.minCount || 1);
   const [stock, setStock] = useState("InStock");
-  const [activesize, setSize] = useState("");
-  const uniqueColor: any[] = [];
+  const [activesize, setSize] = useState<string | null>(
+  // item?.sellingDisplayOptions?.[0] || item?.sellingDisplayOption || null
+);
+  const isOutOfStock = !item?.stock || item.stock <= 0;
   const uniqueSizes: string[] = item?.sellingDisplayOptions || [];
   const uniqueSize: string[] = item?.sellingDisplayOption || [];
-  const sizePrices: number[] = item?.sellingPrices || [];
+  const sizePrices: number[] = item?.sellingPrices || item.sellingPrice || [];
   const { addToWish } = React.useContext(WishlistContext);
-  const { addToCart } = useContext(CartContext);
+  const { addToCart, cartItems } = useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
   const [warning, setWarning] = useState<string>("");
   const activeIndex = activesize ? uniqueSizes.indexOf(activesize) : null;
-  const [isAddedToCart, setIsAddedToCart] = useState(false);
+  const isCustomMode = item?.saleMode === "custom";
+  const productId = item?.id;
+
+  const isOptionInCart = useMemo(() => {
+  if (!cartItems || !item) return false;
+
+  const cartItemId = `${item.id}-${activesize || ""}`;
+
+  return cartItems.some((cartItem) => cartItem.cartItemId === cartItemId);
+}, [cartItems, item, activesize]);
+
+
 
   const finalPrice = getProductFinalPrice({
   price: item.getProductPrice(),
@@ -108,8 +120,19 @@ const ProductDetail: React.FC<ProductRightProps> = ({
     e.preventDefault();
     if (uniqueSizes.length && !activesize) {
     setWarning("⚠️ Please select an option before adding to cart.");
-    return;
-  }
+      return;
+    }
+    const existingItem = cartItems.find(
+      (cartItem) =>
+        (cartItem.productId ?? cartItem.id) === productId &&
+        (cartItem.cartPurchaseOptionStr || cartItem.sellingDisplayOption) === activesize
+    );
+
+    // If custom mode and already added, redirect
+    if (isCustomMode && existingItem) {
+      router.push("/pages/account/cart");
+      return;
+    }
     // Check stock before adding
     if (item.stock && qty > item.stock) {
       setStock("Out of Stock !");
@@ -120,18 +143,21 @@ const ProductDetail: React.FC<ProductRightProps> = ({
     addToCart(
       {
         id: item.id,
+        productId: productId,
+        saleMode:item.saleMode,
         name: item.name,
         img:item.img,
         selectedSize: activesize,
         price: finalPrice,
         cartItemCount: qty, 
         cartPurchaseOptionStr: activesize || "",
+        purchaseOptionStr:activesize || "",
         getPriceWithDiscount: () => finalPrice,
+        qty: isCustomMode ? 1 : qty,
       },
       qty
     );
     setWarning("");
-    setIsAddedToCart(true);
   };
   const handleGoToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -201,7 +227,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
           <div>
             <h2>
               <span className="text-danger me-3">-{item.getDiscount()}%</span>
-              <del className="text-muted">
+              <del className=" muted-text color-black ">
                 M.R.P: {symbol}{activeIndex !== null
                   ? (sizePrices[activeIndex] * value).toFixed(2)
                   : (item.getProductPrice() * value).toFixed(2)}
@@ -314,7 +340,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 data-type="minus"
                 data-field=""
                 onClick={minusQty}
-                disabled={item.saleMode === "custom" || qty <= (item.minCount || 1)}
+                disabled={isCustomMode || qty <= (item.minCount || 1)}
               >
                 <i className="ti-angle-left"></i>
               </button>
@@ -323,9 +349,9 @@ const ProductDetail: React.FC<ProductRightProps> = ({
               type="text"
               name="quantity"
               className="form-control input-number"
-              value={item.saleMode === "custom" ? 1 : qty}
+              value={isCustomMode ? 1 : qty}
               onChange={changeQty}
-              readOnly={item.saleMode === "custom"} // prevent manual typing
+              readOnly={isCustomMode} // prevent manual typing
             />
             <span className="input-group-prepend">
               <button
@@ -334,7 +360,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 data-type="plus"
                 data-field=""
                 onClick={plusQty}
-                disabled={item.saleMode === "custom" || qty >= (item.maxCount)}
+                disabled={isCustomMode || qty >= (item.maxCount)}
               >
                 <i className="ti-angle-right"></i>
               </button>
@@ -344,7 +370,20 @@ const ProductDetail: React.FC<ProductRightProps> = ({
 
         <div className="product-buttons">
           <AnimatePresence mode="wait">
-            {!isAddedToCart ? (
+            {isOutOfStock ? (
+              <motion.a
+                key="out-of-stock"
+                href="#"
+                className="btn btn-normal disabled-btn"
+                onClick={(e) => e.preventDefault()}
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                OUT OF STOCK
+              </motion.a>
+            ) : !isOptionInCart ? (
               <motion.a
                 key="add-to-cart"
                 href="#"
@@ -374,17 +413,18 @@ const ProductDetail: React.FC<ProductRightProps> = ({
               </motion.a>
             )}
           </AnimatePresence>
-          {/* Keep Buy Now separate so it animates only on page load */}
-          <motion.a
-            href="#"
-            className="btn btn-normal"
-            onClick={handleBuyNow}
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-          >
-            buy now
-          </motion.a>
+          {!isOutOfStock && (
+            <motion.a
+              href="#"
+              className="btn btn-normal"
+              onClick={handleBuyNow}
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+            >
+              buy now
+            </motion.a>
+          )}
         </div>
       </div>
       {/* <div className="border-product"> */}

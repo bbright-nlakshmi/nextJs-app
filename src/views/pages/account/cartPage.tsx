@@ -116,9 +116,11 @@ const CartPage: NextPage = () => {
     const product = getProductById(item.productId || item.id);
     
     // Get product constraints
-    const minCount = product?.minCount || 1;
-    const maxCount = product?.maxCount || product?.stock || 999;
-    const stock = product?.stock || 999;
+    const stock = product?.stock;
+    const isCustom = product?.saleMode === "custom";
+    const minCount = isCustom ? 1 : (product?.minCount || 1);
+    const maxCount = isCustom ? 1 : product?.maxCount;
+
     
     // Clear previous messages
     setQuantityErrorKey(null);
@@ -127,6 +129,17 @@ const CartPage: NextPage = () => {
       [itemKey]: ""
     }));
 
+    if (isCustom) {
+      setStockMessages(prev => ({
+        ...prev,
+        [itemKey]: "Quantity is fixed to 1 for this product"
+      }));
+
+      if (item.qty !== 1) {
+        updateQty(item, 1);
+      }
+      return;
+    }
     if (isNaN(qty) || qty < 1) {
       setQuantityErrorKey(itemKey);
       setStockMessages(prev => ({
@@ -142,7 +155,9 @@ const CartPage: NextPage = () => {
         ...prev,
         [itemKey]: `Minimum quantity is ${minCount}`
       }));
+    if (item.qty !== minCount) {
       updateQty(item, minCount);
+    }
       return;
     }
 
@@ -152,7 +167,9 @@ const CartPage: NextPage = () => {
         ...prev,
         [itemKey]: `Maximum quantity is ${maxCount}`
       }));
+    if (item.qty !== maxCount) {
       updateQty(item, maxCount);
+    }
       return;
     }
 
@@ -161,12 +178,17 @@ const CartPage: NextPage = () => {
         ...prev,
         [itemKey]: "Out of Stock!"
       }));
-      updateQty(item, Math.min(stock, maxCount));
+      const adjusted = Math.min(stock, maxCount);
+      if (item.qty !== adjusted) {
+        updateQty(item, adjusted);
+      }
       return;
     }
 
     // Valid quantity - update
-    updateQty(item, qty);
+    if (item.qty !== qty) {
+      updateQty(item, qty);
+    }
   };
 
   const getSubtotal = (): number => {
@@ -204,14 +226,14 @@ const CartPage: NextPage = () => {
     const saleMode = product?.saleMode || productInfo?.saleMode || item.saleMode;
     
     // Get the current selected size or fallback
-    const currentSize = item.selectedSize || item.cartPurchaseOptionStr || uniqueSizes[0] || uniqueSize[0] || '';
+    const currentSize = item.selectedSize || item.cartPurchaseOptionStr || uniqueSizes[0] || uniqueSize || '';
     
     return {
       uniqueSizes,
       uniqueSize,
       saleMode,
       currentSize,
-      displayLabel: getSizeLabel(currentSize) || currentSize || 'N/A'
+      displayLabel: getSizeLabel(String(currentSize)) || currentSize || 'N/A'
     };
   };
 
