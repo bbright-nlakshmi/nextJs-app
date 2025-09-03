@@ -9,6 +9,7 @@ import { objCache, Product } from "@/app/globalProvider";
 import { CartContext } from "@/helpers/cart/cart.context";
 import { getProductFinalPrice } from "@/utils/price.helper";
 import { getSizeLabel } from "@/utils/Labels";
+import { AnimatePresence, motion } from "framer-motion";
  
 interface productType {
   id?: number;
@@ -46,7 +47,7 @@ const ProductBox: NextPage<productType> = ({
 }) => {
   const currencyContext = useContext(CurrencyContext);
   const { selectedCurr } = useContext(CurrencyContext);
-  const { addToCart } = useContext(CartContext);
+  const { addToCart, cartItems  } = useContext(CartContext);
   const slider2 = useRef<Slider | null>(null);
   const [nav1, setNav1] = useState<Slider | null>();
   const router = useRouter();
@@ -64,6 +65,26 @@ const ProductBox: NextPage<productType> = ({
   const [activesize, setActiveSize] = useState<string | null>(
   uniqueSizes.length ? uniqueSizes[0] : uniqueSize
 );
+  const availableStock = data?.stock ?? item?.stock ?? productInfo?.stock ?? 0;
+  const isOutOfStock = availableStock <= 0;
+
+  const productId = data?.productId ?? data?.id;
+  const isCustomMode = (item?.saleMode || data?.saleMode) === "custom";
+  const isAddedToCart = React.useMemo(() => {
+    if (!cartItems || !productId) return false;
+
+    return cartItems.some(
+      (cartItem) =>
+        (cartItem.productId ?? cartItem.id) === productId &&
+        (cartItem.cartPurchaseOptionStr || cartItem.purchaseOptionStr || cartItem.sellingDisplayOption) === activesize
+    );
+  }, [cartItems, productId, activesize]);
+
+  const handleGoToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/pages/account/cart"); // Adjust path if your cart page differs
+  };
+
   React.useEffect(() => {
   if (!activesize) {
     if (uniqueSizes.length) {
@@ -135,7 +156,42 @@ const plusQty = () => {
       setWarning("⚠️ Please select an option before adding to cart.");
       return;
     }
-      // Check stock before adding
+      const maxCount = data?.maxCount || item?.maxCount || productInfo?.maxCount || Infinity;
+
+      // Identify current option (size, etc.)
+      const optionKey =
+        activesize ||
+        data?.sellingDisplayOption ||
+        productInfo?.sellingDisplayOption ||
+        "";
+
+      // Find existing cart item with same product + option
+      const existingItem = cartItems.find(
+        (ci) =>
+          (ci.productId ?? ci.id) === productId &&
+          (ci.cartPurchaseOptionStr ||
+            ci.purchaseOptionStr ||
+            ci.sellingDisplayOption) === optionKey
+      );
+
+      const existingQty = existingItem?.cartItemCount || 0;
+      const newQty = existingQty + quantity;
+
+      // ✅ Max count validation
+      if (newQty > maxCount) {
+        setWarning(
+          `⚠️ You can only add ${maxCount} of this option. Cart already contains ${existingQty}.`
+        );
+        return;
+      }
+
+      // ✅ Custom saleMode behavior
+      if (isCustomMode && existingItem) {
+        handleGoToCart(e);
+        return;
+      }
+
+  // ✅ Stock validation
     if (data.stock && quantity > data.stock) {
       setStockState("Out of Stock !");
       return;
@@ -147,11 +203,15 @@ const plusQty = () => {
       {
         ...data,
         id: data.productId ?? data.id,
+        productId: data.productId ?? data.id,
+        salemode: data.saleMode || item?.saleMode,
         selectedSize: activesize,
         price: finalPrice,
         cartItemCount: quantity,
-        cartPurchaseOptionStr: activesize || "",
+        purchaseOptionStr: optionKey,
+        cartPurchaseOptionStr: optionKey,
         getPriceWithDiscount: () => finalPrice,
+        qty: isCustomMode ? 1 : quantity,
       },
       quantity
     );
@@ -178,14 +238,16 @@ const plusQty = () => {
     sessionStorage.setItem(
       "buyNowProduct",
       JSON.stringify({
-        id:data.id,
+        id:data.id ?? data.productId,
+        productId:data.productId ?? data.id,
         name: data.name,
-        img: data.img,        
-        quantity,
+        img: data.img,  
+        salemode: data.saleMode || item?.saleMode,      
+        quantity: isCustomMode ? 1 : quantity,
         selectedSize: activesize,
         price: finalPrice,
         cartItemCount: quantity,
-        cartPurchaseOptionStr: activesize || "",
+        purchaseOptionStr: activesize || "",
         getPriceWithDiscount: () => finalPrice,
       })
     );
@@ -241,7 +303,7 @@ const plusQty = () => {
                     <Media
                       src={src}
                       alt=""
-                      className="img-fluid image_zoom_cls-0"
+                      className={`img-fluid image_zoom_cls-0 ${isOutOfStock ? "grayscale" : ""}`}
                     />
                   </a>
                 </div>
@@ -258,15 +320,19 @@ const plusQty = () => {
           )}
  
           <div className={`product-icon ${hoverEffect}`}>
-            <button
-              title="Add to Cart"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddToCart(e);
-              }}
-            >
-              <i className="ti-shopping-cart"></i>
-            </button>
+            {isOutOfStock ? (
+              <button disabled title="Out of Stock" className="out-of-stock-btn">
+                <i className="ti-na"></i>
+              </button>
+            ) : !isAddedToCart ? (
+              <button title="Add to Cart" onClick={(e) => { e.stopPropagation(); handleAddToCart(e); }}>
+                <i className="ti-shopping-cart"></i>
+              </button>
+            ) : (
+              <button title="Go to Cart" onClick={(e) => { e.stopPropagation(); handleGoToCart(e); }}>
+                <i className="ti-bag"></i>
+              </button>
+            )}
             <a
               title="Add to Wishlist"
               onClick={(e) => {
@@ -542,13 +608,48 @@ const plusQty = () => {
                   </div>
                 </div>
                 <div className="product-buttons">
-                  <a
-                    href="#"
-                    className="btn btn-normal"
-                    onClick={handleAddToCart}                                          
-                  >
-                    add to cart
-                  </a>
+                  <AnimatePresence mode="wait">
+                    {isOutOfStock ? (
+                      <motion.a
+                        key="out-of-stock"
+                        href="#"
+                        className="btn btn-normal disabled-btn"
+                        onClick={(e) => e.preventDefault()}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                      >
+                        OUT OF STOCK
+                      </motion.a>
+                    ) : !isAddedToCart ? (
+                      <motion.a
+                        key="add-to-cart"
+                        href="#"
+                        className="btn btn-normal"
+                        onClick={handleAddToCart}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                      >
+                        add to cart
+                      </motion.a>
+                    ) : (
+                      <motion.a
+                        key="go-to-cart"
+                        href="#"
+                        className="btn btn-normal"
+                        onClick={handleGoToCart}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                      >
+                        GO TO CART
+                      </motion.a>
+                    )}
+                  </AnimatePresence>
                   <a
                     href="#"
                     className="btn btn-normal"

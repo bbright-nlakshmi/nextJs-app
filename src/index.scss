@@ -37507,3 +37507,18 @@ li a:hover .category-name {
   background-color: var(--theme-color1);
   color: #fff;
 }
+.grayscale {
+  filter: grayscale(100%);
+  opacity: 0.6;
+}
+.out-of-stock-btn {
+  cursor: not-allowed;
+  // opacity: 0.5;
+  background-color: #ccc;
+  border: none;
+}
+.disabled-btn {
+  pointer-events: none;
+  filter: grayscale(100%);
+  opacity: 0.5;
+}

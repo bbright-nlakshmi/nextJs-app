@@ -130,6 +130,11 @@ const CartPage: NextPage = () => {
     }));
 
     if (isCustom) {
+      setStockMessages(prev => ({
+        ...prev,
+        [itemKey]: "Quantity is fixed to 1 for this product"
+      }));
+
       if (item.qty !== 1) {
         updateQty(item, 1);
       }
@@ -150,7 +155,9 @@ const CartPage: NextPage = () => {
         ...prev,
         [itemKey]: `Minimum quantity is ${minCount}`
       }));
+    if (item.qty !== minCount) {
       updateQty(item, minCount);
+    }
       return;
     }
 
@@ -160,7 +167,9 @@ const CartPage: NextPage = () => {
         ...prev,
         [itemKey]: `Maximum quantity is ${maxCount}`
       }));
+    if (item.qty !== maxCount) {
       updateQty(item, maxCount);
+    }
       return;
     }
 
@@ -169,12 +178,17 @@ const CartPage: NextPage = () => {
         ...prev,
         [itemKey]: "Out of Stock!"
       }));
-      updateQty(item, Math.min(stock, maxCount));
+      const adjusted = Math.min(stock, maxCount);
+      if (item.qty !== adjusted) {
+        updateQty(item, adjusted);
+      }
       return;
     }
 
     // Valid quantity - update
-    updateQty(item, qty);
+    if (item.qty !== qty) {
+      updateQty(item, qty);
+    }
   };
 
   const getSubtotal = (): number => {
@@ -219,7 +233,7 @@ const CartPage: NextPage = () => {
       uniqueSize,
       saleMode,
       currentSize,
-      displayLabel: getSizeLabel(currentSize) || currentSize || 'N/A'
+      displayLabel: getSizeLabel(String(currentSize)) || currentSize || 'N/A'
     };
   };
 
