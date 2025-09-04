@@ -47,38 +47,59 @@ const ProductBox: NextPage<productType> = ({
 }) => {
   const currencyContext = useContext(CurrencyContext);
   const { selectedCurr } = useContext(CurrencyContext);
-  const { addToCart, cartItems  } = useContext(CartContext);
+  const { addToCart, cartItems } = useContext(CartContext);
+
   const slider2 = useRef<Slider | null>(null);
   const [nav1, setNav1] = useState<Slider | null>();
   const router = useRouter();
+
   const [modal, setModal] = useState(false);
-  const [quantity, setQuantity] = useState(data?.minCount || 1);
   const [stockState, setStockState] = useState("InStock");
   const titleProps = data?.name.split(" ").join("");
   const [warning, setWarning] = useState<string>("");
+
   const productInfo = objCache.getProductById(data?.productId);
-  const uniqueSizes: string[] = data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
-  const uniqueSize: string | null = data?.sellingDisplayOption || productInfo?.sellingDisplayOption || null;
-  const sizePrices: number[] = data?.sellingPrices || productInfo?.sellingPrices || [];
-  const sizePrice: number = data?.sellingPrice || productInfo?.sellingPrice || [];
+
+  const [quantity, setQuantity] = useState(
+    data?.minCount || item?.minCount || productInfo?.minCount || 1
+  );
+
+  const uniqueSizes: string[] =
+    data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
+  const uniqueSize: string | null =
+    data?.sellingDisplayOption || productInfo?.sellingDisplayOption || null;
+
+  const sizePrices: number[] =
+    data?.sellingPrices || productInfo?.sellingPrices || [];
+  const sizePrice: number =
+    data?.sellingPrice || productInfo?.sellingPrice || [];
+
   const uniqueColor: any[] = [];
+
   const [activesize, setActiveSize] = useState<string | null>(
-  uniqueSizes.length ? uniqueSizes[0] : uniqueSize
-);
+    uniqueSizes.length ? uniqueSizes[0] : uniqueSize
+  );
+
   const availableStock = data?.stock ?? item?.stock ?? productInfo?.stock ?? 0;
   const isOutOfStock = availableStock <= 0;
 
   const productId = data?.productId ?? data?.id;
-  const isCustomMode = (item?.saleMode || data?.saleMode) === "custom";
-  const isAddedToCart = React.useMemo(() => {
-    if (!cartItems || !productId) return false;
+  const isCustomMode =
+    (item?.saleMode || data?.saleMode || productInfo?.saleMode) === "custom";
 
-    return cartItems.some(
-      (cartItem) =>
-        (cartItem.productId ?? cartItem.id) === productId &&
-        (cartItem.cartPurchaseOptionStr || cartItem.purchaseOptionStr || cartItem.sellingDisplayOption) === activesize
-    );
-  }, [cartItems, productId, activesize]);
+  const optionKey =
+    activesize ||
+    data?.sellingDisplayOptions ||
+    productInfo?.sellingDisplayOptions ||
+    data?.sellingDisplayOption ||
+    productInfo?.sellingDisplayOption ||
+    "default";
+
+  const cartItemId = `${productId}-${optionKey}`;
+
+  const isAddedToCart = React.useMemo(() => {
+    return cartItems.some((cartItem) => cartItem.cartItemId === cartItemId);
+  }, [cartItems, cartItemId]);
 
   const handleGoToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -86,125 +107,118 @@ const ProductBox: NextPage<productType> = ({
   };
 
   React.useEffect(() => {
-  if (!activesize) {
-    if (uniqueSizes.length) {
-      setActiveSize(uniqueSizes[0]);
-    } else if (uniqueSize) {
-      setActiveSize(uniqueSize);
+    if (!activesize) {
+      if (uniqueSizes.length) {
+        setActiveSize(uniqueSizes[0]);
+      } else if (uniqueSize) {
+        setActiveSize(uniqueSize);
+      }
     }
-  }
-}, [uniqueSizes, uniqueSize]);
+  }, [uniqueSizes, uniqueSize]);
 
   const changeColorVar = (img_id: number) => {
     slider2.current?.slickGoTo(img_id);
   };
+
   const onOpenModal = () => {
     setModal(true);
   };
- 
+
   const onCloseModal = () => {
     setModal(false);
   };
+
   const minusQty = () => {
-  if (quantity > (data?.minCount || item?.minCount || productInfo?.minCount || 1)) {
-    setQuantity(quantity - 1);
-    setStockState("InStock");
-  } else {
-    setStockState("Minimum limit reached");
-  }
-};
- 
-const plusQty = () => {
-  if (quantity < (data?.maxCount || item?.maxCount|| productInfo?.maxCount)) {
-    setQuantity(quantity + 1);
-    setStockState("InStock");
-  } else {
-    setStockState("Maximum limit reached");
-  }
-};
- 
+    if (
+      quantity > (data?.minCount || item?.minCount || productInfo?.minCount || 1)
+    ) {
+      setQuantity(quantity - 1);
+      setStockState("InStock");
+    } else {
+      setStockState("Minimum limit reached");
+    }
+  };
+
+  const plusQty = () => {
+    if (quantity < (data?.maxCount || item?.maxCount || productInfo?.maxCount)) {
+      setQuantity(quantity + 1);
+      setStockState("InStock");
+    } else {
+      setStockState("Maximum limit reached");
+    }
+  };
+
   const changeQty = (e: React.ChangeEvent<HTMLInputElement>) => {
-  let val = parseInt(e.target.value) || 1;
-  if (val < (data?.minCount || item?.minCount || productInfo?.minCount || 1)) {
-    val = (data.minCount || item?.minCount || productInfo?.minCount || 1);
-    setStockState("Minimum limit reached");
-  } else if (val > (data?.maxCount || item?.maxCount || productInfo?.maxCount)) {
-    val = (data.maxCount || item?.maxCount || productInfo?.maxCount);
-    setStockState("Maximum limit reached");
-  } else {
-    setStockState("InStock");
-  }
-  setQuantity(val);
-};
- 
- 
+    let val = parseInt(e.target.value) || 1;
+
+    if (val < (data?.minCount || item?.minCount || productInfo?.minCount || 1)) {
+      val = (data.minCount || item?.minCount || productInfo?.minCount || 1);
+      setStockState("Minimum limit reached");
+    } else if (val > (data?.maxCount || item?.maxCount || productInfo?.maxCount)) {
+      val = data.maxCount || item?.maxCount || productInfo?.maxCount;
+      setStockState("Maximum limit reached");
+    } else {
+      setStockState("InStock");
+    }
+    setQuantity(val);
+  };
+
   const QuickView = (e: React.MouseEvent) => {
     e.stopPropagation();
     setModal(true);
   };
+
   const getFinalPrice = () => {
     return getProductFinalPrice({
       price: sizePrice,
       discount: data?.discount,
       sellingPrices: sizePrices,
       activeIndex: activesize ? uniqueSizes.indexOf(activesize) : 0,
-    }); 
+    });
   };
-   const handleAddToCart = (e: React.MouseEvent) => {
+
+  const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+
     if (uniqueSizes.length && !activesize) {
       setWarning("⚠️ Please select an option before adding to cart.");
       return;
     }
-      const maxCount = data?.maxCount || item?.maxCount || productInfo?.maxCount || Infinity;
 
-      // Identify current option (size, etc.)
-      const optionKey =
-        activesize ||
-        data?.sellingDisplayOption ||
-        productInfo?.sellingDisplayOption ||
-        "";
+    const optionKey =
+      activesize ||
+      data?.sellingDisplayOption ||
+      productInfo?.sellingDisplayOption ||
+      item?.sellingDisplayOption ||
+      "";
 
-      // Find existing cart item with same product + option
-      const existingItem = cartItems.find(
-        (ci) =>
-          (ci.productId ?? ci.id) === productId &&
-          (ci.cartPurchaseOptionStr ||
-            ci.purchaseOptionStr ||
-            ci.sellingDisplayOption) === optionKey
-      );
+    const cartItemId = `${productId}-${optionKey}`;
+    const existingItem = cartItems.find(
+      (cartItem) => cartItem.cartItemId === cartItemId
+    );
 
-      const existingQty = existingItem?.cartItemCount || 0;
-      const newQty = existingQty + quantity;
+    const totalQty = (existingItem?.qty || 0) + quantity;
 
-      // ✅ Max count validation
-      if (newQty > maxCount) {
-        setWarning(
-          `⚠️ You can only add ${maxCount} of this option. Cart already contains ${existingQty}.`
-        );
-        return;
-      }
-
-      // ✅ Custom saleMode behavior
-      if (isCustomMode && existingItem) {
-        handleGoToCart(e);
-        return;
-      }
-
-  // ✅ Stock validation
-    if (data.stock && quantity > data.stock) {
-      setStockState("Out of Stock !");
+    if (availableStock > 0 && totalQty > availableStock) {
+      setWarning(`⚠️ Only ${availableStock} item(s) available in stock.`);
       return;
     }
- 
+
+    // ✅ Custom saleMode check
+    if (isCustomMode && existingItem) {
+      handleGoToCart(e);
+      return;
+    }
+
     const finalPrice = getFinalPrice();
- 
-    addToCart(
+
+    const added = addToCart(
       {
-        ...data,
-        id: data.productId ?? data.id,
-        productId: data.productId ?? data.id,
-        salemode: data.saleMode || item?.saleMode,
+        id: productId.toString(),
+        productId,
+        saleMode: data.saleMode || item?.saleMode,
+        name: data.name,
+        img: data.img,
         selectedSize: activesize,
         price: finalPrice,
         cartItemCount: quantity,
@@ -212,64 +226,79 @@ const plusQty = () => {
         cartPurchaseOptionStr: optionKey,
         getPriceWithDiscount: () => finalPrice,
         qty: isCustomMode ? 1 : quantity,
+        cartItemId,
+        stock: availableStock,
       },
       quantity
     );
+
+    if (!added) {
+      // stock exceeded → show inline warning
+      setWarning(`⚠️ Only ${availableStock} item(s) available in stock.`);
+      return;
+    }
+
+    setWarning("");
+    // setModal(false);
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (uniqueSizes.length && !activesize) {
+      setWarning("⚠️ Please select an option before Buy Now.");
+      setModal(true);
+      return;
+    }
+
+    // stock check
+    if (data.stock && quantity > data.stock) {
+      setStockState("Out of Stock !");
+      return;
+    }
+
+    const finalPrice = getFinalPrice();
+
+    try {
+      sessionStorage.setItem(
+        "buyNowProduct",
+        JSON.stringify({
+          id: (data.id ?? data.productId)?.toString(),
+          productId: data.productId ?? data.id,
+          name: data.name,
+          img: data.img,
+          saleMode: data.saleMode || item?.saleMode,
+          quantity: isCustomMode ? 1 : quantity,
+          selectedSize: activesize,
+          price: finalPrice,
+          cartItemCount: quantity,
+          purchaseOptionStr: activesize || "",
+          getPriceWithDiscount: () => finalPrice,
+        })
+      );
+      sessionStorage.setItem("checkoutMode", "buyNow");
+    } catch (err) {
+      console.error("Session storage error:", err);
+    }
+
     setWarning("");
     setModal(false);
+    router.push("/pages/account/checkout");
   };
-  const handleBuyNow = (e: React.MouseEvent) => {
-  e.preventDefault();
-  if (uniqueSizes.length && !activesize) {
-    setWarning("⚠️ Please select an option before Buy Now.");
-    setModal(true);
-    return;
-  }
- 
-  // stock check
-  if (data.stock && quantity > data.stock) {
-    setStockState("Out of Stock !");
-    return;
-  }
- 
-  const finalPrice = getFinalPrice();
- 
-  try {
-    sessionStorage.setItem(
-      "buyNowProduct",
-      JSON.stringify({
-        id:data.id ?? data.productId,
-        productId:data.productId ?? data.id,
-        name: data.name,
-        img: data.img,  
-        salemode: data.saleMode || item?.saleMode,      
-        quantity: isCustomMode ? 1 : quantity,
-        selectedSize: activesize,
-        price: finalPrice,
-        cartItemCount: quantity,
-        purchaseOptionStr: activesize || "",
-        getPriceWithDiscount: () => finalPrice,
-      })
-    );
-    sessionStorage.setItem("checkoutMode", "buyNow");
-  } catch (err) {
-    console.error("Session storage error:", err);
-  }
- 
-  setWarning("");
-  setModal(false);
-  router.push("/pages/account/checkout");
-};
- 
+
   // update price when size changes
   const handleSelectSize = (size: string) => {
     setActiveSize(size);
     setWarning("");
   };
- 
+
   const clickProductDetail = () => {
     const id = data?.productId ?? data?.id;
-    router.push(data.type === "kit" ? `/product-details/thumbnail-left/${id}` : `/product-details/${id}`);
+    router.push(
+      data.type === "kit"
+        ? `/product-details/thumbnail-left/${id}`
+        : `/product-details/${id}`
+    );
   };
  
   return (
@@ -319,7 +348,7 @@ const plusQty = () => {
           </a>
           )}
  
-          <div className={`product-icon ${hoverEffect}`}>
+          <div className={`product-icon ${hoverEffect} ${isOutOfStock ? "out-of-stock-mode" : ""}`}>
             {isOutOfStock ? (
               <button disabled title="Out of Stock" className="out-of-stock-btn">
                 <i className="ti-na"></i>
@@ -345,23 +374,17 @@ const plusQty = () => {
             <a title="Quick View" onClick={(e) => QuickView(e)}>
               <i className="ti-search" aria-hidden="true"></i>
             </a>
-            <a
-              title="Checkout"
-              onClick={(e) => {
-                e.stopPropagation();
-                // if (uniqueSize.length && !activesize) {
-                //   // Instead of going straight to checkout, open QuickView modal
-                //   setModal(true);
-                //   setWarning("⚠️ Please select a size before checkout.");
-                //   return;
-                // }
-                // ✅ Use getFinalPrice to ensure correct price calculation    
-                // ✅ Always use `data`, not `item`
-                handleBuyNow(e);
-              }}
+            {!isOutOfStock && (
+              <a
+                title="Checkout"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBuyNow(e);
+                }}
               >
               <i className="ti-credit-card" aria-hidden="true"></i>
             </a>
+            )}
           </div>
           {/* {newLabel && (
             <div className="new-label1">
@@ -544,32 +567,35 @@ const plusQty = () => {
                     <div className="display-options">
                       {(data.saleMode || productInfo?.saleMode) !== "range" ? (
                         <>
-                          <ul>
-                            {uniqueSizes.map((size, i) => (
-                              <li key={i} className={size === activesize ? "active" : ""}>
-                                <a
-                                  href="#"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    handleSelectSize(size);
-                                  }}
-                                >
-                                  {size}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-
-                          {/* Show warning only if Add to Cart was clicked and multiple sizes exist */}
-                          {warning && (
-                            <div className="warning-message text-danger mb-2 mt-1">
-                              {warning}
-                            </div>
+                          {uniqueSizes.length > 0 && (
+                            <ul>
+                              {uniqueSizes.map((size, i) => (
+                                <li key={i} className={size === activesize ? "active" : ""}>
+                                  <a
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleSelectSize(size);
+                                    }}
+                                  >
+                                    {size}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          )}                          
+                          {uniqueSizes.length === 0 && uniqueSize && (
+                            <div className="size-value mb-4">{uniqueSize}</div>
                           )}
                         </>
                       ) : (
                         <div className="size-value mb-4">{uniqueSize}</div>
                       )}
+                    </div>
+                  )}                  
+                  {warning && (
+                    <div className="warning-message text-danger mb-2 mt-1">
+                      {warning}
                     </div>
                   )}
                   {stockState !== "InStock" && <span className="instock-cls">{stockState}</span>}
@@ -581,7 +607,7 @@ const plusQty = () => {
                           type="button"
                           className="btn quantity-left-minus"
                           onClick={minusQty}
-                          disabled={((item?.saleMode || data?.saleMode) === "custom") ||quantity <= (data?.minCount || item?.minCount || productInfo?.minCount || 1)}
+                          disabled={isCustomMode ||quantity <= (data?.minCount || item?.minCount || productInfo?.minCount || 1)}
                         >
                           <i className="ti-angle-left"></i>
                         </button>
@@ -590,16 +616,18 @@ const plusQty = () => {
                         type="text"
                         name="quantity"
                         className="form-control input-number"
-                        value={(item?.saleMode || data?.saleMode) === "custom" ? 1 : quantity}
+                        value={isCustomMode?  1 : quantity}
+                        min={productInfo?.minCount || 1}
+                        max={availableStock} 
                         onChange={changeQty}
-                        readOnly={(item?.saleMode || data?.saleMode) === "custom"}
+                        readOnly={isCustomMode}
                       />
                       <span className="input-group-prepend">
                         <button
                           type="button"
                           className="btn quantity-right-plus"
                           onClick={plusQty}
-                          disabled={((item?.saleMode|| data?.saleMode) === "custom") || quantity >= (item?.maxCount || data?.maxCount || productInfo?.maxCount)}
+                          disabled={isCustomMode || quantity >= Math.min( availableStock, item?.maxCount || data?.maxCount || productInfo?.maxCount || availableStock)}
                         >
                           <i className="ti-angle-right"></i>
                         </button>

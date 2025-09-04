@@ -707,7 +707,7 @@ const NoSidebar: NextPage = () => {
               </div>
             </div>
             <div className="col-xl-9 col-lg-12">
-              <div className="collection-wrapper">
+              <div className="collection-wrapper1">
                 <div className="custom-container section-big-pb-space">
                   {categoryType === "discount" ? (
                     <section className="w-full rts-category-area section-pt-space">
