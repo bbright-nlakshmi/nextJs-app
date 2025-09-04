@@ -49,7 +49,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   const isOptionInCart = useMemo(() => {
   if (!cartItems || !item) return false;
 
-  const cartItemId = `${item.id}-${activesize || ""}`;
+  const cartItemId = `${item.id}-${activesize || item.sellingDisplayOption || "" }`;
 
   return cartItems.some((cartItem) => cartItem.cartItemId === cartItemId);
 }, [cartItems, item, activesize]);
