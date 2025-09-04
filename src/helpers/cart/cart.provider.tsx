@@ -28,23 +28,14 @@ export const CartProvider = (props: any) => {
   }, [cartItems]);
 
   // Check if product is already in cart
-  const isProductInCart = (productId: string): boolean => {
-    return cartItems.some(
-      (item) =>
-        item.id === productId ||
-        item.productId === productId ||
-        item.key === productId
-    );
+  // Check if product-option is already in cart
+  const isProductInCart = (cartItemId: string): boolean => {
+    return cartItems.some((item) => item.cartItemId === cartItemId);
   };
 
-  // Get product quantity from cart
-  const getProductQuantity = (productId: string): number => {
-    const item = cartItems.find(
-      (item) =>
-        item.id === productId ||
-        item.productId === productId ||
-        item.key === productId
-    );
+  // Get product-option quantity from cart
+  const getProductQuantity = (cartItemId: string): number => {
+    const item = cartItems.find((item) => item.cartItemId === cartItemId);
     return item ? item.qty : 0;
   };
 
@@ -53,7 +44,7 @@ export const CartProvider = (props: any) => {
     return cartItems.find(
       (cartItem) =>
         //cartItem.id === item.id ||
-        cartItem.cartItemId === item.id
+        cartItem.cartItemId === item.cartItemId
       //cartItem.productId === item.id
     );
   };
@@ -64,86 +55,104 @@ export const CartProvider = (props: any) => {
   };
 
   const addToCart = (item: any, quantity: number = 1): boolean => {
-  console.log("Adding to cart:", item, "Quantity:", quantity);
+    const saleMode: string | undefined = item.saleMode ?? item.salemode;
+    const productId = item.productId || item.id;
+    // const { productId, saleMode } = item;
+    const optionKey: string = String(
+      item.cartPurchaseOptionStr ??
+        item.purchaseOptionStr ??
+        item.sellingDisplayOption ??
+        "default"
+    );
 
-  const { productId, salemode, purchaseOptionStr } = item;
-  // Use composite key for uniqueness
-  const cartItemId = `${productId || item.id}-${purchaseOptionStr || ""}`;
+    // Use composite key for uniqueness
+    const cartItemId: string = item.cartItemId ?? `${productId}-${optionKey}`;
 
-  const existingProduct = cartItems.find(
-    (ci) => ci.cartItemId === cartItemId
-  );
+    const existingProduct = cartItems.find(
+      (ci) => ci.cartItemId === cartItemId
+    );
 
-  if (salemode === "custom") {
-    if (existingProduct) {
-      // Already in cart, do nothing
-      toast.info("This item is already in your cart");
+    const stock = Number(item.stock ?? item.availableStock ?? 0);
+    const newQuantity = (existingProduct?.qty || 0) + quantity;
+
+    // ✅ check stock before updating cart
+    if (stock > 0 && newQuantity > stock) {
+      toast.error(`Only ${stock} item(s) available in stock`);
       return false;
     }
 
-    const newItem: CartItem = {
-      ...item,
-      qty: 1, // always 1
-      cartItemId,
-      id: productId || item.id,
-      purchaseOptionStr,
-      salemode,
-    };
+    if (saleMode === "custom") {
+      if (existingProduct) {
+        // Already in cart, do nothing
+        toast.info("This item is already in your cart");
+        return false;
+      }
 
-    setCartItems((prev) => [...prev, newItem]);
-    toast.success(" Item added to cart!");
-    return true;
-  } else {
-    if (existingProduct) {
-      // Normal mode → increase quantity
-      const newQuantity = existingProduct.qty + quantity;
-      updateQty(existingProduct, newQuantity);
-      toast.success(
-        `Product quantity updated! Now ${newQuantity} items in cart`
-      );
+      const newItem: CartItem = {
+        ...item,
+        qty: 1, // always 1
+        cartItemId,
+        id: productId || item.id,
+        purchaseOptionStr: optionKey,
+        saleMode,
+      };
+
+      setCartItems((prev) => [...prev, newItem]);
+      toast.success(" Item added to cart!");
       return true;
     }
+    if (existingProduct) {
+      // Normal mode → increase quantity
+      const updated = updateQty(existingProduct, newQuantity);
+      if (updated) {
+        toast.success(
+          `Product quantity updated! Now ${newQuantity} item(s) in cart`
+        );
+        return true;
+      }
+      return false;
+    }
 
-    // Normal product, add new
     const newItem: CartItem = {
       ...item,
       qty: quantity,
       cartItemId,
       id: productId || item.id,
+      purchaseOptionStr: optionKey,
+      saleMode,
     };
 
     setCartItems((prev) => [...prev, newItem]);
     toast.success(`${quantity} item(s) added to cart!`);
     return true;
-  }
   };
 
   const updateQty = (item: CartItem, quantity: number): boolean => {
-    if (item.salemode === "custom") {
+    const saleMode = (item as any).saleMode ?? (item as any).salemode;
+    if (saleMode === "custom") {
       toast.info("Custom items always have quantity = 1");
       return false;
     }
+
+    const stock = Number(item.stock ?? (item as any).availableStock ?? 0);
+    if (stock > 0 && quantity > stock) {
+      return false;
+    }
+
     if (quantity >= 1) {
       setCartItems((prev) =>
-        prev.map((cartItem) =>
-          cartItem.cartItemId === item.cartItemId
-            ? {
-                ...cartItem,
-                qty: quantity,
-              }
-            : cartItem
+        prev.map((ci) =>
+          ci.cartItemId === item.cartItemId ? { ...ci, qty: quantity } : ci
         )
       );
       toast.info("Product Quantity Updated!");
       return true;
-    } else {
-      toast.error("Enter Valid Quantity!");
-      return false;
     }
+    return false;
   };
 
   const removeFromCart = (item: CartItem): boolean => {
-    toast.error("Product Removed from Cart Successfully!");
+    toast.error("Product Removed from Cart");
     setCartItems((prev) =>
       prev.filter((e) => e.cartItemId !== item.cartItemId)
     );

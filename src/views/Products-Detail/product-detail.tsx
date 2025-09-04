@@ -122,10 +122,14 @@ const ProductDetail: React.FC<ProductRightProps> = ({
     setWarning("⚠️ Please select an option before adding to cart.");
       return;
     }
+    const optionKey =
+      activesize ||
+      item?.sellingDisplayOption ||
+      "";
+
+    const cartItemId = `${productId}-${optionKey}`;
     const existingItem = cartItems.find(
-      (cartItem) =>
-        (cartItem.productId ?? cartItem.id) === productId &&
-        (cartItem.cartPurchaseOptionStr || cartItem.sellingDisplayOption) === activesize
+      (cartItem) => cartItem.cartItemId === cartItemId
     );
 
     // If custom mode and already added, redirect
@@ -133,32 +137,33 @@ const ProductDetail: React.FC<ProductRightProps> = ({
       router.push("/pages/account/cart");
       return;
     }
-    // Check stock before adding
-    if (item.stock && qty > item.stock) {
-      setStock("Out of Stock !");
-      return;
-    }
 
-
-    addToCart(
-      {
-        id: item.id,
-        productId: productId,
-        saleMode:item.saleMode,
-        name: item.name,
-        img:item.img,
-        selectedSize: activesize,
-        price: finalPrice,
-        cartItemCount: qty, 
-        cartPurchaseOptionStr: activesize || "",
-        purchaseOptionStr:activesize || "",
-        getPriceWithDiscount: () => finalPrice,
-        qty: isCustomMode ? 1 : qty,
-      },
-      qty
+    const added = addToCart({
+      id: item.id,
+      productId: productId,
+      saleMode:item.saleMode,
+      name: item.name,
+      img:item.img,
+      selectedSize: activesize,
+      price: finalPrice,
+      cartItemCount: qty, 
+      cartPurchaseOptionStr: activesize || "",
+      purchaseOptionStr:activesize || "",
+      getPriceWithDiscount: () => finalPrice,
+      qty: isCustomMode ? 1 : qty,
+      cartItemId,
+      stock:item.stock,
+    },
+    qty
     );
-    setWarning("");
-  };
+    if (!added) {
+    // stock exceeded → show inline warning instead of toast
+    setWarning(`⚠️ Only ${item.stock} item(s) available in stock.`);
+    return;
+  }
+
+  setWarning(""); // clear warnings only if add was successful
+};
   const handleGoToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     router.push("/pages/account/cart");   
@@ -171,6 +176,11 @@ const ProductDetail: React.FC<ProductRightProps> = ({
     setWarning("⚠️ Please select an option before proceeding to checkout.");
     return;
   }
+    if (item.stock && qty > item.stock) {
+      setWarning(`⚠️ Only ${item.stock} item left in stock. Please reduce quantity.`);
+      return;
+    }
+
     try {
       sessionStorage.setItem(
         "buyNowProduct",
@@ -308,11 +318,6 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                       </li>
                     ))}
                   </ul>
-
-                  {/* warning only for multiple sizes */}
-                  {warning && (
-                    <p className="warning-message text-danger">{warning}</p>
-                  )}
                 </>
               ) : (
                 <div className="title-font mb-4">{uniqueSize}</div>
@@ -322,6 +327,10 @@ const ProductDetail: React.FC<ProductRightProps> = ({
         )}
 
 
+        
+        {warning && (
+          <p className="warning-message text-danger mt-2">{warning}</p>
+        )}
       <div className="product-description border-product">
         {stock !== "InStock" ? (
           <span className="instock-cls">{stock}</span>
