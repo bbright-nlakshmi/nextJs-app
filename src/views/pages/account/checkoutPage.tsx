@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { toast } from "react-toastify";
 import { usePlaceOrder, OrderPayloadService } from "../../../app/providers/usePlaceOrder/usePlaceOrder";
-import { API, searchController, Kit } from "@/app/globalProvider";
+import { API, searchController, Kit, DeliveryAddressModel } from "@/app/globalProvider";
 import { appConfig } from "../../../app/config/";
 import RazorpayButton from "../../../app/(MainBody)/pages/account/checkout/components/RazorpayButton";
 import { storeOrderSuccessData } from "../../../utils/orderPayloadUtils";
@@ -811,7 +811,22 @@ const CheckoutPage: React.FC = () => {
   const currencyContext = useContext(CurrencyContext);
   const cartContext = useContext(CartContext);
   const authContext = useContext(AuthContext);
+  const [addresses, setAddresses] = useState<DeliveryAddressModel[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<DeliveryAddressModel | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const handleSelectAddress = (addr: DeliveryAddressModel) => {
+    setSelectedAddress(addr);
+    setSelectedAddressId(addr.id || null);
 
+    setValue("firstName", addr.firstName || "");
+    setValue("lastName", addr.lastName || "");
+    setValue("phone", addr.phoneNumber || "");
+    // setValue("country", addr.country || "");
+    // setValue("state", addr.state || "");
+    setValue("city", addr.city || "");
+    setValue("address", addr.address || "");
+    setValue("pincode", addr.pinCode || "");
+  };
   // State
   const [gstNumber, setGstNumber] = useState<string>("");
   const [showValidationErrors, setShowValidationErrors] = useState(false);
@@ -843,7 +858,19 @@ const CheckoutPage: React.FC = () => {
     mode: "onChange", // Enable real-time validation
     reValidateMode: "onChange" // Re-validate on every change
   });
-  
+  useEffect(() => {
+  const fetchAddresses = async () => {
+    try {
+      // Adjust this based on your actual cartContext structure
+      const userPhone = "7093119692";
+      const resp = await API.getAddresses(userPhone);
+      if (resp) setAddresses(resp);
+    } catch (err) {
+      console.error("Error loading addresses:", err);
+    }
+  };
+  fetchAddresses();
+}, []);
   const phoneNumber = watch("phone") || "";
 
   // Memoized values
@@ -973,66 +1000,69 @@ const CheckoutPage: React.FC = () => {
   }, [router, emptyCart, checkoutMode, locationData, appliedCoupon, phoneNumber]);
 
   // Razorpay success handler with coupon tracking
-  const handleRazorpaySuccess = useCallback(async () => {
-    try {
-      const orderSuccessData = sessionStorage.getItem("order-success-data");
-      if (orderSuccessData) {
-        const orderData = JSON.parse(orderSuccessData);
-        
-        // Mark applied coupon as used if exists
-        if (appliedCoupon && orderData.billingDetails.phone) {
-          await markCouponAsUsed(orderData.billingDetails.phone, appliedCoupon.couponCode);
-          // Update local state immediately
-          setUsedCoupons(prev => [...new Set([...prev, appliedCoupon.couponCode])]);
-        }
-       
-        storeOrderSuccessData(
-          {
-            firstName: orderData.billingDetails.firstName,
-            lastName: orderData.billingDetails.lastName,
-            phone: orderData.billingDetails.phone,
-            email: orderData.billingDetails.email,
-            country: orderData.billingDetails.country,
-            state: orderData.billingDetails.state,
-            city: orderData.billingDetails.city,
-            address: orderData.billingDetails.address,
-            pincode: orderData.billingDetails.pincode,
-            latitude: orderData.billingDetails.latitude || 0,
-            longitude: orderData.billingDetails.longitude || 0
-          },
-          {
-            ...orderData.orderModel,
-            deliveryLocation: locationData,
-            deliveryAddress: {
-              ...orderData.orderModel.deliveryAddress,
-              lat: orderData.billingDetails.latitude || 0,
-              lng: orderData.billingDetails.longitude || 0,
-            }
-          },
-          cartItems,
-          orderTotals, // Use centralized totals
-          selectedPaymentMode,
-          { id: defaultStoreId, name: appName },
-          gstNumber
-        );
-        
-        if (checkoutMode === 'cart') {
-          emptyCart();
-        }
-        
-        sessionStorage.removeItem("buyNowProduct");
-        sessionStorage.removeItem("checkoutMode");
-        sessionStorage.removeItem("order-success-data");
-        
-        setTimeout(() => router.push("/pages/order-success"), 1500);
+    // In CheckoutPage component
+const handleRazorpaySuccess = useCallback(async (successData?: any) => {
+  try {
+    let orderData = successData;
+    
+    if (!orderData) {
+      const storedData = sessionStorage.getItem("razorpay-success-data") || 
+                        sessionStorage.getItem("order-success-data");
+      if (storedData) {
+        orderData = JSON.parse(storedData);
       }
-    } catch (error) {
-      console.error("Error handling Razorpay success:", error);
-      toast.error("Error processing payment success");
     }
-  }, [cartItems, orderTotals, selectedPaymentMode, defaultStoreId, appName, gstNumber, emptyCart, router, checkoutMode, locationData, appliedCoupon]);
+    
+    if (!orderData) {
+      throw new Error("No order data found for Razorpay success");
+    }
 
-  // Enhanced order payload creation with consistent pricing and COUPON DATA
+    // Extract payment mode from the order data, default to "RAZORPAY"
+    const paymentMode = orderData.paymentMode || 
+                       (orderData.orderModel && orderData.orderModel.paymentMode) || 
+                       "RAZORPAY";
+
+    // Store data for success page
+    storeOrderSuccessData(
+      {
+        firstName: orderData.billingDetails?.firstName || "",
+        lastName: orderData.billingDetails?.lastName || "",
+        phone: orderData.billingDetails?.phone || "",
+        email: orderData.billingDetails?.email || "",
+        country: orderData.billingDetails?.country || "",
+        state: orderData.billingDetails?.state || "",
+        city: orderData.billingDetails?.city || "",
+        address: orderData.billingDetails?.address || "",
+        pincode: orderData.billingDetails?.pincode || "",
+        latitude: orderData.billingDetails?.latitude || locationData?.latitude || 0,
+        longitude: orderData.billingDetails?.longitude || locationData?.longitude || 0
+      },
+      orderData.orderModel,
+      cartItems,
+      orderTotals,
+      paymentMode, // Use the extracted payment mode
+      { id: defaultStoreId, name: appName, active: true },
+      gstNumber,
+      appliedCoupon
+    );
+
+    if (checkoutMode === 'cart') {
+      emptyCart();
+    }
+    
+    // Clean up session storage
+    sessionStorage.removeItem("buyNowProduct");
+    sessionStorage.removeItem("checkoutMode");
+    sessionStorage.removeItem("order-success-data");
+    sessionStorage.removeItem("razorpay-success-data");
+    
+    // Navigate to success page
+    setTimeout(() => router.push("/pages/order-success"), 1500);
+  } catch (error) {
+    console.error("Error handling Razorpay success:", error);
+    toast.error("Error processing payment. Please contact support.");
+  }
+}, [cartItems, orderTotals, defaultStoreId, appName, gstNumber, emptyCart, router, checkoutMode, locationData, appliedCoupon]); // Enhanced order payload creation with consistent pricing and COUPON DATA
   const prepareOrderData = useCallback((formData: FormType) => {
     try {
       const enhancedFormData = {
@@ -1306,6 +1336,59 @@ const CheckoutPage: React.FC = () => {
           <Form onSubmit={handleSubmit(onSubmit)}>
             <Row>
               <Col lg="7">
+                {/* 👇 New Address Section */}
+              <div className="checkout-form mb-4">
+                <h3 className="checkout-title">Select Delivery Address</h3>
+                {addresses.length > 0 ? (
+                  <div>
+                    <div className="address-list"  style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {addresses.map((address) => (
+                        <div
+                          key={address.id}
+                          className={`address-item p-3 mb-2 border rounded ${
+                            selectedAddressId === address.id ? 'border-primary bg-light' : 'border-secondary'
+                          }`}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleSelectAddress(address)}
+                        >
+                          <div className="d-flex align-items-start">
+                            <input
+                              type="radio"
+                              name="selectedAddress"
+                              checked={selectedAddressId === address.id}
+                              onChange={() => handleSelectAddress(address)}
+                              className="me-3 mt-1"
+                            />
+                            <div className="flex-grow-1">
+                              <div className="fw-bold">
+                                {address.firstName} {address.lastName}
+                              </div>
+                              <div>{address.address}</div>
+                              <div>
+                                {address.city}, {address.pinCode}
+                              </div>
+                              <div>Phone: {address.phoneNumber}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>                    
+                    {selectedAddress && (
+                      <div className="alert alert-success mt-3">
+                        <strong>Selected Address:</strong><br />
+                        {selectedAddress.firstName} {selectedAddress.lastName}<br />
+                        {selectedAddress.address}, {selectedAddress.city} - {selectedAddress.pinCode}<br />
+                        Phone: {selectedAddress.phoneNumber}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="alert alert-info mt-3">
+                    No saved addresses found. Please add a new address.
+                  </div>
+                )}
+              </div>
+
                 <div className="checkout-form">
                   <h3 className="checkout-title">Billing Details</h3>
                   <Row>
