@@ -37546,7 +37546,7 @@ li a:hover .category-name {
 /* AddressForm.css */
 
 /* Form container */
-form {
+.address-form {
   background: #fff;
   border-radius: 12px;
   padding: 24px;
@@ -37556,7 +37556,7 @@ form {
 }
 
 /* Labels */
-form label {
+.address-form label {
   font-weight: 600;
   color: #333;
   margin-bottom: 6px;
@@ -37564,7 +37564,7 @@ form label {
 }
 
 /* Input fields */
-form input {
+.address-form input {
   border-radius: 8px;
   border: 1px solid #ddd;
   padding: 10px 14px;
@@ -37573,19 +37573,19 @@ form input {
 }
 
 /* Input focus effect */
-form input:focus {
+.address-form input:focus {
   border-color: #0d6efd; /* Bootstrap primary color */
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
   outline: none;
 }
 
 /* Required field highlight */
-form input:required {
+.address-form input:required {
   background-color: #fafafa;
 }
 
 /* Buttons */
-form .btn {
+.address-form .btn {
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
@@ -37593,32 +37593,32 @@ form .btn {
   transition: all 0.2s ease-in-out;
 }
 
-form .btn-primary {
+.address-form .btn-primary {
   background: #0d6efd;
   border-color: #0d6efd;
 }
 
-form .btn-primary:hover {
+.address-form .btn-primary:hover {
   background: #0b5ed7;
   border-color: #0a58ca;
 }
 
-form .btn-secondary {
+.address-form .btn-secondary {
   background: #6c757d;
   border-color: #6c757d;
 }
 
-form .btn-secondary:hover {
+.address-form .btn-secondary:hover {
   background: #5c636a;
   border-color: #565e64;
 }
 
 /* Form groups spacing */
-form .form-group {
+.address-form .form-group {
   margin-bottom: 18px;
 }
 
 /* Flexbox buttons */
-form .d-flex {
+.address-form .d-flex {
   justify-content: flex-end;
 }

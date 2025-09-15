@@ -83,7 +83,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
 };
 
   return (
-    <Form onSubmit={handleSubmit} className="p-3">
+    <Form onSubmit={handleSubmit} className="address-form">
       <FormGroup>
         <Label>First Name</Label>
         <Input
