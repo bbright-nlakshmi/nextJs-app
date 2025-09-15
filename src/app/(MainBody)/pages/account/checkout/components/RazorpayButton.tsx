@@ -12,7 +12,7 @@ interface RazorpayButtonProps {
     // deliveryAddress: any;
   } | null; 
   finalTotal: number;     
-  onSuccess: () => void;  
+  onSuccess: (successData?: any) => void;   
 }
 
 const RazorpayButton: React.FC<RazorpayButtonProps> = ({
@@ -99,26 +99,33 @@ const RazorpayButton: React.FC<RazorpayButtonProps> = ({
           try {
             // Attach Razorpay response to order model
             orderModel.txnDetails = response;
+            orderModel.paymentMode = "RAZORPAY"; // Explicitly set payment mode
+            orderModel.paymentStatus = "paid"; // Mark as paid
             
             // Save the order with transaction details
             await API.saveOrder(orderModel);
 
             // Store order success data in session storage
-            sessionStorage.setItem(
-              "order-success-data",
-              JSON.stringify({
-                orderId: orderData.orderId,
-                amount: orderData.amount,
-                billingDetails: orderData.billingDetails,
-                // deliveryAddress: deliveryAddress,
-                paymentStatus: "success",
-                orderModel: orderModel
-              })
-            );
+            const successData = {
+              orderId: orderData.orderId,
+              amount: orderData.amount,
+              billingDetails: orderData.billingDetails,
+              orderModel: orderModel,
+              paymentStatus: "success",
+              razorpayResponse: response,
+              timestamp: new Date().toISOString(),
+              paymentMode: "RAZORPAY"
+            };
+
+            // Store in sessionStorage for the success page
+            sessionStorage.setItem("razorpay-success-data", JSON.stringify(successData));
+            
+            // Also store in the legacy key for backward compatibility
+            sessionStorage.setItem("order-success-data", JSON.stringify(successData));
 
             toast.success("Payment successful! Order placed successfully!");
             setIsProcessing(false);
-            onSuccess(); // Clear cart and redirect
+            onSuccess(successData); // Clear cart and redirect
           } catch (error) {
             console.error("Error saving order:", error);
             toast.error("Payment successful but order placement failed");

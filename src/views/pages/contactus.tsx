@@ -66,23 +66,22 @@ const ContactUsPage: NextPage = () => {
   };
 
   // Save profile data
-  const handleSaveContact = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveContact = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    // setTimeout(() => {
-      try {
-        API.saveContactInfo(data);
-        setData({
-          name: "",
-          phone_number: "",
-          message: "",
-        });
-        toast.success("Contact information saved successfully!");
-      } catch (error) {
-        console.error("Error saving profile:", error);
-      }
-    // }, 1000);
-  };
+  try {
+    await API.saveContactInfo(data); // ✅ wait for API call
+    setData({
+      name: "",
+      phone_number: "",
+      message: "",
+    });
+    toast.success("Contact information saved successfully!");
+  } catch (error) {
+    console.error("Error saving profile:", error);
+    toast.error("Failed to save contact information!");
+  }
+};
 
   return (
     <>
@@ -194,7 +193,7 @@ const ContactUsPage: NextPage = () => {
                       <button
                         className="btn btn-sm btn-normal mb-lg-5"
                         type="submit"
-                        onClick={handleSaveContact}
+                        // onClick={handleSaveContact}
                       >
                         Submit
                       </button>
