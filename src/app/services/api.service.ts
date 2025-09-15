@@ -28,6 +28,7 @@ import {
   ReturnsAndRefund,
   StoreAnnounce,
   StoreBaseDetails,
+  DeliveryAddressModel,
   StoreContactDetails,
   StorePriceRanges,
   TermsAndConditions,
@@ -1344,6 +1345,47 @@ private async ensureBusinessId(): Promise<string> {
       throw error;
     }
   }
+  // Save multiple addresses
+  async saveAddresses(userId: string, addresses: DeliveryAddressModel[]): Promise<boolean> {
+    try {
+      const response = await this.post(
+        `http://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`,
+        addresses.map((a) => a.toJsonObj())
+      );
+      return (response as { status?: number }).status === 200;
+    } catch (error) {
+      console.error("Error saving addresses:", error);
+      return false;
+    }
+  }
+
+  // Get addresses
+  async getAddresses(userId: string): Promise<DeliveryAddressModel[]> {
+    try {
+      const response = await this.get(
+        `http://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`
+      );
+      return (response) as DeliveryAddressModel[];
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+      return [];
+    }
+  }
+
+  // Delete address
+  async deleteAddress(userId: string, addressId: string): Promise<void> {
+    try {
+      await this.delete(
+        `http://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`,
+        { params: { id: addressId } }
+      );
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      throw error;
+    }
+  }
+
+
 }
 // Export a singleton instance
 export const API = APIService.getInstance();
