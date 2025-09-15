@@ -55,7 +55,7 @@
         "type": "link"
       },
       {
-        "path": "/pages/account/profile",
+        "path": "/pages/account/dashboard",
         "title": "profile",
         "type": "link"
       },
