@@ -15,7 +15,7 @@ interface KitRaw {
 }
 
 const CartPage: NextPage = () => {
-  const { cartItems, updateQty, removeFromCart, updateCartItem } = React.useContext(CartContext);
+  const { cartItems, updateQty, removeFromCart } = React.useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
   const [quantityErrorKey, setQuantityErrorKey] = useState<string | null>(null);

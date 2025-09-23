@@ -10161,12 +10161,13 @@ textarea {
   font-weight: 400;
   height: auto;
   line-height: 28px;
-  background: transparent;
+  // background: transparent;
   box-shadow: none;
   padding: 0 15px;
   outline: none;
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius);
+  color: var(--color-black);
 }
 
 input[type="email"]::placeholder,
@@ -30783,7 +30784,7 @@ li a:hover .category-name {
   }
 }
 .checkout-container {
-  background: #f8f9fa;
+  // background: #f8f9fa;
   padding: 60px 0;
 }
 
@@ -32205,7 +32206,7 @@ li a:hover .category-name {
 // Dashboard Container
 .dashboard-container {
   padding: 20px;
-  background-color: #f8f9fa;
+  // background-color: #f8f9fa;
   min-height: 100vh;
 }
 
@@ -33943,7 +33944,7 @@ li a:hover .category-name {
 // Checkout Page Styles
 .checkout-container {
   padding: 40px 0;
-  background-color: #f8f9fa;
+  // background-color: #f8f9fa;
 
   .container {
     max-width: 1200px;
@@ -34430,7 +34431,7 @@ li a:hover .category-name {
 }
 // Enhanced Search Section Styles
 .enhanced-search-section {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  // background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   padding: 40px 0;
   border-bottom: 1px solid #e0e0e0;
 }
@@ -36224,7 +36225,7 @@ li a:hover .category-name {
 // Dashboard Container
 .dashboard-container {
   padding: 20px 0;
-  background-color: #f8f9fa;
+  // background-color: #f8f9fa;
   min-height: 100vh;
 }
 
@@ -36891,7 +36892,7 @@ li a:hover .category-name {
 /* Checkout Page Styles */
 .checkout-container {
   padding: 40px 0;
-  background-color: #f8f9fa;
+  // background-color: #f8f9fa;
   min-height: 100vh;
 }
 
@@ -37482,7 +37483,7 @@ li a:hover .category-name {
 
 .collection-wrapper1 {
   flex: 1;
-  height: 100vh;
+  height: 150vh;
   overflow-y: auto; /* independent scroll */
 }
 

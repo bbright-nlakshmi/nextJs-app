@@ -257,8 +257,8 @@ const OrderHistoryPage: NextPage = () => {
             <div className="info-label">Address</div>
             <div className="info-value">
               <p>{order.deliveryAddress.address || 'N/A'}</p>
-              <p>{order.deliveryAddress.city}, {order.deliveryAddress.state || ''}</p>
-              <p>{order.deliveryAddress.pincode || ''}</p>
+              <p>{order.deliveryAddress.city}, {order.deliveryAddress.city || ''}</p>
+              <p>{order.deliveryAddress.pinCode || ''}</p>
             </div>
           </div>
           {order.assignedDelivery?.name && order.assignedDelivery.name !== "Not Assigned" && (

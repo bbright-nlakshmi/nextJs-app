@@ -18,7 +18,7 @@ interface DashboardStatsProps {
 const DashboardStats: React.FC<DashboardStatsProps> = ({
   userName,
   userEmail,
-    userPhone,
+  userPhone,
   orders,
   enrichedWishlistCount,
   formatDate,
