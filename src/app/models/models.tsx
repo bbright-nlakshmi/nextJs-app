@@ -45,3 +45,4 @@ export * from './user_coupons/user_coupons';
 export * from './razorpay_model/razorpay';
 export * from './live_tracking/live_tracking';
 export * from './latlng.model';
+export * from './cart_model/cart_model';

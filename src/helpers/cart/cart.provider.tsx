@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { CartContext, CartItem } from "./cart.context";
 import { toast } from "react-toastify";
-import { v4 as uuidv4 } from "uuid";
+import { API } from "@/app/globalProvider";
+import { CartModel } from "@/app/globalProvider";
 
 const getLocalCartItems = () => {
   try {
@@ -12,9 +13,38 @@ const getLocalCartItems = () => {
   }
 };
 
+const getPhoneNumber = (): string => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("Login") || "";
+    }
+    return "";
+};
+
 export const CartProvider = (props: any) => {
   const [cartItems, setCartItems] = useState<CartItem[]>(getLocalCartItems());
   const [cartTotal, setCartTotal] = useState(0);
+
+  useEffect(() => {
+    const phoneNumber = getPhoneNumber();
+    console.log("[CartProvider] Loaded userPhone from localStorage:", phoneNumber);
+    if (!phoneNumber) return;
+
+    (async () => {
+      try {
+        const items = await API.getCartItems(phoneNumber);
+        setCartItems(
+          items.map((item: any) => ({
+            ...item,
+            qty: item.qty || 1,
+            cartItemId: item.cartItemId,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to load remote cart, using local storage:", err);
+        setCartItems(getLocalCartItems());
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const total = cartItems.reduce((sum, item) => {
@@ -54,7 +84,7 @@ export const CartProvider = (props: any) => {
     return findExistingProduct(item);
   };
 
-  const addToCart = (item: any, quantity: number = 1): boolean => {
+  const addToCart = async (item: any, quantity: number = 1): Promise<boolean> => {
     const saleMode: string | undefined = item.saleMode ?? item.salemode;
     const productId = item.productId || item.id;
     // const { productId, saleMode } = item;
@@ -80,6 +110,8 @@ export const CartProvider = (props: any) => {
       toast.error(`Only ${stock} item(s) available in stock`);
       return false;
     }
+    console.log("[CartProvider] addToCart called:", { item, quantity });
+    const phoneNumber = getPhoneNumber();
 
     if (saleMode === "custom") {
       if (existingProduct) {
@@ -99,11 +131,31 @@ export const CartProvider = (props: any) => {
 
       setCartItems((prev) => [...prev, newItem]);
       toast.success(" Item added to cart!");
+
+       if (phoneNumber) {
+        try {
+          console.log("[CartProvider] Calling API.saveCartItems with:", {
+             phoneNumber,
+          itemId: item.id,
+          qty: quantity,
+        });
+          const cartModel = new CartModel({
+            id: productId,
+            storeId: item.storeId,
+            cartItemCount: quantity,
+            cartPurchaseOptionStr: optionKey,
+          });
+          await API.saveCartItems(phoneNumber, cartModel);
+        } catch (err) {
+          console.error("Failed to sync addToCart:", err);
+        }
+      }
+
       return true;
     }
     if (existingProduct) {
       // Normal mode → increase quantity
-      const updated = updateQty(existingProduct, newQuantity);
+      const updated = await updateQty(existingProduct, newQuantity);
       if (updated) {
         toast.success(
           `Product quantity updated! Now ${newQuantity} item(s) in cart`
@@ -124,10 +176,25 @@ export const CartProvider = (props: any) => {
 
     setCartItems((prev) => [...prev, newItem]);
     toast.success(`${quantity} item(s) added to cart!`);
+
+    if (phoneNumber) {
+      try {
+        const cartModel = new CartModel({
+          id: productId,
+          storeId: item.storeId,
+          cartItemCount: quantity,
+          cartPurchaseOptionStr: optionKey,
+        });
+        await API.saveCartItems(phoneNumber, cartModel);
+      } catch (err) {
+        console.error("Failed to sync addToCart:", err);
+      }
+    }
+
     return true;
   };
 
-  const updateQty = (item: CartItem, quantity: number): boolean => {
+  const updateQty = async (item: CartItem, quantity: number): Promise<boolean> => {
     const saleMode = (item as any).saleMode ?? (item as any).salemode;
     if (saleMode === "custom") {
       toast.info("Custom items always have quantity = 1");
@@ -146,22 +213,67 @@ export const CartProvider = (props: any) => {
         )
       );
       toast.info("Product Quantity Updated!");
+
+      const phoneNumber = getPhoneNumber();
+      if (phoneNumber) {
+        try {
+          const cartModel = new CartModel({
+            id: item.id,
+            storeId: item.storeId,
+            cartItemCount: quantity,
+            cartPurchaseOptionStr: item.purchaseOptionStr ?? "",
+          });
+          await API.saveCartItems(phoneNumber, cartModel);
+        } catch (err) {
+          console.error("Failed to sync updateQty:", err);
+        }
+      }
       return true;
     }
     return false;
   };
 
-  const removeFromCart = (item: CartItem): boolean => {
+  const removeFromCart = async (item: CartItem): Promise<boolean> => {
     toast.error("Product Removed from Cart");
     setCartItems((prev) =>
       prev.filter((e) => e.cartItemId !== item.cartItemId)
     );
+    const phoneNumber = getPhoneNumber();
+      if (phoneNumber) {
+      try {
+        const cartModel = new CartModel({
+          id: item.id,
+          storeId: item.storeId,
+          cartItemCount: 0,
+          cartPurchaseOptionStr: item.purchaseOptionStr ?? "",
+        });
+        await API.deleteCartItems(phoneNumber, cartModel);
+      } catch (err) {
+        console.error("Failed to sync removeFromCart:", err);
+      }
+    }
     return true;
   };
 
-  const emptyCart = () => {
+  const emptyCart = async () => {
     // toast.error("Cart is empty");
     setCartItems([]);
+    const phoneNumber = getPhoneNumber();
+    if (phoneNumber) {
+      try {
+        for (const item of cartItems) {
+          const cartModel = new CartModel({
+            id: item.id,
+            storeId: item.storeId,
+            cartItemCount: 0,
+            cartPurchaseOptionStr: item.purchaseOptionStr ?? "",
+          });
+          await API.deleteCartItems(phoneNumber, cartModel);
+        }
+      } catch (err) {
+        console.error("Failed to sync emptyCart:", err);
+      }
+    }
   };
 
   return (

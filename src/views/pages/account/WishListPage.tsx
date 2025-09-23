@@ -11,6 +11,7 @@ import Breadcrumb from "../../Containers/Breadcrumb";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { searchController, Kit } from "@/app/globalProvider";
 import { WishlistProduct } from "../../../helpers/wishlist/wishlistStore";
+import router, { useRouter } from "next/navigation";
 
 interface KitRaw {
   id: string;
@@ -43,7 +44,7 @@ const WishListPage: NextPage = () => {
   const { symbol, value } = selectedCurr;
   const [enrichedWishlistData, setEnrichedWishlistData] = useState<EnrichedWishlistItem[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-
+  const router = useRouter();
   const showToast = useCallback((type: 'success' | 'error' | 'info', title: string, message: string) => {
     const id = Date.now().toString();
     const newToast: ToastMessage = { id, type, title, message };
@@ -544,6 +545,7 @@ const WishListPage: NextPage = () => {
             alt={item.title} 
             className="wishlist-table-img rounded"
             style={{ width: 60, height: 60, objectFit: 'cover' }}
+            onClick={() => router.push(`/product-details/${item.productId || item.id}`)}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = "/images/placeholder.png";

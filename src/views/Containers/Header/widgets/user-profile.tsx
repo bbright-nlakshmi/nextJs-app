@@ -87,6 +87,7 @@ const UserProfile: NextPage = () => {
     setUserName(null);
     localStorage.removeItem("Login");
     localStorage.removeItem("UserName");
+    localStorage.clear();
     setExpandedMenu(null);
     toggleAccount();
     setTimeout(() => toast.success("Successfully Signed Out"), 200);
@@ -133,6 +134,7 @@ const UserProfile: NextPage = () => {
     
     try {
       const response = await API.verifyOtp("User", phoneNumber, otp);
+      localStorage.clear();
       localStorage.setItem("Login", phoneNumber);
       localStorage.setItem("UserName", name);
       setUser(phoneNumber);
