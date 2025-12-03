@@ -1,9 +1,9 @@
 export const appConfig = {
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "https://1rpapp.in/v1",
   tenantServiceUrl: "https://tenantservice.1rpapp.in/v1",
-  tenantId: process.env.NEXT_PUBLIC_TENANT_ID || "sbvhnjgg",
-  appName: process.env.NEXT_PUBLIC_APP_NAME || "Hastly Now",
-  defaultStoreId: "3b94651a-80e8-4480-80ce-6cf975e39ae7",
+  tenantId: process.env.NEXT_PUBLIC_TENANT_ID || "vgcwufkv",
+  appName: process.env.NEXT_PUBLIC_APP_NAME || "Fruit Bite Box",
+  defaultStoreId: "0f748354-6b9b-4157-982d-da84719f4c93",
   logger: {
     serverLogging: process.env.NODE_ENV === "production",
     logLevel: process.env.NEXT_PUBLIC_LOG_LEVEL || "debug",
