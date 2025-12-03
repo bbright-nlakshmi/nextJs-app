@@ -8,6 +8,7 @@ import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { searchController, Kit } from "@/app/globalProvider";
+import router from "next/router";
 
 interface EnrichedWishlistItem {
   uuid?: string;
@@ -466,6 +467,7 @@ const Wishlist: NextPage = () => {
                       <a href={`/product/${item.productId}`}>
                         <img
                           src={item.img?.[0] || "/images/placeholder.png"}
+                          onClick={() => router.push(`/product-details/${item.productId}`)}
                           alt={item.title}
                           className="me-3"
                           onError={(e) => {

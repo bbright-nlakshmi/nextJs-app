@@ -29,6 +29,7 @@ import {
   StoreAnnounce,
   StoreBaseDetails,
   DeliveryAddressModel,
+  CartModel,
   StoreContactDetails,
   StorePriceRanges,
   TermsAndConditions,
@@ -55,9 +56,20 @@ export class APIService {
   private tenantId: string;
   private storeId: string;
   private businessId: string | null = null;
+  private bearerToken: string = "";
   baseURL: string;
   appName: string;
+  // private clientId: string = "customer_login";
+  private clientId: string = appConfig.tenantId;
+  // private clientSecret: string = "Hnth9JfUT1uHVDJfLHhbJD.1ry";
+  private static readonly DEFAULT_CLIENT_SECRET: string = "TRWPg6GE9mQKgHJsIl2LyWmGcJ";
 
+  private clientSecret: string | null = null;
+  private cachedAccessToken: string | null = null;
+  private tokenExpiryTime: number | null = null;
+  private isFetchingToken: boolean = false;
+  private isFetchingAppSettings: boolean = false;
+  
   private constructor() {
     this.tenantId = tenantId;
     this.storeId = this.getCurrentStoreId();
@@ -829,6 +841,18 @@ private async ensureBusinessId(): Promise<string> {
 
   // App Settings
   async getAppSettings(): Promise<AppSettingsModel> {
+    // Prevent multiple simultaneous requests for app settings
+    if (this.isFetchingAppSettings) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // After waiting, if we have clientSecret, return a mock or wait for completion
+      if (this.clientSecret) {
+        // Return a minimal AppSettingsModel or wait for the actual request
+        return AppSettingsModel.fromMap({ id: this.clientId, secretKey: this.clientSecret });
+      }
+    }
+    
+    this.isFetchingAppSettings = true;
+    
     try {
       const response = await this.get<any[]>(
         `${this.baseURL}/get-app-settings`,
@@ -838,12 +862,24 @@ private async ensureBusinessId(): Promise<string> {
       );
 
       if (Array.isArray(response) && response.length > 0) {
-        return AppSettingsModel.fromMap(response[0]);
+        const appSettings = AppSettingsModel.fromMap(response[0]);
+
+        // Store values for future use
+        this.clientId = appSettings.id;
+        this.clientSecret = appSettings.secretKey;
+
+        // Clear any cached token since credentials changed
+        this.cachedAccessToken = null;
+        this.tokenExpiryTime = null;
+
+        return appSettings;
       }
       throw new Error("No app settings found");
     } catch (error) {
       console.error("Error fetching app settings:", error);
       throw error;
+    } finally {
+      this.isFetchingAppSettings = false;
     }
   }
 
@@ -1345,47 +1381,216 @@ private async ensureBusinessId(): Promise<string> {
       throw error;
     }
   }
-  // Save multiple addresses
-  async saveAddresses(userId: string, addresses: DeliveryAddressModel[]): Promise<boolean> {
+  
+  // Get Access Token
+  async getAccessToken(): Promise<string> {
+    // Return cached token if it's still valid
+    if (this.cachedAccessToken && this.tokenExpiryTime && Date.now() < this.tokenExpiryTime) {
+      return this.cachedAccessToken;
+    }
+    
+    // Prevent multiple simultaneous token requests
+    if (this.isFetchingToken) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (this.cachedAccessToken) {
+        return this.cachedAccessToken;
+      }
+      throw new Error("Timeout waiting for token");
+    }
+    
+    this.isFetchingToken = true;
+    
     try {
-      const response = await this.post(
-        `http://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`,
-        addresses.map((a) => a.toJsonObj())
+      // Ensure we have the client secret first
+      let secretToUse = this.clientSecret;
+      
+      // If we don't have a client secret, try to get app settings
+      if (!secretToUse) {
+        try {
+          await this.getAppSettings();
+          secretToUse = this.clientSecret;
+        } catch (error) {
+          console.warn("Failed to get app settings, using default secret:", error);
+          secretToUse = APIService.DEFAULT_CLIENT_SECRET;
+        }
+      }
+      
+      // Still no secret? Use default as last resort
+      if (!secretToUse) {
+        secretToUse = APIService.DEFAULT_CLIENT_SECRET;
+      }
+
+      const response = await this.post<{ 
+        access_token: string; 
+        expires_in?: number;
+      }>(
+        "https://token.1rpapp.in/v1/get-token",
+        { 
+          client_id: this.clientId, 
+          client_secret: secretToUse 
+        }
       );
-      return (response as { status?: number }).status === 200;
+
+      if (response && response.access_token) {
+        this.cachedAccessToken = response.access_token;
+        // Set token expiry (default to 55 minutes if not provided)
+        const expiresIn = response.expires_in || 3300; // 55 minutes in seconds
+        this.tokenExpiryTime = Date.now() + (expiresIn * 1000) - 30000; // 30 seconds buffer
+        
+        return response.access_token;
+      }
+
+      throw new Error("No access token received");
     } catch (error) {
-      console.error("Error saving addresses:", error);
-      return false;
+      console.error("Error fetching access token:", error);
+      // Clear cached token on error
+      this.cachedAccessToken = null;
+      this.tokenExpiryTime = null;
+      throw error;
+    } finally {
+      this.isFetchingToken = false;
     }
   }
 
-  // Get addresses
-  async getAddresses(userId: string): Promise<DeliveryAddressModel[]> {
+  // Helper method to handle token expiry in API calls
+  private async withTokenRetry<T>(apiCall: () => Promise<T>): Promise<T> {
     try {
-      const response = await this.get(
-        `http://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`
-      );
-      return (response) as DeliveryAddressModel[];
-    } catch (error) {
-      console.error("Error fetching addresses:", error);
-      return [];
-    }
-  }
-
-  // Delete address
-  async deleteAddress(userId: string, addressId: string): Promise<void> {
-    try {
-      await this.delete(
-        `http://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`,
-        { params: { id: addressId } }
-      );
-    } catch (error) {
-      console.error("Error deleting address:", error);
+      return await apiCall();
+    } catch (error: any) {
+      // Check if it's an authentication error
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.log("Token expired, clearing cache and retrying...");
+        // Clear the cached token
+        this.cachedAccessToken = null;
+        this.tokenExpiryTime = null;
+        // Retry the API call
+        return await apiCall();
+      }
       throw error;
     }
   }
 
+   // Updated cart methods with token retry handling
+  async saveCartItems(phoneNumber: string, cartItem: CartModel): Promise<void> {
+    return this.withTokenRetry(async () => {
+      const token = await this.getAccessToken();
+      const response = await this.axiosInstance.post(
+        `https://addresscartkong.1rpapp.in/v1/${this.tenantId}/${phoneNumber}/cart-items`,
+        cartItem.toMap(),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      
+      return response.data;
+    });
+  }
 
+  async getCartItems(phoneNumber: string): Promise<CartModel[]> {
+    return this.withTokenRetry(async () => {
+      const token = await this.getAccessToken();
+      const response = await this.axiosInstance.get(
+        `https://addresscartkong.1rpapp.in/v1/${this.tenantId}/${phoneNumber}/cart-items`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = response.data;
+
+      if (!data) throw new Error("Invalid response: no data received");
+
+      if (Array.isArray(data)) {
+        return data.map((e) => CartModel.fromMap(e));
+      }
+
+      if (typeof data === "object") {
+        return [CartModel.fromMap(data)];
+      }
+
+      throw new Error(`Unexpected response format: ${typeof data}`);
+    });
+  }
+
+  async deleteCartItems(phoneNumber: string, cartItem: CartModel): Promise<void> {
+    return this.withTokenRetry(async () => {
+      const token = await this.getAccessToken();
+      const queryParams = {
+        id: cartItem.id,
+        cart_purchase_option_str: cartItem.cartPurchaseOptionStr,
+      };
+
+      const response = await this.axiosInstance.delete(
+        `https://addresscartkong.1rpapp.in/v1/${this.tenantId}/${phoneNumber}/cart-items`,
+        {
+          params: queryParams,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      
+      return response.data;
+    });
+  }
+
+  // Updated address methods with token retry handling
+  async saveAddresses(userId: string, addresses: DeliveryAddressModel[]): Promise<boolean> {
+    return this.withTokenRetry(async () => {
+      const token = await this.getAccessToken();
+      const response = await this.axiosInstance.post(
+        `https://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`,
+        addresses.map((a) => a.toJsonObj()),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.status === 200;
+    });
+  }
+
+  async getAddresses(userId: string): Promise<DeliveryAddressModel[]> {
+    return this.withTokenRetry(async () => {
+      const token = await this.getAccessToken();
+      const response = await this.axiosInstance.get(
+        `https://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data.map((addr: any) => DeliveryAddressModel.fromMap(addr));
+    });
+  }
+
+  async deleteAddress(userId: string, addressId: string): Promise<void> {
+    return this.withTokenRetry(async () => {
+      const token = await this.getAccessToken();
+      const response = await this.axiosInstance.delete(
+        `https://addresscartkong.1rpapp.in/v1/${this.tenantId}/${userId}/addresses`,
+        {
+          params: { id: addressId },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    });
+  }
 }
 // Export a singleton instance
 export const API = APIService.getInstance();

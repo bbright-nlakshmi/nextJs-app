@@ -1,5 +1,5 @@
 // cart.context.tsx - Updated Interface
-import { createContext } from "react";
+import React, { createContext, useState, useEffect } from "react";
 
 export interface CartItem {
   id: string;
@@ -20,13 +20,14 @@ export interface CartItem {
 interface ContextProps {
   cartItems: CartItem[];
   cartTotal: number;
-  addToCart: (item: any, quantity?: number) => boolean;
-  updateQty: (item: CartItem, quantity: number) => boolean;
-  removeFromCart: (item: CartItem) => boolean;
-  emptyCart: () => void;
-  isProductInCart: (productId: string) => boolean;
-  getProductQuantity: (productId: string) => number;
-  findCartItem: (cartItemId: string) => CartItem | undefined;
+  addToCart: (item: any, quantity?: number) => Promise<boolean>;
+  updateQty: (item: CartItem, quantity: number) => Promise<boolean>;
+  removeFromCart: (item: CartItem) => Promise<boolean>;
+  emptyCart: () => Promise<void>;
+  isProductInCart: (cartItemId: string) => boolean;
+  getProductQuantity: (cartItemId: string) => number;
+  findCartItem: (item: any) => CartItem | undefined;
 }
+
 
 export const CartContext = createContext({} as ContextProps);

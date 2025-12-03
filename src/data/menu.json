@@ -33,30 +33,9 @@
         "title": "cart",
         "type": "link"
       },
-
-      {
-        "path": "/pages/account/login",
-        "title": "login",
-        "type": "link"
-      },
-      {
-        "path": "/pages/account/register",
-        "title": "register",
-        "type": "link"
-      },
       {
         "path": "/pages/ContactUs",
-        "title": "contact",
-        "type": "link"
-      },
-      {
-        "path": "/pages/account/forget-password",
-        "title": "forget password",
-        "type": "link"
-      },
-      {
-        "path": "/pages/account/dashboard",
-        "title": "profile",
+        "title": "contactUs",
         "type": "link"
       },
       {

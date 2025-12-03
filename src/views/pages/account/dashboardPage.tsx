@@ -11,7 +11,7 @@ import { OrderModel } from "@/app/models/order/order";
 import { useWishlistStore } from "../../../helpers/wishlist/wishlistStore";
 import { CartContext } from "../../../helpers/cart/cart.context";
 import { CurrencyContext } from "../../../helpers/currency/CurrencyContext";
-import { searchController, Kit, DeliveryAddressModel } from "@/app/globalProvider";
+import { searchController, Kit, DeliveryAddressModel, Product } from "@/app/globalProvider";
 
 // ✅ Import new components
 import ProfileAvatar from "@/views/components/dashboard/ProfileAvatar";
@@ -46,12 +46,28 @@ const Dashboard: NextPage = () => {
 
   // State
   const [userInfo, setUserInfo] = useState<UserInfo>({
-    name: "User",
+    name: "",
     email: "",
     phone: "",
     billingAddress: "",
     shippingAddress: "",
   });
+  useEffect(() => {
+  try {
+    const storedPhone = localStorage.getItem("Login");
+    const storedName = localStorage.getItem("UserName");
+
+    setUserInfo({
+      name: storedName || "",
+      email: "", // if you don’t store email yet
+      phone: storedPhone || "",
+      billingAddress: "",
+      shippingAddress: "",
+    });
+  } catch (err) {
+    console.error("Failed to load user data from localStorage:", err);
+  }
+}, []);
   const [editingUser, setEditingUser] = useState(false);
   const [orders, setOrders] = useState<OrderModel[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<OrderModel[]>([]);
@@ -153,6 +169,28 @@ const Dashboard: NextPage = () => {
 
     loadAddresses();
   }, [activeTab, userInfo.phone]);
+  useEffect(() => {
+  const loadOrders = async () => {
+    if (userInfo.phone) {
+      try {
+        setLoading(true);
+        const userOrders: OrderModel[] = await API.getOrders(userInfo.phone);
+        setOrders(userOrders);
+        setFilteredOrders(userOrders); // if you’re filtering later
+      } catch (err) {
+        console.error("Error loading orders:", err);
+        setError("Failed to load orders");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // 🔹 Fetch orders as soon as dashboard loads
+  if (activeTab === "dashboard") {
+    loadOrders();
+  }
+}, [activeTab, userInfo.phone]);
 
   const getItemKey = useCallback((item: EnrichedWishlistItem): string => {
     return item.productId || item.cartItemId || item.key || item.id || item.title || Math.random().toString();
@@ -180,7 +218,7 @@ const Dashboard: NextPage = () => {
   // Add this function to your dashboardPage.tsx
   const renderWishlistItem = useCallback(
     (item: EnrichedWishlistItem, isMobile = false) => {
-      const price = item.price;
+      const price = getPrice(item);
       const itemKey = getItemKey(item);
 
       if (isMobile) {
@@ -192,6 +230,7 @@ const Dashboard: NextPage = () => {
                   <img
                     src={item.img?.[0] || "/images/placeholder.png"}
                     alt={item.title}
+                    onClick={() => router.push(`/product-details/${item.productId || item.id}`)}                    
                     className="dashboard-wishlist-mobile-img dashboard-rounded"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -248,6 +287,7 @@ const Dashboard: NextPage = () => {
             <img
               src={item.img?.[0] || "/images/placeholder.png"}
               alt={item.title}
+              onClick={() => router.push(`/product-details/${item.productId || item.id}`)}
               className="dashboard-wishlist-table-img dashboard-rounded"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
