@@ -4,12 +4,12 @@ import React, { useEffect, useState } from "react";
 import { Input, Label, Row, Col, Form, FormGroup } from "reactstrap";
 import Breadcrumb from "../Containers/Breadcrumb";
 import { API } from "../../app/services/api.service";
-import { BusinessDetails, LatLng } from "@/app/globalProvider";
+import { StoreBaseDetails, LatLng } from "@/app/globalProvider";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
 const ContactUsPage: NextPage = () => {
-  const [details, setDetails] = useState<BusinessDetails | null>(null);
+  const [details, setDetails] = useState<StoreBaseDetails | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [storeCoords, setStoreCoords] = useState<LatLng | null>(null);
 
@@ -23,17 +23,28 @@ const ContactUsPage: NextPage = () => {
   useEffect(() => {
     const fetchBusinessDetailsAndLocation = async () => {
       try {
-        const data = await API.getBusinessDetails();
-        setDetails(data);
+        // Fetch all store details
+        const storesMap = await API.getStoresBaseDetails();
 
-        const storeLocation = {
-          latitude: 17.1205268,
-          longitude: 81.2983022,
-        };
-        setStoreCoords({
-          lat: storeLocation.latitude,
-          lng: storeLocation.longitude,
-        });
+        // Pick the first store (or change logic if you need a specific one)
+        const firstStore = storesMap.values().next().value as
+          | StoreBaseDetails
+          | undefined;
+
+        if (firstStore) {
+          setDetails(firstStore);
+
+          if (
+            firstStore.storeLocation &&
+            firstStore.storeLocation.lat &&
+            firstStore.storeLocation.lng
+          ) {
+            setStoreCoords({
+              lat: firstStore.storeLocation.lat,
+              lng: firstStore.storeLocation.lng,
+            });
+          }
+        }
       } catch (error) {
         console.error("Error loading data:", error);
       } finally {
@@ -55,23 +66,22 @@ const ContactUsPage: NextPage = () => {
   };
 
   // Save profile data
-  const handleSaveContact = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveContact = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    setTimeout(() => {
-      try {
-        API.saveContactInfo(data);
-        setData({
-          name: "",
-          phone_number: "",
-          message: "",
-        });
-        toast.success("Contact information saved successfully!");
-      } catch (error) {
-        console.error("Error saving profile:", error);
-      }
-    }, 1000);
-  };
+  try {
+    await API.saveContactInfo(data); // ✅ wait for API call
+    setData({
+      name: "",
+      phone_number: "",
+      message: "",
+    });
+    toast.success("Contact information saved successfully!");
+  } catch (error) {
+    console.error("Error saving profile:", error);
+    toast.error("Failed to save contact information!");
+  }
+};
 
   return (
     <>
@@ -89,16 +99,11 @@ const ContactUsPage: NextPage = () => {
                   <p>Business details not available.</p>
                 ) : (
                   <div className="form-row row">
-                    {details.phone && (
+                    {details.phoneNumber && (
                       <Col md="6" className="mb-3">
                         <strong>Phone:</strong>
-                        <p className="mb-0">{details.phone}</p>
-                      </Col>
-                    )}
-                    {details.email && (
-                      <Col md="6" className="mb-3">
-                        <strong>Email:</strong>
-                        <p className="mb-0">{details.email}</p>
+                        <p className="mb-0">{details.phoneNumber}</p>
+                        
                       </Col>
                     )}
                     {details.address && (
@@ -107,19 +112,10 @@ const ContactUsPage: NextPage = () => {
                         <p className="mb-0">{details.address}</p>
                       </Col>
                     )}
-                    {details.instagram && (
-                      <Col md="12">
-                        <strong>Instagram:</strong>{" "}
-                        <p
-                          className="text-primary mb-0"
-                          style={{
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                          }}
-                          onClick={() => openInstagram(details.instagram!)}
-                        >
-                          {details.instagram}
-                        </p>
+                    {details.name && (
+                      <Col md="12" className="mb-3">
+                        <strong>Store:</strong>
+                        <p className="mb-0">{details.name}</p>
                       </Col>
                     )}
                   </div>
@@ -132,7 +128,7 @@ const ContactUsPage: NextPage = () => {
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    style={{ width: "100%", height: "400px", border: 0 }}
+                    className="contact-map"
                   />
                 ) : (
                   <p>Loading map...</p>
@@ -197,7 +193,7 @@ const ContactUsPage: NextPage = () => {
                       <button
                         className="btn btn-sm btn-normal mb-lg-5"
                         type="submit"
-                        onClick={handleSaveContact}
+                        // onClick={handleSaveContact}
                       >
                         Submit
                       </button>
@@ -214,6 +210,3 @@ const ContactUsPage: NextPage = () => {
 };
 
 export default ContactUsPage;
-function setData(arg0: (prev: any) => any) {
-  throw new Error("Function not implemented.");
-}

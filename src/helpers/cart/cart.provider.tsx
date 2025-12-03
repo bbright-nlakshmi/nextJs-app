@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { CartContext, CartItem } from "./cart.context";
 import { toast } from "react-toastify";
-import { v4 as uuidv4 } from "uuid";
+import { API } from "@/app/globalProvider";
+import { CartModel } from "@/app/globalProvider";
 
 const getLocalCartItems = () => {
   try {
@@ -12,9 +13,38 @@ const getLocalCartItems = () => {
   }
 };
 
+const getPhoneNumber = (): string => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("Login") || "";
+    }
+    return "";
+};
+
 export const CartProvider = (props: any) => {
   const [cartItems, setCartItems] = useState<CartItem[]>(getLocalCartItems());
   const [cartTotal, setCartTotal] = useState(0);
+
+  useEffect(() => {
+    const phoneNumber = getPhoneNumber();
+    console.log("[CartProvider] Loaded userPhone from localStorage:", phoneNumber);
+    if (!phoneNumber) return;
+
+    (async () => {
+      try {
+        const items = await API.getCartItems(phoneNumber);
+        setCartItems(
+          items.map((item: any) => ({
+            ...item,
+            qty: item.qty || 1,
+            cartItemId: item.cartItemId,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to load remote cart, using local storage:", err);
+        setCartItems(getLocalCartItems());
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const total = cartItems.reduce((sum, item) => {
@@ -28,23 +58,14 @@ export const CartProvider = (props: any) => {
   }, [cartItems]);
 
   // Check if product is already in cart
-  const isProductInCart = (productId: string): boolean => {
-    return cartItems.some(
-      (item) =>
-        item.id === productId ||
-        item.productId === productId ||
-        item.key === productId
-    );
+  // Check if product-option is already in cart
+  const isProductInCart = (cartItemId: string): boolean => {
+    return cartItems.some((item) => item.cartItemId === cartItemId);
   };
 
-  // Get product quantity from cart
-  const getProductQuantity = (productId: string): number => {
-    const item = cartItems.find(
-      (item) =>
-        item.id === productId ||
-        item.productId === productId ||
-        item.key === productId
-    );
+  // Get product-option quantity from cart
+  const getProductQuantity = (cartItemId: string): number => {
+    const item = cartItems.find((item) => item.cartItemId === cartItemId);
     return item ? item.qty : 0;
   };
 
@@ -53,7 +74,7 @@ export const CartProvider = (props: any) => {
     return cartItems.find(
       (cartItem) =>
         //cartItem.id === item.id ||
-        cartItem.cartItemId === item.id
+        cartItem.cartItemId === item.cartItemId
       //cartItem.productId === item.id
     );
   };
@@ -63,68 +84,196 @@ export const CartProvider = (props: any) => {
     return findExistingProduct(item);
   };
 
-  const addToCart = (item: any, quantity: number = 1): boolean => {
-    console.log("Adding to cart:", item, "Quantity:", quantity);
-    const existingProduct = findExistingProduct(item);
+  const addToCart = async (item: any, quantity: number = 1): Promise<boolean> => {
+    const saleMode: string | undefined = item.saleMode ?? item.salemode;
+    const productId = item.productId || item.id;
+    // const { productId, saleMode } = item;
+    const optionKey: string = String(
+      item.cartPurchaseOptionStr ??
+        item.purchaseOptionStr ??
+        item.sellingDisplayOption ??
+        "default"
+    );
 
-    if (existingProduct) {
-      // Product already exists, update quantity instead of adding new
-      const newQuantity = existingProduct.qty + quantity;
-      updateQty(existingProduct, newQuantity);
-      toast.success(
-        `Product quantity updated! Now ${newQuantity} items in cart`
-      );
+    // Use composite key for uniqueness
+    const cartItemId: string = item.cartItemId ?? `${productId}-${optionKey}`;
+
+    const existingProduct = cartItems.find(
+      (ci) => ci.cartItemId === cartItemId
+    );
+
+    const stock = Number(item.stock ?? item.availableStock ?? 0);
+    const newQuantity = (existingProduct?.qty || 0) + quantity;
+
+    // ✅ check stock before updating cart
+    if (stock > 0 && newQuantity > stock) {
+      toast.error(`Only ${stock} item(s) available in stock`);
+      return false;
+    }
+    console.log("[CartProvider] addToCart called:", { item, quantity });
+    const phoneNumber = getPhoneNumber();
+
+    if (saleMode === "custom") {
+      if (existingProduct) {
+        // Already in cart, do nothing
+        toast.info("This item is already in your cart");
+        return false;
+      }
+
+      const newItem: CartItem = {
+        ...item,
+        qty: 1, // always 1
+        cartItemId,
+        id: productId || item.id,
+        purchaseOptionStr: optionKey,
+        saleMode,
+      };
+
+      setCartItems((prev) => [...prev, newItem]);
+      toast.success(" Item added to cart!");
+
+       if (phoneNumber) {
+        try {
+          console.log("[CartProvider] Calling API.saveCartItems with:", {
+             phoneNumber,
+          itemId: item.id,
+          qty: quantity,
+        });
+          const cartModel = new CartModel({
+            id: productId,
+            storeId: item.storeId,
+            cartItemCount: quantity,
+            cartPurchaseOptionStr: optionKey,
+          });
+          await API.saveCartItems(phoneNumber, cartModel);
+        } catch (err) {
+          console.error("Failed to sync addToCart:", err);
+        }
+      }
+
       return true;
     }
-
-    // Product doesn't exist, add it to cart with specified quantity
+    if (existingProduct) {
+      // Normal mode → increase quantity
+      const updated = await updateQty(existingProduct, newQuantity);
+      if (updated) {
+        toast.success(
+          `Product quantity updated! Now ${newQuantity} item(s) in cart`
+        );
+        return true;
+      }
+      return false;
+    }
 
     const newItem: CartItem = {
       ...item,
       qty: quantity,
-      cartItemId: item.id,
-      // Ensure we have a consistent identifier
-      id: item.id,
-      //key: item.key || item.id,
+      cartItemId,
+      id: productId || item.id,
+      purchaseOptionStr: optionKey,
+      saleMode,
     };
 
     setCartItems((prev) => [...prev, newItem]);
-    console.log(cartItems, existingProduct);
     toast.success(`${quantity} item(s) added to cart!`);
+
+    if (phoneNumber) {
+      try {
+        const cartModel = new CartModel({
+          id: productId,
+          storeId: item.storeId,
+          cartItemCount: quantity,
+          cartPurchaseOptionStr: optionKey,
+        });
+        await API.saveCartItems(phoneNumber, cartModel);
+      } catch (err) {
+        console.error("Failed to sync addToCart:", err);
+      }
+    }
+
     return true;
   };
 
-  const updateQty = (item: CartItem, quantity: number): boolean => {
+  const updateQty = async (item: CartItem, quantity: number): Promise<boolean> => {
+    const saleMode = (item as any).saleMode ?? (item as any).salemode;
+    if (saleMode === "custom") {
+      toast.info("Custom items always have quantity = 1");
+      return false;
+    }
+
+    const stock = Number(item.stock ?? (item as any).availableStock ?? 0);
+    if (stock > 0 && quantity > stock) {
+      return false;
+    }
+
     if (quantity >= 1) {
       setCartItems((prev) =>
-        prev.map((cartItem) =>
-          cartItem.cartItemId === item.cartItemId
-            ? {
-                ...cartItem,
-                qty: quantity,
-              }
-            : cartItem
+        prev.map((ci) =>
+          ci.cartItemId === item.cartItemId ? { ...ci, qty: quantity } : ci
         )
       );
       toast.info("Product Quantity Updated!");
+
+      const phoneNumber = getPhoneNumber();
+      if (phoneNumber) {
+        try {
+          const cartModel = new CartModel({
+            id: item.id,
+            storeId: item.storeId,
+            cartItemCount: quantity,
+            cartPurchaseOptionStr: item.purchaseOptionStr ?? "",
+          });
+          await API.saveCartItems(phoneNumber, cartModel);
+        } catch (err) {
+          console.error("Failed to sync updateQty:", err);
+        }
+      }
       return true;
-    } else {
-      toast.error("Enter Valid Quantity!");
-      return false;
     }
+    return false;
   };
 
-  const removeFromCart = (item: CartItem): boolean => {
-    toast.error("Product Removed from Cart Successfully!");
+  const removeFromCart = async (item: CartItem): Promise<boolean> => {
+    toast.error("Product Removed from Cart");
     setCartItems((prev) =>
       prev.filter((e) => e.cartItemId !== item.cartItemId)
     );
+    const phoneNumber = getPhoneNumber();
+      if (phoneNumber) {
+      try {
+        const cartModel = new CartModel({
+          id: item.id,
+          storeId: item.storeId,
+          cartItemCount: 0,
+          cartPurchaseOptionStr: item.purchaseOptionStr ?? "",
+        });
+        await API.deleteCartItems(phoneNumber, cartModel);
+      } catch (err) {
+        console.error("Failed to sync removeFromCart:", err);
+      }
+    }
     return true;
   };
 
-  const emptyCart = () => {
-    toast.error("Cart is empty");
+  const emptyCart = async () => {
+    // toast.error("Cart is empty");
     setCartItems([]);
+    const phoneNumber = getPhoneNumber();
+    if (phoneNumber) {
+      try {
+        for (const item of cartItems) {
+          const cartModel = new CartModel({
+            id: item.id,
+            storeId: item.storeId,
+            cartItemCount: 0,
+            cartPurchaseOptionStr: item.purchaseOptionStr ?? "",
+          });
+          await API.deleteCartItems(phoneNumber, cartModel);
+        }
+      } catch (err) {
+        console.error("Failed to sync emptyCart:", err);
+      }
+    }
   };
 
   return (

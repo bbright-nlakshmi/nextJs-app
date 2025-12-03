@@ -38,34 +38,36 @@ export const SearchResults: React.FC<Props> = React.memo(({ show, kits, products
   ];
 
   return (
-    <div
-      style={{
-        background: "#fff",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
-        position: "absolute",
-        top: "100%",
-        left: 0,
-        width: "100%",
-        zIndex: 999,
-        maxHeight: "300px",
-        overflowY: "auto",
-        borderRadius: "8px",
-        padding: "10px",
-      }}
+    <div className="search-results-container"
+      // style={{
+      //   background: "#fff",
+      //   boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+      //   position: "absolute",
+      //   top: "100%",
+      //   left: 0,
+      //   width: "100%",
+      //   zIndex: 999,
+      //   maxHeight: "300px",
+      //   overflowY: "auto",
+      //   borderRadius: "8px",
+      //   padding: "10px",
+      // }}
     >
       {allItems.length > 0 ? (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+        // <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+        <ul className="search-results-list">
           {allItems.map((item) => (
             <li
               key={`${item.type}-${item.id}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "8px",
-                borderBottom: "1px solid #eee",
-                cursor: "pointer",
-                transition: "background 0.2s",
-              }}
+              className="search-result-item"
+              // style={{
+              //   display: "flex",
+              //   alignItems: "center",
+              //   padding: "8px",
+              //   borderBottom: "1px solid #eee",
+              //   cursor: "pointer",
+              //   transition: "background 0.2s",
+              // }}
             >
               <Link
                 href={
@@ -73,46 +75,50 @@ export const SearchResults: React.FC<Props> = React.memo(({ show, kits, products
                     ? `${item.url}?id=${item.id}`
                     : item.url
                 }
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  textDecoration: "none",
-                  color: "#333",
-                  width: "100%",
-                }}
-              >
+                className="search-result-link"
+                // style={{
+                //   display: "flex",
+                //   alignItems: "center",
+                //   textDecoration: "none",
+                //   color: "#333",
+                //   width: "100%",
+                // }}
+                >
                 <Media
                   src={item.img?.[0] || "/placeholder.jpg"}
                   alt={item.name}
-                  style={{
-                    width: 50,
-                    height: 50,
-                    objectFit: "cover",
-                    borderRadius: "4px",
-                    marginRight: "10px",
-                  }}
+                  className="search-result-image"
+                  // style={{
+                  //   width: 50,
+                  //   height: 50,
+                  //   objectFit: "cover",
+                  //   borderRadius: "4px",
+                  //   marginRight: "10px",
+                  // }}
                 />
                 <div>
-                  <h6 style={{ margin: 0, fontSize: "14px" }}>{item.name}</h6>
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "#555",
-                      backgroundColor: "#f1f1f1",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      marginLeft: "6px",
-                    }}
-                  >
-                    {item.type.toUpperCase()}
-                  </span>
-                </div>
+                  {/* <h6 style={{ margin: 0, fontSize: "14px" }}>{item.name}</h6> */}
+                    <h6 className="search-result-title">{item.name}</h6>
+                    <span className="search-result-type"
+                    // style={{
+                    //   fontSize: "12px",
+                    //   color: "#555",
+                    //   backgroundColor: "#f1f1f1",
+                    //   padding: "2px 6px",
+                    //   borderRadius: "4px",
+                    //   marginLeft: "6px",
+                    // }}
+                    >
+                      {item.type.toUpperCase()}
+                    </span>
+                  </div>
               </Link>
             </li>
           ))}
         </ul>
       ) : (
-        <div style={{ textAlign: "center", padding: "10px", color: "#999" }}>
+        // <div style={{ textAlign: "center", padding: "10px", color: "#999" }}>
+        <div className="search-no-results">
           No matching results found.
         </div>
       )}

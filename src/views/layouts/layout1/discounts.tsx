@@ -15,6 +15,7 @@ import { WishlistContext } from "../../../helpers/wishlist/wish.context";
 import { CompareContext } from "../../../helpers/compare/compare.context";
 import ProductBox from "@/views/layouts/widgets/Product-Box/productbox";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
+import { getProductFinalPrice } from "@/utils/price.helper";
 
 interface Props {
   products?: Discount[];
@@ -49,7 +50,13 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
     const price = getPrice(productId);
     return price * (1 - discount / 100);
   };
-
+  const getFinalPrice = (product: Product) =>
+    getProductFinalPrice({
+      price: product.sellingPrice,
+      discount: product.discount,
+      sellingPrices: product.sellingPrices,
+      activeIndex: 0,
+    });
   const handleAddToCart = (item: any, qty = 1) => {
     const cartItem = {
       ...item,
@@ -114,7 +121,7 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
                             <div className="product">
                               <ProductBox
                                 layout="layout-one"
-                                price= {priceWithDiscount}
+                                price= {getFinalPrice(item)}
                                 hoverEffect="icon-inline"
                                 data={item}
                                 newLabel={item.name}
@@ -127,7 +134,7 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
                             <div className="custom-product-card d-flex align-items-center p-3 mb-4 shadow-sm rounded bg-white border position-relative">
                               <div className="discount-badge">{item.discount}% Off</div>
                               <div
-                                className="product-thumbnail me-3 flex-shrink-0"
+                                className="product-thumbnail me-3 flex-shrink-0 pt-3"
                                 style={{ cursor: "pointer" }}
                                 onClick={() => router.push(`/product-details/${item.id}`)}
                               >
@@ -168,11 +175,9 @@ const DiscountProducts: NextPage<Props> = ({ item, products = [] }) => {
                                       data-toggle="modal"
                                       data-target="#addtocart"
                                       className="btn btn-normal"
-                                      onClick={() =>
-                                        handleAddToCart(item)
-                                      }
+                                      onClick={() =>router.push(`/product-details/${item.id}`)}                                      
                                     >
-                                      add to cart
+                                      View Details
                                     </a>
                                   </div>
                                 </div>

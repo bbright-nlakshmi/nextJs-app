@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useMemo } from "react";
 import { Modal, ModalHeader, ModalBody, Input } from "reactstrap";
 import ImageGroup from "./common/ImageGroup";
 import CountDownComponent from "@/views/layouts/widgets/CountDownComponent";
@@ -9,6 +9,9 @@ import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import { WishlistContext } from "@/helpers/wishlist/wish.context";
 import ImageSwatch from "./common/ImageSwatch";
 import { Discount, Product, searchController } from "@/app/globalProvider";
+import { useRouter} from "next/navigation";
+import { getProductFinalPrice } from "@/utils/price.helper";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductRightProps {
   item: Product | Discount;
@@ -23,16 +26,51 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   bundle,
   swatch,
 }) => {
+  const router = useRouter();
   const [modal, setModal] = useState(false);
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(item?.minCount || 1);
   const [stock, setStock] = useState("InStock");
-  const [activesize, setSize] = useState("");
+  const [activesize, setSize] = useState<string | null>(
+  // item?.sellingDisplayOptions?.[0] || item?.sellingDisplayOption || null
+);
+  const isOutOfStock = !item?.stock || item.stock <= 0;
+  const uniqueSizes: string[] = item?.sellingDisplayOptions || [];
+  const uniqueSize: string[] = item?.sellingDisplayOption || [];
+  const sizePrices: number[] = item?.sellingPrices || item.sellingPrice || [];
   const { addToWish } = React.useContext(WishlistContext);
-
-  const { addToCart } = useContext(CartContext);
-
+  const { addToCart, cartItems } = useContext(CartContext);
   const { selectedCurr } = React.useContext(CurrencyContext);
   const { symbol, value } = selectedCurr;
+  const [warning, setWarning] = useState<string>("");
+  const activeIndex = activesize ? uniqueSizes.indexOf(activesize) : null;
+  const isCustomMode = item?.saleMode === "custom";
+  const productId = item?.id;
+
+  const isOptionInCart = useMemo(() => {
+  if (!cartItems || !item) return false;
+
+  const cartItemId = `${item.id}-${activesize || item.sellingDisplayOption || "" }`;
+
+  return cartItems.some((cartItem) => cartItem.cartItemId === cartItemId);
+}, [cartItems, item, activesize]);
+
+
+
+  const finalPrice = getProductFinalPrice({
+  price: item.getProductPrice(),
+  discount: item.discount ? item.getDiscount() : 0,
+  sellingPrices: sizePrices,
+  activeIndex: activeIndex,
+});
+
+  // Ensure product details persist after refresh
+  React.useEffect(() => {
+    if (item) {
+      try {
+        sessionStorage.setItem("productDetail", JSON.stringify(item));
+      } catch {}
+    }
+  }, [item]);
 
   //const price = searchController.getDetails(item.productId,'getPrice');
   //const discountedPrice = searchController.getDetails(item.productId,'getPriceWithDiscount');
@@ -45,80 +83,176 @@ const ProductDetail: React.FC<ProductRightProps> = ({
   };
 
   const minusQty = () => {
-    if (qty > 1) {
+    if (qty > (item.minCount || 1)) {
       setStock("InStock");
       setQty(qty - 1);
+      } else {
+    setStock(`Minimum quantity is ${item.minCount}`); 
     }
   };
 
   const plusQty = () => {
-    if (item.stock >= qty) {
+    if (qty < (item.maxCount || item.stock)) {
       setQty(qty + 1);
     } else {
-      setStock("Out of Stock !");
+      setStock(`Maximum quantity is ${item.maxCount || item.stock}`); 
     }
   };
 
   const changeQty = (e: any) => {
-    const newQty = parseInt(e.target.value);
-    if (newQty >= 1 && !isNaN(newQty)) {
+  const newQty = parseInt(e.target.value);
+  if (!isNaN(newQty)) {
+    if (newQty < (item.minCount || 1)) {
+      setQty(item.minCount || 1);
+      setStock(`Minimum quantity is ${item.minCount}`);
+    } else if (newQty > (item.maxCount || item.stock)) {
+      setQty(item.maxCount || item.stock);
+      setStock(`Maximum quantity is ${item.maxCount || item.stock}`);
+    } else {
       setQty(newQty);
-      // Check stock availability
-      if (item.stock && newQty > item.stock) {
-        setStock("Out of Stock !");
-      } else {
-        setStock("InStock");
-      }
+      setStock("InStock");
     }
-  };
+  }
+};
+
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (uniqueSizes.length && !activesize) {
+    setWarning("⚠️ Please select an option before adding to cart.");
+      return;
+    }
+    const optionKey =
+      activesize ||
+      item?.sellingDisplayOption ||
+      "";
 
-    // Check stock before adding
-    if (item.stock && qty > item.stock) {
-      setStock("Out of Stock !");
+    const cartItemId = `${productId}-${optionKey}`;
+    const existingItem = cartItems.find(
+      (cartItem) => cartItem.cartItemId === cartItemId
+    );
+
+    // If custom mode and already added, redirect
+    if (isCustomMode && existingItem) {
+      router.push("/pages/account/cart");
       return;
     }
 
-    // Add to cart with the selected quantity
-    addToCart(item, qty);
+    const added = addToCart({
+      id: item.id,
+      productId: productId,
+      saleMode:item.saleMode,
+      name: item.name,
+      img:item.img,
+      selectedSize: activesize,
+      price: finalPrice,
+      cartItemCount: qty, 
+      cartPurchaseOptionStr: activesize || "",
+      purchaseOptionStr:activesize || "",
+      getPriceWithDiscount: () => finalPrice,
+      qty: isCustomMode ? 1 : qty,
+      cartItemId,
+      stock:item.stock,
+    },
+    qty
+    );
+    if (!added) {
+    // stock exceeded → show inline warning instead of toast
+    setWarning(`⚠️ Only ${item.stock} item(s) available in stock.`);
+    return;
+  }
+
+  setWarning(""); // clear warnings only if add was successful
+};
+  const handleGoToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/pages/account/cart");   
+  };
+
+  // Buy Now handler: store product in sessionStorage and set checkout mode
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (uniqueSizes.length && !activesize) {
+    setWarning("⚠️ Please select an option before proceeding to checkout.");
+    return;
+  }
+    if (item.stock && qty > item.stock) {
+      setWarning(`⚠️ Only ${item.stock} item left in stock. Please reduce quantity.`);
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        "buyNowProduct",
+         JSON.stringify({
+          id: item.id,
+          name: item.name,
+          img:item.img,
+          qty,
+          selectedSize: activesize,
+          price: finalPrice,
+          cartItemCount: qty, 
+          cartPurchaseOptionStr: activesize || "",
+          getPriceWithDiscount: () => finalPrice,
+          
+        })
+      );
+      sessionStorage.setItem("checkoutMode", "buyNow");
+    } catch {}
+    setWarning("");
+    router.push("/pages/account/checkout"); 
   };
 
   // const { id } = router.query;
+  
+  // update price when size changes
+  const handleSelectSize = (size: string, index: number) => {
+    setSize(size);
+    setWarning("");
+  };
 
-  const uniqueColor: any[] = [];
-  const uniqueSize: any[] = [];
   return (
     <div className="product-right contents">
       <div className="product-status">
         <span className="product-catagory">{item.categoryName}</span>
-        <div className="d-flex align-items-center gap-2">
-          <ul className="rating-star m-2 p-0">
-            <i className="fa fa-star text-warning"></i>
-            <i className="fa fa-star text-warning"></i>
-            <i className="fa fa-star text-warning"></i>
-            <i className="fa fa-star text-warning"></i>
-            <i className="fa fa-star-o text-warning"></i>
-          </ul>
-        </div>
+        <div className="rating-star">
+          {[...Array(5)].map((_, i) => (
+            <i
+              key={i}
+              className={`fa fa-star ${
+                i <
+                (item.rating
+                  ? item.rating.calculateRating?.() ?? 0
+                  : 0)
+                  ? "text-warning"
+                  : "fa-star-o text-warning"
+              }`}
+            ></i>
+           ))}
+        </div>                              
       </div>
       <h2>{item.name}</h2>
-      {item.discount ? (
-        <h2>
-          <span className="text-danger me-3">-{item.getDiscount()}%</span>
-          <del className="text-muted ">
-            M.R.P:{symbol}
-            {item.getProductPrice() * value}
-          </del>
-        </h2>
-      ) : (
-        ""
-      )}
-      <h3 className="product-price mb--15 d-block">
-        {symbol}
-        {(item.getPriceWithDiscount() * value).toFixed(2)}
-      </h3>{" "}
+      <div className="product-price-section">
+        {item.discount ? (
+          <div>
+            <h2>
+              <span className="text-danger me-3">-{item.getDiscount()}%</span>
+              <del className=" muted-text color-black ">
+                M.R.P: {symbol}{activeIndex !== null
+                  ? (sizePrices[activeIndex] * value).toFixed(2)
+                  : (item.getProductPrice() * value).toFixed(2)}
+              </del>
+            </h2>
+            <h3 className="product-price mb--15 d-block">
+              {symbol}{(finalPrice * value).toFixed(2)}
+            </h3>
+          </div>
+        ) : (
+          <h3 className="product-price mb--15 d-block">
+            {symbol}{(finalPrice * value).toFixed(2)}
+          </h3>
+        )}
+      </div>
       {/* {item.variants &&
         item.variants.map((vari:any) => {
           var findItem = uniqueColor.find((x) => x.color === vari.color);
@@ -147,20 +281,17 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                   return <li className={vari.color} key={i} title={vari.color} onClick={() => changeColorVar(i)}></li>;
                 })}
               </ul>
-            )}
-        {!!uniqueSize.length && (
+            )} */}
+        {(!!uniqueSizes.length || uniqueSize.length) && (
           <>
             <h6 className="product-title size-text">
-              select size{" "}
               <span>
-                <a data-toggle="modal" data-target="#sizemodal" onClick={onOpenModal}>
-                  size chart
-                </a>
+                <a data-toggle="modal" data-target="#sizemodal" onClick={onOpenModal}></a>
               </span>
             </h6>
             <Modal isOpen={modal} centered={true} toggle={onCloseModal}>
               <ModalHeader>
-                Sheer Straight Kurta <i className="fa fa-close modal-close" onClick={onCloseModal}></i>
+                {" "} <i className="fa fa-close modal-close" onClick={onCloseModal}></i>
               </ModalHeader>
               <ModalBody>
                 <div className="modal-body">
@@ -169,25 +300,37 @@ const ProductDetail: React.FC<ProductRightProps> = ({
               </ModalBody>
             </Modal>
 
-            <div className="size-box">
-              <ul>
-                {uniqueSize.map((size, i) => (
-                  <li className={`${size === activesize ? "active" : ""}`} key={i}>
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSize(size);
-                      }}>
-                      {size}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+            <div className="display-options">
+              {(item.saleMode !== "range") ? (
+                <>
+                  <ul>
+                    {uniqueSizes.map((size, i) => (
+                      <li className={`${size === activesize ? "active" : ""}`} key={i}>
+                        <a
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleSelectSize(size, i);
+                            setWarning(""); 
+                          }}>
+                          {size}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <div className="title-font mb-4">{uniqueSize}</div>
+              )}
             </div>
           </>
         )}
-      </div> */}
+
+
+        
+        {warning && (
+          <p className="warning-message text-danger mt-2">{warning}</p>
+        )}
       <div className="product-description border-product">
         {stock !== "InStock" ? (
           <span className="instock-cls">{stock}</span>
@@ -206,6 +349,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 data-type="minus"
                 data-field=""
                 onClick={minusQty}
+                disabled={isCustomMode || qty <= (item.minCount || 1)}
               >
                 <i className="ti-angle-left"></i>
               </button>
@@ -214,8 +358,9 @@ const ProductDetail: React.FC<ProductRightProps> = ({
               type="text"
               name="quantity"
               className="form-control input-number"
-              value={qty}
+              value={isCustomMode ? 1 : qty}
               onChange={changeQty}
+              readOnly={isCustomMode} // prevent manual typing
             />
             <span className="input-group-prepend">
               <button
@@ -224,6 +369,7 @@ const ProductDetail: React.FC<ProductRightProps> = ({
                 data-type="plus"
                 data-field=""
                 onClick={plusQty}
+                disabled={isCustomMode || qty >= (item.maxCount)}
               >
                 <i className="ti-angle-right"></i>
               </button>
@@ -232,18 +378,62 @@ const ProductDetail: React.FC<ProductRightProps> = ({
         </div>
 
         <div className="product-buttons">
-          <a
-            href="#"
-            data-toggle="modal"
-            data-target="#addtocart"
-            className="btn btn-normal"
-            onClick={handleAddToCart}
-          >
-            add to cart
-          </a>
-          <a href="/pages/account/checkout" className="btn btn-normal">
-            buy now
-          </a>
+          <AnimatePresence mode="wait">
+            {isOutOfStock ? (
+              <motion.a
+                key="out-of-stock"
+                href="#"
+                className="btn btn-normal disabled-btn"
+                onClick={(e) => e.preventDefault()}
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                OUT OF STOCK
+              </motion.a>
+            ) : !isOptionInCart ? (
+              <motion.a
+                key="add-to-cart"
+                href="#"
+                data-toggle="modal"
+                data-target="#addtocart"
+                className="btn btn-normal"
+                onClick={handleAddToCart}
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                add to cart
+              </motion.a>
+            ) : (
+              <motion.a
+                key="go-to-cart"
+                href="#"
+                className="btn btn-normal"
+                onClick={handleGoToCart}
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                GO TO CART
+              </motion.a>
+            )}
+          </AnimatePresence>
+          {!isOutOfStock && (
+            <motion.a
+              href="#"
+              className="btn btn-normal"
+              onClick={handleBuyNow}
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+            >
+              buy now
+            </motion.a>
+          )}
         </div>
       </div>
       {/* <div className="border-product"> */}
@@ -267,10 +457,10 @@ const ProductDetail: React.FC<ProductRightProps> = ({
           ""
         )}
         <span className="tags product-unipue mb--10">
-          <strong>LIFE:</strong> 6 Months
+          {/* <strong>LIFE:</strong> 6 Months */}
         </span>
         <span className="tags product-unipue mb--10">
-          <strong>Type:</strong> original
+          {/* <strong>Type:</strong> original */}
         </span>
         {item.brandName ? (
           <span className="tags product-unipue mb--10">

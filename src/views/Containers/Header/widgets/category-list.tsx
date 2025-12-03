@@ -67,7 +67,8 @@ const CategoryList: NextPage<ByCategoryProps> = ({ category }) => {
             {categories.map((cat) => (
               <li key={cat.id} 
                   onClick={() => router.push(`/collections/no-sidebar?id=${cat.id}&type=category`)}
-                style={{ cursor: "pointer" }}
+                  // style={{ cursor: "pointer" }}
+                  className="cursor-pointer"
               >                            
                   <span className="arrow-before">&gt;</span>
                   <span className="category-name">{cat.name}</span>                  

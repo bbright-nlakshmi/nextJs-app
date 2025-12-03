@@ -186,15 +186,14 @@ const ComparePage: NextPage = () => {
         <Table borderless className="mb-0">
           <thead>
             <tr>
-              <th style={{ width: '200px' }}></th>
+              <th className="compare-table-header"></th>
               {data.products.map((prod) => (
                 <th key={prod.id} className="text-center">
                   <div className="position-relative">
                     <RSButton
                       color="danger"
                       size="sm"
-                      className="position-absolute top-0 end-0"
-                      style={{ zIndex: 1 }}
+                      className="position-absolute top-0 end-0 compare-image-container"
                       onClick={() => handleRemoveProduct(prod.id)}
                     >
                       ×
@@ -203,11 +202,10 @@ const ComparePage: NextPage = () => {
                       <img
                         src={prod.images[0]}
                         alt={prod.name}
-                        className="img-fluid rounded"
-                        style={{ maxHeight: '150px', objectFit: 'cover' }}
+                        className="img-fluid rounded compare-product-image"                        
                       />
                     ) : (
-                      <div className="bg-light rounded d-flex align-items-center justify-content-center" style={{ height: '150px' }}>
+                      <div className="bg-light rounded d-flex align-items-center justify-content-center compare-placeholder">
                         <span className="text-muted">No Image</span>
                       </div>
                     )}
@@ -230,7 +228,7 @@ const ComparePage: NextPage = () => {
         <Table bordered responsive hover className="mb-0">
           <thead className="table-dark">
             <tr>
-              <th style={{ width: '200px' }}>Attribute</th>
+              <th className="compare-attribute-header">Attribute</th>
               {data.products.map((prod) => (
                 <th key={prod.id} className="text-center">
                   {prod.name}

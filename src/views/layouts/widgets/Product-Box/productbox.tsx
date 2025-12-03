@@ -1,4 +1,3 @@
-//import Img from "@/utils/BgImgRatio";
 import { NextPage } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -6,13 +5,17 @@ import React, { Fragment, useContext, useRef, useState } from "react";
 import { Media, Modal, ModalBody } from "reactstrap";
 import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
 import Slider from "react-slick";
-import { objCache } from "@/app/globalProvider";
-
+import { objCache, Product } from "@/app/globalProvider";
+import { CartContext } from "@/helpers/cart/cart.context";
+import { getProductFinalPrice } from "@/utils/price.helper";
+import { getSizeLabel } from "@/utils/Labels";
+import { AnimatePresence, motion } from "framer-motion";
+ 
 interface productType {
-  id?: Number;
+  id?: number;
   title?: string;
   newLabel?: boolean;
-  sale?: Boolean;
+  sale?: boolean;
   price: number;
   discount?: number;
   stock?: number;
@@ -43,62 +46,261 @@ const ProductBox: NextPage<productType> = ({
   addWish,
 }) => {
   const currencyContext = useContext(CurrencyContext);
-  const { selectedCurr } = currencyContext;
-  const [imgsrc, setImgsrc] = useState("");
-  const imgChange = (src: React.SetStateAction<string>) => {
-    setImgsrc(src);
-  };
+  const { selectedCurr } = useContext(CurrencyContext);
+  const { addToCart, cartItems } = useContext(CartContext);
 
   const slider2 = useRef<Slider | null>(null);
   const [nav1, setNav1] = useState<Slider | null>();
   const router = useRouter();
+
   const [modal, setModal] = useState(false);
-  const [quantity, setQuantity] = useState(1);
   const [stockState, setStockState] = useState("InStock");
-  const uniqueSize: any[] = [];
-  const uniqueColor: any[] = [];
   const titleProps = data?.name.split(" ").join("");
+  const [warning, setWarning] = useState<string>("");
 
   const productInfo = objCache.getProductById(data?.productId);
+
+  const [quantity, setQuantity] = useState(
+    data?.minCount || item?.minCount || productInfo?.minCount || 1
+  );
+
+  const uniqueSizes: string[] =
+    data?.sellingDisplayOptions || productInfo?.sellingDisplayOptions || [];
+  const uniqueSize: string | null =
+    data?.sellingDisplayOption || productInfo?.sellingDisplayOption || null;
+
+  const sizePrices: number[] =
+    data?.sellingPrices || productInfo?.sellingPrices || [];
+  const sizePrice: number =
+    data?.sellingPrice || productInfo?.sellingPrice || [];
+
+  const uniqueColor: any[] = [];
+
+  const [activesize, setActiveSize] = useState<string | null>(
+    uniqueSizes.length ? uniqueSizes[0] : uniqueSize
+  );
+
+  const availableStock = data?.stock ?? item?.stock ?? productInfo?.stock ?? 0;
+  const isOutOfStock = availableStock <= 0;
+
+  const productId = data?.productId ?? data?.id;
+  const isCustomMode =
+    (item?.saleMode || data?.saleMode || productInfo?.saleMode) === "custom";
+
+  const optionKey =
+    activesize ||
+    data?.sellingDisplayOptions ||
+    productInfo?.sellingDisplayOptions ||
+    data?.sellingDisplayOption ||
+    productInfo?.sellingDisplayOption ||
+    "default";
+
+  const cartItemId = `${productId}-${optionKey}`;
+
+  const isAddedToCart = React.useMemo(() => {
+    return cartItems.some((cartItem) => cartItem.cartItemId === cartItemId);
+  }, [cartItems, cartItemId]);
+
+  const handleGoToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/pages/account/cart"); // Adjust path if your cart page differs
+  };
+
+  React.useEffect(() => {
+    if (!activesize) {
+      if (uniqueSizes.length) {
+        setActiveSize(uniqueSizes[0]);
+      } else if (uniqueSize) {
+        setActiveSize(uniqueSize);
+      }
+    }
+  }, [uniqueSizes, uniqueSize]);
 
   const changeColorVar = (img_id: number) => {
     slider2.current?.slickGoTo(img_id);
   };
 
+  const onOpenModal = () => {
+    setModal(true);
+  };
+
+  const onCloseModal = () => {
+    setModal(false);
+  };
+
   const minusQty = () => {
-    if (quantity > 1) {
+    if (
+      quantity > (data?.minCount || item?.minCount || productInfo?.minCount || 1)
+    ) {
       setQuantity(quantity - 1);
       setStockState("InStock");
+    } else {
+      setStockState("Minimum limit reached");
     }
   };
 
   const plusQty = () => {
-    if (data.active) setQuantity(quantity + 1);
-    else setStockState("Out of Stock !");
+    if (quantity < (data?.maxCount || item?.maxCount || productInfo?.maxCount)) {
+      setQuantity(quantity + 1);
+      setStockState("InStock");
+    } else {
+      setStockState("Maximum limit reached");
+    }
   };
 
-  const changeQty = (e: { target: { value: string } }) => {
-    setQuantity(parseInt(e.target.value));
+  const changeQty = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = parseInt(e.target.value) || 1;
+
+    if (val < (data?.minCount || item?.minCount || productInfo?.minCount || 1)) {
+      val = (data.minCount || item?.minCount || productInfo?.minCount || 1);
+      setStockState("Minimum limit reached");
+    } else if (val > (data?.maxCount || item?.maxCount || productInfo?.maxCount)) {
+      val = data.maxCount || item?.maxCount || productInfo?.maxCount;
+      setStockState("Maximum limit reached");
+    } else {
+      setStockState("InStock");
+    }
+    setQuantity(val);
   };
 
-  const QuickView = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+  const QuickView = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setModal(!modal);
+    setModal(true);
+  };
+
+  const getFinalPrice = () => {
+    return getProductFinalPrice({
+      price: sizePrice,
+      discount: data?.discount,
+      sellingPrices: sizePrices,
+      activeIndex: activesize ? uniqueSizes.indexOf(activesize) : 0,
+    });
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (uniqueSizes.length && !activesize) {
+      setWarning("⚠️ Please select an option before adding to cart.");
+      return;
+    }
+
+    const optionKey =
+      activesize ||
+      data?.sellingDisplayOption ||
+      productInfo?.sellingDisplayOption ||
+      item?.sellingDisplayOption ||
+      "";
+
+    const cartItemId = `${productId}-${optionKey}`;
+    const existingItem = cartItems.find(
+      (cartItem) => cartItem.cartItemId === cartItemId
+    );
+
+    const totalQty = (existingItem?.qty || 0) + quantity;
+
+    if (availableStock > 0 && totalQty > availableStock) {
+      setWarning(`⚠️ Only ${availableStock} item(s) available in stock.`);
+      return;
+    }
+
+    // ✅ Custom saleMode check
+    if (isCustomMode && existingItem) {
+      handleGoToCart(e);
+      return;
+    }
+
+    const finalPrice = getFinalPrice();
+
+    const added = addToCart(
+      {
+        id: productId.toString(),
+        productId,
+        saleMode: data.saleMode || item?.saleMode,
+        name: data.name,
+        img: data.img,
+        selectedSize: activesize,
+        price: finalPrice,
+        cartItemCount: quantity,
+        purchaseOptionStr: optionKey,
+        cartPurchaseOptionStr: optionKey,
+        getPriceWithDiscount: () => finalPrice,
+        qty: isCustomMode ? 1 : quantity,
+        cartItemId,
+        stock: availableStock,
+      },
+      quantity
+    );
+
+    if (!added) {
+      // stock exceeded → show inline warning
+      setWarning(`⚠️ Only ${availableStock} item(s) available in stock.`);
+      return;
+    }
+
+    setWarning("");
+    // setModal(false);
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (uniqueSizes.length && !activesize) {
+      setWarning("⚠️ Please select an option before Buy Now.");
+      setModal(true);
+      return;
+    }
+
+    // stock check
+    if (data.stock && quantity > data.stock) {
+      setStockState("Out of Stock !");
+      return;
+    }
+
+    const finalPrice = getFinalPrice();
+
+    try {
+      sessionStorage.setItem(
+        "buyNowProduct",
+        JSON.stringify({
+          id: (data.id ?? data.productId)?.toString(),
+          productId: data.productId ?? data.id,
+          name: data.name,
+          img: data.img,
+          saleMode: data.saleMode || item?.saleMode,
+          quantity: isCustomMode ? 1 : quantity,
+          selectedSize: activesize,
+          price: finalPrice,
+          cartItemCount: quantity,
+          purchaseOptionStr: activesize || "",
+          getPriceWithDiscount: () => finalPrice,
+        })
+      );
+      sessionStorage.setItem("checkoutMode", "buyNow");
+    } catch (err) {
+      console.error("Session storage error:", err);
+    }
+
+    setWarning("");
+    setModal(false);
+    router.push("/pages/account/checkout");
+  };
+
+  // update price when size changes
+  const handleSelectSize = (size: string) => {
+    setActiveSize(size);
+    setWarning("");
   };
 
   const clickProductDetail = () => {
-    if (data.type === "kit") {
-      router.push(
-        `/product-details/thumbnail-left/${
-          data?.productId ? data?.productId : data?.id
-        }`
-      );
-    } else
-      router.push(
-        `/product-details/${data?.productId ? data?.productId : data?.id}`
-      );
+    const id = data?.productId ?? data?.id;
+    router.push(
+      data.type === "kit"
+        ? `/product-details/thumbnail-left/${id}`
+        : `/product-details/${id}`
+    );
   };
-
+ 
   return (
     <Fragment>
       <div
@@ -106,24 +308,62 @@ const ProductBox: NextPage<productType> = ({
         onClick={clickProductDetail}
       >
         <div className="product-imgbox image-and-action-area-wrapper">
-          <a className="thumbnail-preview">
-            <Media
-              src={data?.img[0]}
-              alt=""
-              className="img-fluid  image_zoom_cls-0"
+          {data?.discount && data.discount > 0 && (
+            <div className="discount-badge-pb">
+              <span className="discount-percent">-{data.discount}%</span>
+              <span className="discount-off">OFF</span>
+            </div>
+          )}        
+          {data?.img?.length > 1 ? (
+            <Slider
+              dots={true}
+              infinite={true}
+              speed={500}
+              slidesToShow={1}
+              slidesToScroll={1}
+              arrows={false}
+              autoplay={true}          
+              autoplaySpeed={1000}      
+              pauseOnHover={true}
+            >
+              {data.img.map((src: string, idx: number) => (
+                <div key={idx}>
+                  <a className="thumbnail-preview">
+                    <Media
+                      src={src}
+                      alt=""
+                      className={`img-fluid image_zoom_cls-0 ${isOutOfStock ? "grayscale" : ""}`}
+                    />
+                  </a>
+                </div>
+              ))}
+            </Slider>
+          ) : (
+            <a className="thumbnail-preview">
+              <Media
+                src={data?.img?.[0]}
+                alt=""
+                className="img-fluid image_zoom_cls-0"
             />
           </a>
-
-          <div className={`product-icon ${hoverEffect}`}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                addCart(data);
-              }}
-            >
-              <i className="ti-bag"></i>
-            </button>
+          )}
+ 
+          <div className={`product-icon ${hoverEffect} ${isOutOfStock ? "out-of-stock-mode" : ""}`}>
+            {isOutOfStock ? (
+              <button disabled title="Out of Stock" className="out-of-stock-btn">
+                <i className="ti-na"></i>
+              </button>
+            ) : !isAddedToCart ? (
+              <button title="Add to Cart" onClick={(e) => { e.stopPropagation(); handleAddToCart(e); }}>
+                <i className="ti-shopping-cart"></i>
+              </button>
+            ) : (
+              <button title="Go to Cart" onClick={(e) => { e.stopPropagation(); handleGoToCart(e); }}>
+                <i className="ti-bag"></i>
+              </button>
+            )}
             <a
+              title="Add to Wishlist"
               onClick={(e) => {
                 e.stopPropagation();
                 addWish(e);
@@ -134,16 +374,17 @@ const ProductBox: NextPage<productType> = ({
             <a title="Quick View" onClick={(e) => QuickView(e)}>
               <i className="ti-search" aria-hidden="true"></i>
             </a>
-            <a
-              href="#"
-              title="Compare"
-              onClick={(e) => {
-                e.stopPropagation();
-                addCompare(e);
-              }}
-            >
-              <i className="ti-reload" aria-hidden="true"></i>
+            {!isOutOfStock && (
+              <a
+                title="Checkout"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBuyNow(e);
+                }}
+              >
+              <i className="ti-credit-card" aria-hidden="true"></i>
             </a>
+            )}
           </div>
           {/* {newLabel && (
             <div className="new-label1">
@@ -156,28 +397,60 @@ const ProductBox: NextPage<productType> = ({
           <div className="detail-title">
             <div className="detail-left">
               <Link href="#">
-                <h6 className="price-title">{data?.name}</h6>
+                <h6 className="price-title truncate-text"
+                    title={data?.name}
+                  > {data?.name}
+                </h6>
               </Link>
-              <ul className="rating-star">
-                <i className="fa fa-star"></i>
-                <i className="fa fa-star"></i>
-                <i className="fa fa-star"></i>
-                <i className="fa fa-star"></i>
-                <i className="fa fa-star"></i>
-              </ul>
             </div>
-
+ 
             {/* <div className="check-price">
                 {selectedCurr.symbol}
                 {(getPrice(data.productId) * selectedCurr.value).toFixed(2)}{" "}
               </div> */}
-            <div className="detail-right">
+            <div className="detail-right flex items-center justify-between gap-3">
               <div className="price">
-                <div className="price">
+                <div className="theme-color">
                   {selectedCurr.symbol}
-                  {(price * selectedCurr.value).toFixed(2)}
+                  {(getFinalPrice() * selectedCurr.value).toFixed(2)}
                 </div>
               </div>
+              {(data.saleMode || productInfo?.saleMode) !=='range' ? (
+                <div className="size-dropdown"
+                onClick={(e) => e.stopPropagation()}
+                >
+                  <select
+                    value={activesize || ""}
+                    onChange={(e) => e.target.value && handleSelectSize(e.target.value)}
+                  >
+                    {uniqueSizes.map((size, i) => (
+                      <option key={i} value={size} className="dropdown-list">
+                        {getSizeLabel(size)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+              <div className="size-value theme-color truncate-text"
+              title={String(uniqueSize)}>
+                {uniqueSize}
+              </div>
+              )}
+            </div>
+            <div className="rating-star mt-2">
+              {[...Array(5)].map((_, i) => (
+                <i
+                  key={i}
+                  className={`fa fa-star ${
+                    i <
+                    (data.rating
+                      ? data.rating.calculateRating()
+                      : 0)
+                      ? "text-warning"
+                      : "fa-star-o text-warning"
+                  }`}
+                ></i>
+              ))}
             </div>
           </div>
         </div>
@@ -189,38 +462,66 @@ const ProductBox: NextPage<productType> = ({
         centered
         size="lg"
       >
-        <ModalBody>
-          <button
+        <button
             type="button"
-            className="close"
+            className="quickview-close mb-2"
             onClick={() => setModal(!modal)}
           >
             <span>&times;</span>
           </button>
+        <ModalBody>
           <div className="row">
             <div className="col-lg-6 col-xs-12">
-              {/* <Slider asNavFor={nav1!} ref={(slider1) => setNav1(slider1)}> */}
-              {data &&
-                data.img.map((img: any, i: any) => {
-                  return (
-                    <div key={i}>
+              {data?.img?.length > 1 ? (
+                <Slider
+                  dots={true}
+                  infinite={true}
+                  speed={500}
+                  slidesToShow={1}
+                  slidesToScroll={1}
+                  arrows={false}
+                  autoplay={true}
+                  autoplaySpeed={1000}
+                  pauseOnHover={true}
+                >
+                  {data.img.map((img: string, idx: number) => (
+                    <div key={idx} className="product-image-slide">
                       <Media
                         src={img}
                         alt=""
                         className="img-fluid  image_zoom_cls-0"
                       />
                     </div>
-                  );
-                })}
-              {/* </Slider> */}
+                  ))}
+                </Slider>
+              ) : (
+                <div className="product-image-slide">
+                  <Media
+                    src={data?.img?.[0]}
+                    alt=""
+                    className="img-fluid image_zoom_cls-0"
+                  />
+                </div>
+              )}
             </div>
             <div className="col-lg-6 rtl-text">
               <div className="product-right">
                 <h2>{data?.name}</h2>
-                <h3 className="theme-color price-tag">
-                  {" "}
+                {/* <div className="rating-star mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <i
+                      key={i}
+                      className={`fa fa-star ${
+                        i < (data.rating ? data.rating.calculateRating() : 0)
+                          ? "text-warning"
+                          : "fa-star-o text-warning"
+                      }`}
+                    ></i>
+                  ))}
+                </div> */}
+                <h3 className="price theme-color">
                   {selectedCurr.symbol}
-                  {(price * selectedCurr.value).toFixed(2)}
+                  {(getFinalPrice() * selectedCurr.value).toFixed(2)}
                 </h3>
                 <ul className="color-variant">
                   {uniqueColor.map((vari, i) => {
@@ -237,27 +538,15 @@ const ProductBox: NextPage<productType> = ({
                 <div className="border-product">
                   <h6 className="product-title">product details</h6>
                   {/* <p>{item?.description}</p> */}
+                  {productInfo?.description?.length ? (
+                    <div dangerouslySetInnerHTML={{ __html: productInfo.description[0]?.description.slice(0, 150) }}></div>
+                  ) : null}
                   <ul className="product-description-list">
-                    {productInfo?.description?.length ? (
-                      <>
-                        <div
-                          dangerouslySetInnerHTML={{
-                            __html:
-                              productInfo.description[0]?.description.slice(
-                                0,
-                                150
-                              ),
-                          }}
-                        ></div>
-                      </>
-                    ) : (
-                      ""
-                    )}
-                    {/* {data?.brandName && (
+                    {data?.brandName && (
                       <li>
                         <strong>Brand:</strong> {data.brandName}
                       </li>
-                    )} */}
+                    )}
                     {data?.categoryName && (
                       <li>
                         <strong>Category:</strong> {data.categoryName}
@@ -266,30 +555,50 @@ const ProductBox: NextPage<productType> = ({
                     {/* <li>
                       <strong>Type:</strong> Original
                     </li> */}
-                    {/* {data?.tags && data.tags.length > 0 && (
+                    {data?.tags && data.tags.length > 0 && (
                       <li>
                         <strong>Tags:</strong> {data.tags.join(", ")}
                       </li>
-                    )} */}
+                    )}
                   </ul>
                 </div>
                 <div className="product-description border-product">
-                  <div className="size-box">
-                    <ul>
-                      {uniqueSize.map((size, i) => (
-                        <li key={i}>
-                          <a href="#" onClick={(e) => e.preventDefault()}>
-                            {size}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {stockState !== "InStock" ? (
-                    <span className="instock-cls">{stockState}</span>
-                  ) : (
-                    ""
+                  {(!!uniqueSizes.length || !!uniqueSize) && (
+                    <div className="display-options">
+                      {(data.saleMode || productInfo?.saleMode) !== "range" ? (
+                        <>
+                          {uniqueSizes.length > 0 && (
+                            <ul>
+                              {uniqueSizes.map((size, i) => (
+                                <li key={i} className={size === activesize ? "active" : ""}>
+                                  <a
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleSelectSize(size);
+                                    }}
+                                  >
+                                    {size}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          )}                          
+                          {uniqueSizes.length === 0 && uniqueSize && (
+                            <div className="size-value mb-4">{uniqueSize}</div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="size-value mb-4">{uniqueSize}</div>
+                      )}
+                    </div>
+                  )}                  
+                  {warning && (
+                    <div className="warning-message text-danger mb-2 mt-1">
+                      {warning}
+                    </div>
                   )}
+                  {stockState !== "InStock" && <span className="instock-cls">{stockState}</span>}
                   <h6 className="product-title">quantity</h6>
                   <div className="qty-box">
                     <div className="input-group">
@@ -298,6 +607,7 @@ const ProductBox: NextPage<productType> = ({
                           type="button"
                           className="btn quantity-left-minus"
                           onClick={minusQty}
+                          disabled={isCustomMode ||quantity <= (data?.minCount || item?.minCount || productInfo?.minCount || 1)}
                         >
                           <i className="ti-angle-left"></i>
                         </button>
@@ -306,14 +616,18 @@ const ProductBox: NextPage<productType> = ({
                         type="text"
                         name="quantity"
                         className="form-control input-number"
-                        value={quantity}
+                        value={isCustomMode?  1 : quantity}
+                        min={productInfo?.minCount || 1}
+                        max={availableStock} 
                         onChange={changeQty}
+                        readOnly={isCustomMode}
                       />
                       <span className="input-group-prepend">
                         <button
                           type="button"
                           className="btn quantity-right-plus"
                           onClick={plusQty}
+                          disabled={isCustomMode || quantity >= Math.min( availableStock, item?.maxCount || data?.maxCount || productInfo?.maxCount || availableStock)}
                         >
                           <i className="ti-angle-right"></i>
                         </button>
@@ -322,22 +636,54 @@ const ProductBox: NextPage<productType> = ({
                   </div>
                 </div>
                 <div className="product-buttons">
-                  <a
-                    href="#"
-                    className="btn btn-normal"
-                    onClick={() => {
-                      addCart(data, quantity);
-                      setModal(!modal);
-                    }}
-                  >
-                    add to cart
-                  </a>
+                  <AnimatePresence mode="wait">
+                    {isOutOfStock ? (
+                      <motion.a
+                        key="out-of-stock"
+                        href="#"
+                        className="btn btn-normal disabled-btn"
+                        onClick={(e) => e.preventDefault()}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                      >
+                        OUT OF STOCK
+                      </motion.a>
+                    ) : !isAddedToCart ? (
+                      <motion.a
+                        key="add-to-cart"
+                        href="#"
+                        className="btn btn-normal"
+                        onClick={handleAddToCart}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                      >
+                        add to cart
+                      </motion.a>
+                    ) : (
+                      <motion.a
+                        key="go-to-cart"
+                        href="#"
+                        className="btn btn-normal"
+                        onClick={handleGoToCart}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                      >
+                        GO TO CART
+                      </motion.a>
+                    )}
+                  </AnimatePresence>
                   <a
                     href="#"
                     className="btn btn-normal"
                     onClick={() => clickProductDetail()}
                   >
-                    view detail
+                    view details
                   </a>
                 </div>
               </div>
@@ -349,3 +695,4 @@ const ProductBox: NextPage<productType> = ({
   );
 };
 export default ProductBox;
+ 

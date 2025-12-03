@@ -1,5 +1,5 @@
 interface DeliveryAddressJson {
-  id?: number | null;
+  id?: string | null;
   at_store: boolean | number;
   first_name: string;
   last_name: string;
@@ -19,7 +19,7 @@ interface DeliveryAddressJson {
 }
 
 export class DeliveryAddressModel {
-  id?: number | null;
+  id?: string | null;
   atStore: number;
   firstName: string;
   lastName: string;
@@ -56,7 +56,7 @@ export class DeliveryAddressModel {
     // doNotRingTheBell = 0,
     // petAtHome = 0,
   }: {
-    id?: number | null;
+    id?: string | null;
     atStore: number;
     firstName: string;
     lastName: string;
