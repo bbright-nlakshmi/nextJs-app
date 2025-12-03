@@ -9,7 +9,7 @@ export class OrderItemsModel {
   collectedTax: number;
   costPrice: number;
   saleQuantityStr: string;
-  saleQuantity: string;
+  saleQuantity: number;
   isProduct: boolean;
   isReturnable: boolean;
   url: string;
@@ -28,7 +28,7 @@ export class OrderItemsModel {
     collectedTax?: number;
     costPrice?: number;
     saleQuantityStr?: string;
-    saleQuantity?: string;
+    saleQuantity?: number;
     isProduct?: boolean;
     isReturnable?: boolean;
     url?: string;
@@ -46,7 +46,7 @@ export class OrderItemsModel {
     this.collectedTax = params.collectedTax ?? 0;
     this.costPrice = params.costPrice ?? 0;
     this.saleQuantityStr = params.saleQuantityStr ?? '';
-    this.saleQuantity = params.saleQuantity ?? '';
+    this.saleQuantity = params.saleQuantity ?? 0;
     this.isProduct = params.isProduct ?? false;
     this.isReturnable = params.isReturnable ?? false;
     this.url = params.url ?? '';

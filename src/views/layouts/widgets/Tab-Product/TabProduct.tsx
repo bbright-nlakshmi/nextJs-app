@@ -40,6 +40,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getProductFinalPrice } from "@/utils/price.helper";
 
 type TabProductProps = {
   effect?: any;
@@ -53,20 +54,47 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
   const [activeTab, setActiveTab] = useState(0);
   const router = useRouter();
 
-  const getPrice = (productId: string) => {
-    const price = searchController.getDetails(productId, "getPrice");
-
-    return price;
-  };
+  const getPrice = (product: Product) => {
+    return getProductFinalPrice({
+      price: product.sellingPrice,
+      discount: product.discount,
+      sellingPrices: product.sellingPrices,
+      activeIndex: 0,
+    });
+  }
 
   // Function to handle adding item to cart with price included
-  const handleAddToCart = (item: any, qty = 1) => {
+  const handleAddToCart = (item: any, qty: 1) => {
+    const finalPrice = getPrice(item);
     const cartItem = {
+      ...item,
+      id: item.productId ?? item.id,
+      price: finalPrice,
+      cartItemCount: qty,
+      getPriceWithDiscount: () => finalPrice,
+
+    };
+    addToCart(cartItem, qty);
+  };
+
+  // Function to handle adding item to wishlist with price included
+  const handleAddToWish = (item: any) => {
+    const wishItem = {
+      ...item,
+      price: getPrice(item),
+      id: item.productId,
+    };
+    addToWish(wishItem);
+  };
+
+  // Function to handle adding item to compare with price included
+  const handleAddToCompare = (item: any) => {
+    const compareItem = {
       ...item,
       price: getPrice(item.productId),
       id: item.productId,
     };
-    addToCart(cartItem, qty);
+    addToCompare(compareItem);
   };
 
   if (categories?.length)
@@ -131,7 +159,11 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
                           //   rows: 2,
                           // }}
                           loop={false}
-                          autoplay={{ delay: 1000, pauseOnMouseEnter: true }}
+                          speed={2000}
+                          autoplay={{ 
+                            delay: 3000,
+                            pauseOnMouseEnter: true,
+                           }}
                           breakpoints={appConfig.mediaQueries}
                           modules={[Autoplay, Navigation, Keyboard]}
                         >
@@ -141,13 +173,14 @@ const TabProduct: NextPage<TabProductProps> = ({ effect, categories }) => {
                                 <SwiperSlide key={item.id}>
                                   <ProductBox
                                     layout="layout-one"
-                                    price={getPrice(item.productId)}
+                                    data={item}                                     
+                                    price={getPrice(item)}
+                                    discount={item.discount?.discount}
                                     hoverEffect={effect}
-                                    data={item}
                                     newLabel={item.name}
                                     addCart={handleAddToCart}
-                                    addCompare={() => addToCompare(item)}
-                                    addWish={() => addToWish(item)}
+                                    addCompare={() => handleAddToCompare(item)}
+                                    addWish={() => handleAddToWish(item)}
                                   />
                                 </SwiperSlide>
                               )

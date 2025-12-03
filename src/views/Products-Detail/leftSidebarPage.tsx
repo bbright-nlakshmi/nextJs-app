@@ -18,6 +18,7 @@ import {
 
 interface LeftSidebar {
   pathId: any;
+  productData:any;
 }
 
 var data: any;

@@ -15,68 +15,80 @@ const ProductSlick: React.FC<ProductSlickProps> = ({
   bundle,
   swatch,
 }) => {
-  const [nav1, setNav1] = useState<Slider | null>();
-  const [nav2, setNav2] = useState<Slider | null>();
-
+  // Simple carousel settings - same as ProductBox
   let setting = {
+    dots: true,
+    infinite: true,
+    speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,
     arrows: false,
-    fade: true,
+    autoplay: true,
+    autoplaySpeed: 1000,
+    pauseOnHover: true,
+    adaptiveHeight: false,
+    variableWidth: false,
   };
-  let setting1 = {
-    slidesToScroll: 1,
-    slidesToShow: 3,
-    dots: true,
-    centerMode: false,
-    focusOnSelect: true,
-  };
+
   const changeColorVar = (img_id: number) => {
-    nav1?.slickGoTo(img_id);
+    // Simple function for color variant change if needed
   };
-  //const productPriceDetails:Product | Discount = searchController.getDetails(item.productId,'getProductById');
-  //console.log(productPriceDetails)
+
   return (
     <>
-      {" "}
-      <section className="rts-product-details-section rts-product-details-section2 ">
-        <div className="details-product-area w-full">
-          <Row className="w-full">
-            <Col lg="6">
-              <div className="product-thumb-area">
-                <div className="thumb-wrapper one filterd-items figure">
-                  <div className="product-thumb">
-                    {item &&
-                      item.img.map((img: any, i: any) => {
-                        return (
-                          <Media
-                            src={`${img}`}
-                            alt=""
-                            className="img-fluid  image_zoom_cls-0"
-                          />
-                        );
-                      })}
+      <section className="rts-product-details-section rts-product-details-section2" style={{ overflow: "visible" }}>
+        <div className="details-product-area w-full" style={{ overflow: "visible" }}>
+          <Row className="w-full" style={{ margin: 0 }}>
+            <Col lg="6" md="12" sm="12" className="d-flex justify-content-center align-items-center">
+              <div className="product-thumb-area" style={{ width: "100%", position: "relative" }}>
+                <div className="thumb-wrapper one filterd-items figure" style={{ width: "100%", minHeight: "400px" }}>
+                  <div className="product-thumb" style={{ width: "100%", height: "100%" }}>
+                    {/* Single Carousel Area - Same as ProductBox */}
+                    {item?.img?.length > 1 ? (
+                      <div style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}>
+                        <Slider {...setting}>
+                          {item.img.map((img: string, idx: number) => (
+                            <div key={idx} style={{ outline: "none" }}>
+                              <div className="product-image-slide" style={{ position: "relative", width: "100%" }}>
+                                <Media
+                                  src={img}
+                                  alt=""
+                                  className="img-fluid image_zoom_cls-0"
+                                  style={{
+                                    width: "100%",
+                                    height: "auto",
+                                    // display: "block",
+                                    maxHeight: "500px",
+                                    objectFit: "contain",
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </Slider>
+                      </div>
+                    ) : (
+                      <div className="product-image-slide" style={{ position: "relative", width: "100%", maxWidth: "600px", margin: "0 auto" }}>
+                        <Media
+                          src={item?.img?.[0]}
+                          alt=""
+                          className="img-fluid image_zoom_cls-0"
+                          style={{
+                            width: "100%",
+                            height: "auto",
+                            // display: "block",
+                            maxHeight: "500px",
+                            objectFit: "contain",
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </Col>
 
-            {/* <Row>
-          <Col>
-            <Slider {...setting1} className="slider-nav" asNavFor={nav1!} ref={(slider2) => setNav2(slider2)} slidesToShow={item.img.length >= 3 ? 3 :item.img.length} >
-              {item &&
-                item.img.map((img: any, i: any) => {
-                  return (
-                    <div key={i}>
-                      <Media src={`/images/${img.src}`} alt="" className="img-fluid  image_zoom_cls-0" />
-                    </div>
-                  );
-                })}
-            </Slider>
-          </Col>
-        </Row> */}
-            {/* </Col> */}
-            <Col lg="6" className="rtl-text">
+            <Col lg="6" md="12" sm="12" className="rtl-text text-lg-start text-center">
               <ProductDetail
                 item={item}
                 changeColorVar={changeColorVar}

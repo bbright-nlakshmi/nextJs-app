@@ -24,12 +24,12 @@ const TabProduct: React.FC<Props> = ({description}) => {
                 <div className="material-border"></div>
               </NavLink>
             </NavItem> */}
-            <NavItem>
+            {/* <NavItem>
               <NavLink className={activeTab === "2" ? "active" : ""} onClick={() => setActiveTab("3")}>
                 Write Review
                 <div className="material-border"></div>
               </NavLink>
-            </NavItem>
+            </NavItem> */}
           </Nav>
           <TabContent className="nav-material" activeTab={activeTab}>
             <TabPane tabId="1">

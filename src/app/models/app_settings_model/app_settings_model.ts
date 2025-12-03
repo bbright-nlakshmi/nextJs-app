@@ -4,6 +4,7 @@ export class AppSettingsModel {
   apiVersion: string;
   currency: string;
   refreshInterval: string;
+  secretKey: string;
 
   constructor({
     id,
@@ -11,14 +12,16 @@ export class AppSettingsModel {
     apiVersion,
     currency,
     refreshInterval,
+    secretKey,
   }: {
     id: string;
     showErrorsAtMobile: boolean;
     apiVersion: string;
     currency: string;
     refreshInterval: string;
+    secretKey: string;
   }) {
-    if (!id || !apiVersion || !currency || !refreshInterval) {
+    if (!id || !apiVersion || !currency || !refreshInterval || !secretKey) {
       throw new Error("Required fields must not be empty.");
     }
 
@@ -27,6 +30,7 @@ export class AppSettingsModel {
     this.apiVersion = apiVersion;
     this.currency = currency;
     this.refreshInterval = refreshInterval;
+    this.secretKey = secretKey;
   }
 
   static fromMap(map: any): AppSettingsModel {
@@ -36,16 +40,18 @@ export class AppSettingsModel {
       apiVersion: map.api_version,
       currency: map.currency,
       refreshInterval: map.refresh_interval,
+      secretKey: map.secret_key,
     });
   }
 
   static emptyAppSettings(): AppSettingsModel {
     return new AppSettingsModel({
-      id: '',
+      id: "",
       showErrorsAtMobile: false,
-      apiVersion: '',
-      currency: '',
-      refreshInterval: '',
+      apiVersion: "",
+      currency: "",
+      refreshInterval: "",
+      secretKey: "",
     });
   }
 }

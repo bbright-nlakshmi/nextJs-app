@@ -80,10 +80,12 @@ const Home = () => {
         <RecentlyAddedProducts />
 
         <Kits kits={kits} />
-
+        {priceRanges && (
         <section className="box-category section-py-space">
           <PriceRanges priceRanges={priceRanges} />
         </section>
+        )}
+        
       </Layouts>
     </>
   );

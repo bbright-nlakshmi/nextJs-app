@@ -1,9 +1,11 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Slider from "react-slick";
 import { Media } from "reactstrap";
 import { useRouter } from "next/navigation"; // ✅ For client-side navigation
 import { objCache, Product } from "@/app/globalProvider";
+import { CurrencyContext } from "@/helpers/currency/CurrencyContext";
+import { getProductFinalPrice } from "@/utils/price.helper";
 
 const bestSellerSetting = {
   dots: false,
@@ -52,6 +54,8 @@ const bestSellerSetting = {
 const NewProduct: React.FC = () => {
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const router = useRouter();
+  const currencyContext = useContext(CurrencyContext);
+  const { selectedCurr } = useContext(CurrencyContext);
 
   useEffect(() => {
     const products = objCache.getRecentlyAddedProducts(8);
@@ -67,7 +71,14 @@ const NewProduct: React.FC = () => {
       objCache.off("update", updateHandler);
     };
   }, []);
-
+  const getFinalPrice = (product: Product) =>
+      getProductFinalPrice({
+        price: product.sellingPrice,
+        discount: product.discount,
+        sellingPrices: product.sellingPrices,
+        activeIndex: 0,
+      });
+    
   // Group products into chunks of 3 for each slide
   const chunkedProducts = recentProducts.reduce<Product[][]>(
     (result, product, index) => {
@@ -92,14 +103,14 @@ const NewProduct: React.FC = () => {
             <div key={groupIndex}>
               {group.map((product) => (
                 <div
-                  className="media cursor-pointer product-thumbnail flex-shrink-0 img.align-self-center p-3"
+                  className="media cursor-pointer product-thumbnail flex-shrink-0 img.align-self-center p-3 cursor-pointer"
                   key={product.id}
                   onClick={() => handleProductClick(product.id)}
-                  style={{ cursor: "pointer" }}
+                  // style={{ cursor: "pointer" }}
                 >
                   <a>
                     <Media
-                      className="img-fluid product-thumbnail.img p-2 h-100"
+                      className="img-fluid product-thumbnail-img p-2"
                       src={product.img[0]}
                       alt={product.name}
                     />
@@ -121,7 +132,7 @@ const NewProduct: React.FC = () => {
                         ></i>
                       ))}
                     </div>
-                    <h5 className="mb-0 ">${product.sellingPrice.toFixed(2)}</h5>
+                    <h5 className="mb-0 theme-color ">{selectedCurr.symbol}{getFinalPrice(product)}</h5>
                   </div>
                 </div>
               ))}

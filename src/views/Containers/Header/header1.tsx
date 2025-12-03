@@ -93,7 +93,7 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                   </div>
                   <div className="header-right d-lg-show " id="nav-menu">
                     <div className="icon-block d-xl-none" >
-                      <ul>
+                      <ul className="display-flex items-center justify-around ">
                         <User />
                         <WishList />
                         <MobileSearch onOpen={onOpenMobileSearch} />
@@ -133,11 +133,11 @@ const Header: NextPage<HeaderProps> = ({ cartPopupPosition, display, category, l
                   {/* <div className="category-left"> */}
                   <Category category={category} />
                   <HorizaontalMenu />
-                  <div className="icon-block">
+                  <div className="icon-block ">
                     <ul>
                       <MobileSearch onOpen={onOpenMobileSearch} />
                       <User />
-                       <MobileSetting />
+                       {/* <MobileSetting /> */}
                       <WishList />
                       
                      

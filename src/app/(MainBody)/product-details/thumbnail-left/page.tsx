@@ -13,7 +13,7 @@ const ThumbnailLeft: NextPage = () => {
   return (
     <div className="b-g-light">
       <Layout1>
-        <Breadcrumb title="Thumbnail Left" parent="product" />
+        <Breadcrumb title="Kit Details" parent="product" />
         <section className="section-big-pt-space bg-light">
           <KitDetails />
           {kitId && <RelatedKits kitId={kitId} />}

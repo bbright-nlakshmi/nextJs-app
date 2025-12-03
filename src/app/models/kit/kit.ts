@@ -41,6 +41,7 @@ export class Kit {
   discount: Discount | null;
   kitItems: KitProduct[];
   tags: string[];
+  getStock: any;
   constructor({
     id,
     name,

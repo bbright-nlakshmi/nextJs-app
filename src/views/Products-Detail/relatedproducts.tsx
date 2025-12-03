@@ -7,8 +7,9 @@ import { Skeleton } from "../../common/skeleton";
 import { CartContext } from "../../helpers/cart/cart.context";
 import { WishlistContext } from "../../helpers/wishlist/wish.context";
 import { CompareContext } from "../../helpers/compare/compare.context";
-import { appConfig, objCache, Product, searchController } from "@/app/globalProvider";
+import { appConfig, objCache, Product, searchController, centralDataCollector } from "@/app/globalProvider";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { getProductFinalPrice } from "@/utils/price.helper";
 import "swiper/css";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 interface RelatedProductsProps {
@@ -26,7 +27,38 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({
   const { addToCompare } = React.useContext(CompareContext);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   // const [pageLimit, setPageLimit] = useState(6);
-  // const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); 
+
+  const loadRelatedProducts = () => {
+    try {
+      // Get all products from different sources
+      const allProducts: Product[] = [
+        ...objCache.getAllPremiumProducts(),
+        ...objCache.getAllNonPremiumProducts(),
+        ...objCache.getAllProducts(),
+      ];
+
+      // Remove duplicates by creating a map with product IDs
+      const uniqueProducts = new Map<string, Product>();
+      allProducts.forEach((product) => {
+        if (!uniqueProducts.has(product.id)) {
+          uniqueProducts.set(product.id, product);
+        }
+      });
+
+      // Filter related products
+      const filtered = Array.from(uniqueProducts.values()).filter(
+        (product) =>
+          product.categoryID === categoryId && product.id !== productId
+      );
+
+      setRelatedProducts(filtered);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error loading related products:", error);
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleUpdateAllProducts = (data: Map<string, Product[]>) => {
@@ -42,24 +74,83 @@ const RelatedProducts: NextPage<RelatedProductsProps> = ({
           product.categoryID === categoryId && product.id !== productId
       );
       setRelatedProducts(filtered);
+      setIsLoading(false);
     };
 
+    const handleUpdate = () => {
+      loadRelatedProducts();
+    };
+
+    const handleUpdatePremium = () => {
+      loadRelatedProducts();
+    };
+
+    const handleUpdateNonPremium = () => {
+      loadRelatedProducts();
+    };
+
+    // Initial load
+    if (centralDataCollector.isInitialLoading) {
+      // Wait for data to be loaded
+      const checkDataLoaded = () => {
+        if (!centralDataCollector.isInitialLoading) {
+          loadRelatedProducts();
+        } else {
+          setTimeout(checkDataLoaded, 100);
+        }
+      };
+      checkDataLoaded();
+    } else {
+      loadRelatedProducts();
+    }
+
+    // Listen for various update events
     objCache.on("updateAllProducts", handleUpdateAllProducts);
+    objCache.on("update", handleUpdate);
+    objCache.on("updatePremium", handleUpdatePremium);
+    objCache.on("updateNonPremium", handleUpdateNonPremium);
+    objCache.on("dataLoaded", handleUpdate);
 
     return () => {
       objCache.off("updateAllProducts", handleUpdateAllProducts);
+      objCache.off("update", handleUpdate);
+      objCache.off("updatePremium", handleUpdatePremium);
+      objCache.off("updateNonPremium", handleUpdateNonPremium);
+      objCache.off("dataLoaded", handleUpdate);
     };
   }, [categoryId, productId]);
-  
-const handleAddToCart = (item: any, qty = 1) => {
-    const price = searchController.getDetails(item.productId, "getPrice");
+
+  const getPrice = (item: Product) => {
+    return getProductFinalPrice({
+      price: item.sellingPrice,
+      discount: item.discount,
+      sellingPrices: item.sellingPrices,
+      activeIndex: 0,
+    });
+  };
+
+  const handleAddToCart = (item: any, qty = 1) => {
+    const price = getPrice(item);
     const cartItem = {
       ...item,
       price: price,
+      cartItemCount: qty,
+      getPriceWithDiscount: () => price,
       id: item.productId,
+      cartPurchaseOptionStr: item.selectedSize || "",
     };
     addToCart(cartItem, qty);
   };
+
+  // Don't render if no related products and still loading
+  if (isLoading && relatedProducts.length === 0) {
+    return null;
+  }
+
+  // Don't render if no related products found
+  if (!isLoading && relatedProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="section-big-py-space ratio_asos ">
@@ -68,8 +159,15 @@ const handleAddToCart = (item: any, qty = 1) => {
           <Col sm="12">
             <h2>Related Products</h2>
             <div className="related-products-slider">
-              {!relatedProducts?.length ? (
-                <Skeleton />
+              {isLoading ? (
+                <div className="d-flex justify-content-center align-items-center related-products-container">
+                  <div className="text-center">
+                    <div className="spinner-border mb-3" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading related products...</p>
+                  </div>
+                </div>
               ) : (
                 <Swiper
                   spaceBetween={20}
@@ -88,7 +186,8 @@ const handleAddToCart = (item: any, qty = 1) => {
                           layout="layout-one"
                           data={item}
                           item={item}
-                          price={item.getPrice()}
+                          price={getPrice(item)}
+                          discount={item.discount?.discount}
                           addCart={handleAddToCart}
                           addCompare={() => addToCompare(item)}
                           addWish={() => addToWish(item)}
